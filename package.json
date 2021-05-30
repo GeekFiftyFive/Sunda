@@ -1,0 +1,10 @@
+{
+  "name": "squirrel",
+  "version": "0.0.1",
+  "description": "Tool to query JSON input using SQL style syntax",
+  "main": "dist/index.js",
+  "repository": "git@github.com:GeekFiftyFive/Squirrel.git",
+  "author": "GeekFiftyFive <op15736@my.bristol.ac.uk>",
+  "license": "MIT",
+  "private": false
+}
