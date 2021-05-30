@@ -4,10 +4,24 @@
     "plugins": [
       "@typescript-eslint"
     ],
+    "rules": {
+      "import/prefer-default-export": "off",
+      "import/extensions": "off"
+    },
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
       "airbnb"
-    ]
+    ],
+    "settings": {
+      "import/resolver": {
+        "node": {
+          "extensions": [".js", ".jsx", ".ts", ".tsx"]
+        }
+      }
+    },
+    "env": {
+      "jest": true
+    }
 }
