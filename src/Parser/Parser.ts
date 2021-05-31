@@ -25,7 +25,7 @@ export interface Condition {
   comparison: Comparison;
   field: string;
   value: unknown;
-  pair?: Condition;
+  rhs?: Condition;
 }
 
 export interface Projection {

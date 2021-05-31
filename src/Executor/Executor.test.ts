@@ -21,28 +21,24 @@ describe('test executeQuery', () => {
     expect(result).toEqual([1, 2, 3, 4, 5]);
   });
 
-  test('execute query with simple where clause', () => {
+  test('execute query with simple where clause on numeric values', () => {
     const query: Query = {
       projection: {
         type: ProjectionType.ALL,
       },
       table: 'test_data',
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.EQ,
-        field: 'Apples',
-        value: 10,
-      },
     };
 
     const data = {
       test_data: [
         {
           Oranges: 5,
+          Grapes: 5,
           Apples: 10,
         },
         {
           Pairs: 5,
+          Grapes: 10,
           Apples: 10,
         },
         {
@@ -52,16 +48,34 @@ describe('test executeQuery', () => {
       ],
     };
 
-    const result = execute<number>(query, data);
+    let result = execute<Record<string, number>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'Apples',
+        value: 10,
+      },
+    }, data);
+
     expect(result).toEqual([
-      {
-        Oranges: 5,
-        Apples: 10,
-      },
-      {
-        Pairs: 5,
-        Apples: 10,
-      },
+      data.test_data[0], data.test_data[1],
     ]);
+
+    result = execute<Record<string, number>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GTE,
+        field: 'Grapes',
+        value: 10,
+      },
+    }, data);
+
+    expect(result).toEqual([
+      data.test_data[1], data.test_data[2],
+    ]);
+
+    // TODO: Add test coverage for other comparison types
   });
 });

@@ -1,5 +1,20 @@
 import { Comparison, ProjectionType, Query } from '../Parser';
 
+const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
+  '=': (value: unknown, expected: unknown) => value === expected,
+  '<>': (value: unknown, expected: unknown) => value !== expected,
+  '>': (value: unknown, expected: unknown) => value > expected,
+  '<': (value: unknown, expected: unknown) => value < expected,
+  '>=': (value: unknown, expected: unknown) => value >= expected,
+  '<=': (value: unknown, expected: unknown) => value <= expected,
+  BETWEEN: (
+    value: number,
+    expected: { min: number, max: number },
+  ) => value < expected.max && value > expected.max,
+  LIKE: (value: string, expected: string) => value.includes(expected),
+  IN: (value: unknown[], expected: unknown) => value.includes(expected),
+};
+
 export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {
   const table = data[query.table];
 
@@ -17,8 +32,9 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
         return false;
       }
 
-      return query.condition.comparison === Comparison.EQ
-        && entry[query.condition.field] === query.condition.value;
+      const comparison = comparisons[query.condition.comparison];
+
+      return comparison(entry[query.condition.field], query.condition.value);
     });
   }
 
