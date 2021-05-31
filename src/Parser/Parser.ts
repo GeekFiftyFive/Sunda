@@ -74,7 +74,7 @@ export const parse = (input: string[]): Query => {
   let projection: Projection;
   let tokens = input;
 
-  if (tokens[0] === 'SELECT') {
+  if (tokens[0].toLowerCase() === 'select') {
     const parsed = parseProjection(tokens.splice(1));
     tokens = parsed.tokens;
     projection = parsed.projection;
@@ -82,7 +82,7 @@ export const parse = (input: string[]): Query => {
     throw new Error('Expected \'SELECT\'');
   }
 
-  if (tokens[0] === 'FROM') {
+  if (tokens[0].toLowerCase() === 'from') {
     tokens = tokens.slice(1);
     query = {
       projection,
@@ -94,7 +94,7 @@ export const parse = (input: string[]): Query => {
 
   tokens = tokens.slice(1);
 
-  if (tokens[0] === 'WHERE') {
+  if (tokens[0] && tokens[0].toLowerCase() === 'where') {
     const parsed = parseCondition(tokens.splice(1));
     tokens = parsed.tokens;
     query.condition = parsed.condition;

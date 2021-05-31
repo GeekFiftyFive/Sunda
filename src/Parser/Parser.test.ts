@@ -15,6 +15,18 @@ describe('test parser', () => {
     });
   });
 
+  test('parse simple valid query in lowercase', () => {
+    const tokens = ['select', '*', 'from', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+    });
+  });
+
   test('parse valid query with simple where clause', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '"value"', ';'];
     const query = parse(tokens);
