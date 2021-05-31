@@ -1,4 +1,4 @@
-import { parse, ProjectionType } from './parser';
+import { parse, ProjectionType } from './Parser';
 
 describe('test parser', () => {
   test('parse simple valid query', () => {

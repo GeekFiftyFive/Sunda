@@ -1,3 +1,3 @@
-import { executeQuery } from './executor';
+import { executeQuery } from './Executor';
 
 export { executeQuery };

@@ -1,4 +1,4 @@
-import { tokenise } from './tokeniser';
+import { tokenise } from './Tokeniser';
 
 describe('test tokeniser', () => {
   test('tokenise valid simple command', () => {
