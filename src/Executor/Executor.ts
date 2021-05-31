@@ -10,7 +10,7 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
   BETWEEN: (
     value: number,
     expected: { min: number, max: number },
-  ) => value < expected.max && value > expected.max,
+  ) => value < expected.max && value > expected.min,
   LIKE: (value: string, expected: string) => value.includes(expected),
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
 };
