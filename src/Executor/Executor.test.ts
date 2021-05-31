@@ -1,4 +1,4 @@
-import { executeQuery } from '.';
+import { execute } from '.';
 import { ProjectionType, Query } from '../Parser';
 
 describe('test executeQuery', () => {
@@ -14,7 +14,7 @@ describe('test executeQuery', () => {
       test_data: [1, 2, 3, 4, 5],
     };
 
-    const result = executeQuery<number>(query, data);
+    const result = execute<number>(query, data);
 
     expect(result).toEqual([1, 2, 3, 4, 5]);
   });
