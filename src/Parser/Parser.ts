@@ -25,6 +25,7 @@ export interface Condition {
   comparison: Comparison;
   field: string;
   value: unknown;
+  pair?: Condition;
 }
 
 export interface Projection {
