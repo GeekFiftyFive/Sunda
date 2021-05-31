@@ -6,7 +6,9 @@
     ],
     "rules": {
       "import/prefer-default-export": "off",
-      "import/extensions": "off"
+      "import/extensions": "off",
+      "no-shadow": "off",
+      "no-unused-vars": "off"
     },
     "extends": [
       "eslint:recommended",
