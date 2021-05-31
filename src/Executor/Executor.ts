@@ -3,10 +3,10 @@ import { Comparison, ProjectionType, Query } from '../Parser';
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
   '=': (value: unknown, expected: unknown) => value === expected,
   '<>': (value: unknown, expected: unknown) => value !== expected,
-  '>': (value: unknown, expected: unknown) => value > expected,
-  '<': (value: unknown, expected: unknown) => value < expected,
-  '>=': (value: unknown, expected: unknown) => value >= expected,
-  '<=': (value: unknown, expected: unknown) => value <= expected,
+  '>': (value: number, expected: number) => value > expected,
+  '<': (value: number, expected: number) => value < expected,
+  '>=': (value: number, expected: number) => value >= expected,
+  '<=': (value: number, expected: number) => value <= expected,
   BETWEEN: (
     value: number,
     expected: { min: number, max: number },
