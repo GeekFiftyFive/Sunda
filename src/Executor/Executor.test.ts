@@ -1,6 +1,6 @@
 import { execute } from '.';
 import {
-  ProjectionType, Query, BooleanType, Comparison,
+  ProjectionType, Query, BooleanType, Comparison, SingularCondition,
 } from '../Parser';
 
 describe('test executeQuery', () => {
@@ -55,7 +55,7 @@ describe('test executeQuery', () => {
         comparison: Comparison.EQ,
         field: 'Apples',
         value: 10,
-      },
+      } as SingularCondition,
     }, data);
 
     expect(result).toEqual([
@@ -69,7 +69,7 @@ describe('test executeQuery', () => {
         comparison: Comparison.GTE,
         field: 'Grapes',
         value: 10,
-      },
+      } as SingularCondition,
     }, data);
 
     expect(result).toEqual([

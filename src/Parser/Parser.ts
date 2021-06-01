@@ -1,7 +1,8 @@
 export enum BooleanType {
   AND,
   OR,
-  NONE
+  NONE,
+  NOT
 }
 
 export enum Comparison {
@@ -22,10 +23,17 @@ export enum ProjectionType {
 
 export interface Condition {
   boolean: BooleanType;
+}
+
+export interface SingularCondition extends Condition {
   comparison: Comparison;
   field: string;
   value: unknown;
-  rhs?: Condition;
+}
+
+export interface ConditionPair extends Condition {
+  lhs: Condition;
+  rhs: Condition;
 }
 
 export interface Projection {
@@ -38,6 +46,10 @@ export interface Query {
   table: string;
   condition?: Condition;
 }
+
+export const isSingularCondition = (object: Condition): object is SingularCondition => 'comparison' in object && 'field' in object && 'value' in object;
+
+export const isConditionPair = (object: Condition): object is ConditionPair => 'lhs' in object && 'rhs' in object;
 
 const parseValue = (value: string): unknown => {
   const numeric = Number.parseFloat(value);
@@ -68,7 +80,7 @@ const parseCondition = (tokens: string[]): { condition: Condition, tokens: strin
       comparison: tokens[1] as Comparison,
       field: tokens[0],
       value: parseValue(tokens[2]),
-    },
+    } as SingularCondition,
     tokens: tokens.slice(3),
   };
 };

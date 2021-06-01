@@ -1,4 +1,6 @@
-import { Comparison, ProjectionType, Query } from '../Parser';
+import {
+  Comparison, isSingularCondition, ProjectionType, Query,
+} from '../Parser';
 
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
   '=': (value: unknown, expected: unknown) => value === expected,
@@ -28,6 +30,10 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
     }
 
     return table.filter((entry: Record<string, unknown>) => {
+      if (!isSingularCondition(query.condition)) {
+        throw new Error('Multiple conditions not currently supported');
+      }
+
       if (entry[query.condition.field] === undefined) {
         return false;
       }
