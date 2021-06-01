@@ -20,4 +20,9 @@ describe('test tokeniser', () => {
     const actual = tokenise('SELECT * FROM table WHERE field="value";');
     expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field', '=', '"value"', ';']);
   });
+
+  test('can tokenise all comparison operators', () => {
+    const actual = tokenise('= <= >= <> > < BETWEEN LIKE');
+    expect(actual).toEqual(['=', '<=', '>=', '<>', '>', '<', 'BETWEEN', 'LIKE']);
+  });
 });
