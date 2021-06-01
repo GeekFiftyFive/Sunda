@@ -68,10 +68,30 @@ const parseValue = (value: string): unknown => {
   return match[1];
 };
 
+const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
+  const index = arr.indexOf(value.toUpperCase());
+  return index >= 0 ? index : arr.indexOf(value.toLowerCase());
+};
+
 const parseCondition = (tokens: string[]): { condition: Condition, tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
     throw new Error('Invalid condition in WHERE clause');
+  }
+
+  const andIndex = indexOfCaseInsensitive('and', tokens);
+
+  if (andIndex >= 0) {
+    const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
+    const rhs = parseCondition(tokens.slice(andIndex + 1)).condition;
+    return {
+      condition: {
+        boolean: BooleanType.AND,
+        lhs,
+        rhs,
+      } as ConditionPair,
+      tokens: [], // FIXME: Actually properly figure out what's been consumed
+    };
   }
 
   return {
