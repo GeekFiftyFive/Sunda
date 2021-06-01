@@ -42,7 +42,7 @@ export interface Query {
 const parseCondition = (tokens: string[]): { condition: Condition, tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
-    throw new Error('Invaluid condition in WHERE clause');
+    throw new Error('Invalid condition in WHERE clause');
   }
 
   return {
