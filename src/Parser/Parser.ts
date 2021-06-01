@@ -39,6 +39,23 @@ export interface Query {
   condition?: Condition;
 }
 
+const parseValue = (value: string): unknown => {
+  const numeric = Number.parseFloat(value);
+
+  if (!Number.isNaN(numeric)) {
+    return numeric;
+  }
+
+  const regex = /"(.*)"/gm;
+  const match = regex.exec(value);
+
+  if (!match) {
+    throw new Error(`Could not parse value ${value}`);
+  }
+
+  return match[1];
+};
+
 const parseCondition = (tokens: string[]): { condition: Condition, tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
@@ -50,7 +67,7 @@ const parseCondition = (tokens: string[]): { condition: Condition, tokens: strin
       boolean: BooleanType.NONE,
       comparison: tokens[1] as Comparison,
       field: tokens[0],
-      value: tokens[2],
+      value: parseValue(tokens[2]),
     },
     tokens: tokens.slice(3),
   };

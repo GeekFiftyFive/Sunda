@@ -39,7 +39,25 @@ describe('test parser', () => {
       condition: {
         boolean: BooleanType.NONE,
         field: 'field',
-        value: '"value"',
+        value: 'value',
+        comparison: Comparison.EQ,
+      },
+    });
+  });
+
+  test('parser should parse numeric values', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '10', ';'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.NONE,
+        field: 'field',
+        value: 10,
         comparison: Comparison.EQ,
       },
     });
