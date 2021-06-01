@@ -1,6 +1,6 @@
 import { execute } from '.';
 import {
-  ProjectionType, Query, BooleanType, Comparison, SingularCondition,
+  ProjectionType, Query, BooleanType, Comparison, SingularCondition, ConditionPair,
 } from '../Parser';
 
 describe('test executeQuery', () => {
@@ -75,6 +75,27 @@ describe('test executeQuery', () => {
     expect(result).toEqual([
       data.test_data[1], data.test_data[2],
     ]);
+
+    result = execute<Record<string, number>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.GTE,
+          field: 'Grapes',
+          value: 10,
+        } as SingularCondition,
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'Apples',
+          value: 10,
+        } as SingularCondition,
+      } as ConditionPair,
+    }, data);
+
+    expect(result).toEqual([data.test_data[1]]);
 
     // TODO: Add test coverage for other comparison types
   });

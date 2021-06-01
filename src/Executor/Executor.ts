@@ -1,5 +1,13 @@
 import {
-  Comparison, isSingularCondition, ProjectionType, Query,
+  BooleanType,
+  Comparison,
+  Condition,
+  ConditionPair,
+  isConditionPair,
+  isSingularCondition,
+  ProjectionType,
+  Query,
+  SingularCondition,
 } from '../Parser';
 
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
@@ -17,6 +25,46 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
 };
 
+const handleSingularCondition = (
+  condition: SingularCondition,
+  entry: Record<string, unknown>,
+): boolean => {
+  if (entry[condition.field] === undefined) {
+    return false;
+  }
+
+  const comparison = comparisons[condition.comparison];
+
+  return comparison(entry[condition.field], condition.value);
+};
+
+const handleConditionPair = (
+  condition: ConditionPair,
+  entry: Record<string, unknown>,
+): boolean => {
+  if (condition.boolean === BooleanType.AND) {
+    // eslint-disable-next-line no-use-before-define
+    return handleCondition(condition.lhs, entry) && handleCondition(condition.rhs, entry);
+  }
+
+  throw new Error('Only \'AND\' supported at present!');
+};
+
+const handleCondition = (
+  condition: Condition,
+  entry: Record<string, unknown>,
+): boolean => {
+  if (isSingularCondition(condition)) {
+    return handleSingularCondition(condition, entry);
+  }
+
+  if (isConditionPair(condition)) {
+    return handleConditionPair(condition, entry);
+  }
+
+  throw new Error('Could not identify condition! There must be a parser bug!');
+};
+
 export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {
   const table = data[query.table];
 
@@ -29,19 +77,9 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
       return table as T[];
     }
 
-    return table.filter((entry: Record<string, unknown>) => {
-      if (!isSingularCondition(query.condition)) {
-        throw new Error('Multiple conditions not currently supported');
-      }
-
-      if (entry[query.condition.field] === undefined) {
-        return false;
-      }
-
-      const comparison = comparisons[query.condition.comparison];
-
-      return comparison(entry[query.condition.field], query.condition.value);
-    });
+    return table.filter(
+      (entry: Record<string, unknown>) => handleCondition(query.condition, entry),
+    );
   }
 
   throw new Error('Projections not currently supported');
