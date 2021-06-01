@@ -25,4 +25,14 @@ describe('test tokeniser', () => {
     const actual = tokenise('= <= >= <> > < BETWEEN LIKE');
     expect(actual).toEqual(['=', '<=', '>=', '<>', '>', '<', 'BETWEEN', 'LIKE']);
   });
+
+  test('can tokenise integers', () => {
+    const actual = tokenise('42');
+    expect(actual).toEqual(['42']);
+  });
+
+  test('can tokenise decimals', () => {
+    const actual = tokenise('3.14');
+    expect(actual).toEqual(['3.14']);
+  });
 });
