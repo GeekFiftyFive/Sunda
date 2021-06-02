@@ -8,6 +8,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
+    "prepare": "husky install",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
     "start": "ts-node src/index.ts",
@@ -24,6 +25,7 @@
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "husky": "^6.0.0",
     "jest": "^27.0.3",
     "ts-jest": "^27.0.1",
     "ts-node": "^10.0.0",
