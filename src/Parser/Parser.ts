@@ -79,6 +79,21 @@ const parseCondition = (tokens: string[]): { condition: Condition, tokens: strin
     throw new Error('Invalid condition in WHERE clause');
   }
 
+  const orIndex = indexOfCaseInsensitive('or', tokens);
+  // TODO: Deduplicate
+  if (orIndex >= 0) {
+    const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
+    const rhs = parseCondition(tokens.slice(orIndex + 1)).condition;
+    return {
+      condition: {
+        boolean: BooleanType.OR,
+        lhs,
+        rhs,
+      } as ConditionPair,
+      tokens: [], // FIXME: Actually properly figure out what's been consumed
+    };
+  }
+
   const andIndex = indexOfCaseInsensitive('and', tokens);
 
   if (andIndex >= 0) {

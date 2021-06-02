@@ -89,4 +89,67 @@ describe('test parser', () => {
       },
     });
   });
+
+  test('parser should handle \'or\' in the where clause', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field1', '=', '10', 'or', 'field2', 'LIKE', '"value"', ';'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.OR,
+        lhs: {
+          boolean: BooleanType.NONE,
+          field: 'field1',
+          value: 10,
+          comparison: Comparison.EQ,
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          field: 'field2',
+          value: 'value',
+          comparison: Comparison.LIKE,
+        },
+      },
+    });
+  });
+
+  test('parser should handle \'and\' and \'or\' in the where clause', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field1', '=', '10', 'or', 'field2', 'LIKE', '"value"', 'and', 'field3', '>=', '8', ';'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.OR,
+        lhs: {
+          boolean: BooleanType.NONE,
+          field: 'field1',
+          value: 10,
+          comparison: Comparison.EQ,
+        },
+        rhs: {
+          boolean: BooleanType.AND,
+          lhs: {
+            boolean: BooleanType.NONE,
+            field: 'field2',
+            value: 'value',
+            comparison: Comparison.LIKE,
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            field: 'field3',
+            value: 8,
+            comparison: Comparison.GTE,
+          },
+        },
+      },
+    });
+  });
 });
