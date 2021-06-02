@@ -1,0 +1,46 @@
+{
+  "cats": [
+    {
+      "name": "Tom",
+      "breed": "Tabby",
+      "age": 5
+    },
+    {
+      "name": "Sarah",
+      "breed": "Maine Coon",
+      "age": 7
+    },
+    {
+      "name": "Rocket",
+      "breed": "Bengal",
+      "age": 2
+    },
+    {
+      "name": "Biscuits",
+      "breed": "British Shorthair",
+      "age": 10
+    },
+    {
+      "name": "Sam",
+      "breed": "Bengal",
+      "age": 14
+    }
+  ],
+  "dogs": [
+    {
+      "name": "Fenton",
+      "breed": "Whippet",
+      "age": 4
+    },
+    {
+      "name": "Braken",
+      "breed": "Labrador",
+      "age": 10
+    },
+    {
+      "name": "Spot",
+      "breed": "Dalmation",
+      "age": 9
+    }
+  ]
+}
