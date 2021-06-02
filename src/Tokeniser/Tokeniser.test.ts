@@ -35,4 +35,9 @@ describe('test tokeniser', () => {
     const actual = tokenise('3.14');
     expect(actual).toEqual(['3.14']);
   });
+
+  test('can parse two string conditions', () => {
+    const actual = tokenise('select * from cats where breed = "British Shorthair" or breed = "Bengal"');
+    expect(actual).toEqual(['select', '*', 'from', 'cats', 'where', 'breed', '=', '"British Shorthair"', 'or', 'breed', '=', '"Bengal"']);
+  });
 });
