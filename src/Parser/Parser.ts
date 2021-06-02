@@ -1,8 +1,8 @@
 export enum BooleanType {
-  AND,
-  OR,
-  NONE,
-  NOT
+  AND = 'AND',
+  OR = 'OR',
+  NONE = 'NONE',
+  NOT = 'NOT'
 }
 
 export enum Comparison {

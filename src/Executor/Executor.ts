@@ -47,7 +47,12 @@ const handleConditionPair = (
     return handleCondition(condition.lhs, entry) && handleCondition(condition.rhs, entry);
   }
 
-  throw new Error('Only \'AND\' supported at present!');
+  if (condition.boolean === BooleanType.OR) {
+    // eslint-disable-next-line no-use-before-define
+    return handleCondition(condition.lhs, entry) || handleCondition(condition.rhs, entry);
+  }
+
+  throw new Error('Only \'AND\' and \'OR\' supported at present!');
 };
 
 const handleCondition = (
