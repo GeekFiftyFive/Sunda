@@ -25,16 +25,37 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
 };
 
+export const followJsonPath = <T>(
+  path: string,
+  entry: Record<string, T> | Record<string, Record<string, T>> | undefined,
+): T => {
+  const tokens = path.split('.');
+
+  if (tokens.length === 1) {
+    return (entry as Record<string, T>)[tokens[0]];
+  }
+
+  const next = (entry as Record<string, Record<string, T>>)[tokens[0]];
+
+  if (!next) {
+    return undefined;
+  }
+
+  return followJsonPath<T>(tokens.slice(1).join('.'), next);
+};
+
 const handleSingularCondition = (
   condition: SingularCondition,
   entry: Record<string, unknown>,
 ): boolean => {
-  if (entry[condition.field] === undefined) {
+  const value = followJsonPath<unknown>(condition.field, entry);
+
+  if (value === undefined) {
     return false;
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const evaluated = comparison(entry[condition.field], condition.value);
+  const evaluated = comparison(value, condition.value);
 
   return condition.boolean === BooleanType.NOT ? !evaluated : evaluated;
 };

@@ -22,6 +22,8 @@ describe('test executeQuery', () => {
   });
 
   test('execute query with simple where clause on numeric values', () => {
+    // TODO: Add test coverage for other comparison types
+    // TODO: Break this out into smaller tests
     const query: Query = {
       projection: {
         type: ProjectionType.ALL,
@@ -138,8 +140,47 @@ describe('test executeQuery', () => {
     }, data);
 
     expect(result).toEqual([data.test_data[0]]);
+  });
 
-    // TODO: Add test coverage for other comparison types
-    // TODO: Break this out into smaller tests
+  test('can dig into the structure of an object using json path', () => {
+    const data = {
+      test_data: [
+        {
+          name: 'Brad',
+          address: {
+            line1: '53 Spruce Street',
+            line2: 'Meadmead',
+            city: 'Madeupton',
+            county: 'Madeupshire',
+          },
+        },
+        {
+          name: 'Clara',
+          address: {
+            line1: '92 Maple Street',
+            line2: null,
+            city: 'Clowntown',
+            county: 'Circushire',
+          },
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'test_data',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'address.city',
+        value: 'Clowntown',
+      } as SingularCondition,
+    };
+
+    const result = execute<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([data.test_data[1]]);
   });
 });
