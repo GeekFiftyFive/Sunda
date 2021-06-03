@@ -152,4 +152,49 @@ describe('test parser', () => {
       },
     });
   });
+
+  test('parser should handle \'not\' in the where clause', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'NOT', 'field1', '=', '10'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.NOT,
+        field: 'field1',
+        value: 10,
+        comparison: Comparison.EQ,
+      },
+    });
+  });
+
+  test('parser should handle \'not\' and \'and\' in the where clause', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'not', 'field1', '=', '10', 'and', 'field2', 'LIKE', '"value"', ';'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.NOT,
+          field: 'field1',
+          value: 10,
+          comparison: Comparison.EQ,
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          field: 'field2',
+          value: 'value',
+          comparison: Comparison.LIKE,
+        },
+      },
+    });
+  });
 });

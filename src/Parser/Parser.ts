@@ -109,14 +109,22 @@ const parseCondition = (tokens: string[]): { condition: Condition, tokens: strin
     };
   }
 
+  let boolean = BooleanType.NONE;
+  let offset = 0;
+
+  if (tokens[0].toLowerCase() === 'not') {
+    boolean = BooleanType.NOT;
+    offset = 1;
+  }
+
   return {
     condition: {
-      boolean: BooleanType.NONE,
-      comparison: tokens[1] as Comparison,
-      field: tokens[0],
-      value: parseValue(tokens[2]),
+      boolean,
+      comparison: tokens[1 + offset] as Comparison,
+      field: tokens[0 + offset],
+      value: parseValue(tokens[2 + offset]),
     } as SingularCondition,
-    tokens: tokens.slice(3),
+    tokens: tokens.slice(3 + offset),
   };
 };
 
