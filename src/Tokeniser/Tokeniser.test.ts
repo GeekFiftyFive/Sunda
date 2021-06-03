@@ -36,8 +36,13 @@ describe('test tokeniser', () => {
     expect(actual).toEqual(['3.14']);
   });
 
-  test('can parse two string conditions', () => {
+  test('can tokenise two string conditions', () => {
     const actual = tokenise('select * from cats where breed = "British Shorthair" or breed = "Bengal"');
     expect(actual).toEqual(['select', '*', 'from', 'cats', 'where', 'breed', '=', '"British Shorthair"', 'or', 'breed', '=', '"Bengal"']);
+  });
+
+  test('can tokenise JSON path field names', () => {
+    const actual = tokenise('SELECT * FROM table WHERE field.subfield="value";');
+    expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field.subfield', '=', '"value"', ';']);
   });
 });
