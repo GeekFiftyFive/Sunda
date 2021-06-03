@@ -34,8 +34,9 @@ const handleSingularCondition = (
   }
 
   const comparison = comparisons[condition.comparison];
+  const evaluated = comparison(entry[condition.field], condition.value);
 
-  return comparison(entry[condition.field], condition.value);
+  return condition.boolean === BooleanType.NOT ? !evaluated : evaluated;
 };
 
 const handleConditionPair = (

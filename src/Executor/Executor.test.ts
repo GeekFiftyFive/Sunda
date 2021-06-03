@@ -118,6 +118,28 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
 
+    result = execute<Record<string, number>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.OR,
+        lhs: {
+          boolean: BooleanType.NOT,
+          comparison: Comparison.EQ,
+          field: 'Pairs',
+          value: 5,
+        } as SingularCondition,
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'Oranges',
+          value: 5,
+        } as SingularCondition,
+      } as ConditionPair,
+    }, data);
+
+    expect(result).toEqual([data.test_data[0]]);
+
     // TODO: Add test coverage for other comparison types
+    // TODO: Break this out into smaller tests
   });
 });
