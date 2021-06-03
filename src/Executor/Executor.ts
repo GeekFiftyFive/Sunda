@@ -33,7 +33,7 @@ const handleSingularCondition = (
     return false;
   }
 
-  const comparison = comparisons[condition.comparison];
+  const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
   const evaluated = comparison(entry[condition.field], condition.value);
 
   return condition.boolean === BooleanType.NOT ? !evaluated : evaluated;
