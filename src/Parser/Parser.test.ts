@@ -197,4 +197,16 @@ describe('test parser', () => {
       },
     });
   });
+
+  test('parser should handle projections', () => {
+    const tokens = ['SELECT', 'name', 'age', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual(expect.objectContaining({
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['name', 'age'],
+      },
+    }));
+  });
 });

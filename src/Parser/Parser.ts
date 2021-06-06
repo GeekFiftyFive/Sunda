@@ -18,7 +18,8 @@ export enum Comparison {
 }
 
 export enum ProjectionType {
-  ALL
+  ALL,
+  SELECTED
 }
 
 export interface Condition {
@@ -138,7 +139,19 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
     };
   }
 
-  throw new Error('Projections not currently supported');
+  const fromIndex = indexOfCaseInsensitive('from', tokens);
+  if (fromIndex < 0) {
+    throw new Error('Expected \'FROM\'');
+  }
+
+  const fields = tokens.slice(0, fromIndex);
+  return {
+    projection: {
+      type: ProjectionType.SELECTED,
+      fields,
+    },
+    tokens: tokens.slice(fromIndex),
+  };
 };
 
 export const parse = (input: string[]): Query => {
