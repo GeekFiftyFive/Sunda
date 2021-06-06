@@ -102,15 +102,23 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
     throw new Error(`${query.table} is not an array!`);
   }
 
-  if (query.projection.type === ProjectionType.ALL) {
-    if (!query.condition) {
-      return table as T[];
-    }
+  const filtered = !query.condition ? table : table.filter(
+    (entry: Record<string, unknown>) => handleCondition(query.condition, entry),
+  );
 
-    return table.filter(
-      (entry: Record<string, unknown>) => handleCondition(query.condition, entry),
-    );
+  if (query.projection.type === ProjectionType.ALL) {
+    return filtered;
   }
 
-  throw new Error('Projections not currently supported');
+  if (query.projection.type === ProjectionType.SELECTED) {
+    return filtered.map((value: Record<string, unknown>) => {
+      const obj: Record<string, unknown> = {};
+      query.projection.fields.forEach((field) => {
+        obj[field] = value[field];
+      });
+      return obj as T;
+    });
+  }
+
+  throw new Error('Unsupported projection type');
 };

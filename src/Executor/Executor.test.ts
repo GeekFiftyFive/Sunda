@@ -183,6 +183,50 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[1]]);
   });
+
+  test('executor handles projections', () => {
+    const data = {
+      test_data: [
+        {
+          firstName: 'Barry',
+          surname: 'Smith',
+          age: 20,
+        },
+        {
+          firstName: 'Sarah',
+          surname: 'Davis',
+          age: 30,
+        },
+        {
+          firstName: 'Moe',
+          surname: 'Simon',
+          age: 50,
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['firstName', 'surname'],
+      },
+      table: 'test_data',
+    };
+
+    const result = execute<Record<string, string>>(query, data);
+    expect(result).toEqual([{
+      firstName: 'Barry',
+      surname: 'Smith',
+    },
+    {
+      firstName: 'Sarah',
+      surname: 'Davis',
+    },
+    {
+      firstName: 'Moe',
+      surname: 'Simon',
+    }]);
+  });
 });
 
 describe('test executor handles like operator', () => {
