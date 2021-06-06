@@ -210,3 +210,9 @@ describe('test parser', () => {
     }));
   });
 });
+
+describe('test parser error handling', () => {
+  test('get sensible error when empty query parsed', () => {
+    expect(() => parse([])).toThrow(new Error('Expected \'SELECT\''));
+  });
+});

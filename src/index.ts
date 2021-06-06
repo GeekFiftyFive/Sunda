@@ -27,7 +27,11 @@ if (require.main === module) {
   rl.setPrompt('squirrel> ');
   rl.prompt();
   rl.on('line', (input: string) => {
-    console.log(executeQuery(input, dataset));
+    try {
+      console.log(executeQuery(input, dataset));
+    } catch (e) {
+      console.error(e.message);
+    }
     rl.prompt();
   });
   rl.on('close', process.exit);

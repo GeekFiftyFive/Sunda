@@ -159,6 +159,10 @@ export const parse = (input: string[]): Query => {
   let projection: Projection;
   let tokens = input;
 
+  if (tokens.length === 0) {
+    throw new Error('Expected \'SELECT\'');
+  }
+
   if (tokens[0].toLowerCase() === 'select') {
     const parsed = parseProjection(tokens.splice(1));
     tokens = parsed.tokens;
