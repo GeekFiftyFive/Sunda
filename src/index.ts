@@ -24,7 +24,7 @@ if (require.main === module) {
     output: process.stdout,
   });
 
-  rl.setPrompt('squirrel> ');
+  rl.setPrompt('sunda> ');
   rl.prompt();
   rl.on('line', (input: string) => {
     try {
