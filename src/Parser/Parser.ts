@@ -139,18 +139,24 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
     };
   }
 
-  const fromIndex = indexOfCaseInsensitive('from', tokens);
-  if (fromIndex < 0) {
-    throw new Error('Expected \'FROM\'');
+  const fields: string[] = [];
+  let consumedTokens = 0;
+
+  while (tokens[consumedTokens].toLowerCase() !== 'from') {
+    if (consumedTokens % 2 === 0) {
+      fields.push(tokens[consumedTokens]);
+    } else if (tokens[consumedTokens] !== ',') {
+      throw new Error('Remapping column names is not currently supported!');
+    }
+    consumedTokens += 1;
   }
 
-  const fields = tokens.slice(0, fromIndex);
   return {
     projection: {
       type: ProjectionType.SELECTED,
       fields,
     },
-    tokens: tokens.slice(fromIndex),
+    tokens: tokens.slice(consumedTokens),
   };
 };
 
