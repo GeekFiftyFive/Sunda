@@ -184,3 +184,99 @@ describe('test executeQuery', () => {
     expect(result).toEqual([data.test_data[1]]);
   });
 });
+
+describe('test executor handles like operator', () => {
+  const data = {
+    test_data: [
+      {
+        name: 'ice-cream',
+        flavour: 'sweet',
+      },
+      {
+        name: 'steak',
+        flavour: 'savoury',
+      },
+      {
+        name: 'lime',
+        flavour: 'sour',
+      },
+    ],
+  };
+
+  const query: Query = {
+    projection: {
+      type: ProjectionType.ALL,
+    },
+    table: 'test_data',
+  };
+
+  test('like operator properly handles % at beginning and end', () => {
+    const result = execute<Record<string, unknown>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.LIKE,
+        field: 'name',
+        value: '%ea%',
+      } as SingularCondition,
+    }, data);
+
+    expect(result).toEqual([data.test_data[0], data.test_data[1]]);
+  });
+
+  test('like operator properly handles % at end', () => {
+    const result = execute<Record<string, unknown>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.LIKE,
+        field: 'name',
+        value: 's%',
+      } as SingularCondition,
+    }, data);
+
+    expect(result).toEqual([data.test_data[1]]);
+  });
+
+  test('like operator properly handles % at the beginning', () => {
+    const result = execute<Record<string, unknown>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.LIKE,
+        field: 'flavour',
+        value: '%our',
+      } as SingularCondition,
+    }, data);
+
+    expect(result).toEqual([data.test_data[2]]);
+  });
+
+  test('like operator properly handles _', () => {
+    const result = execute<Record<string, unknown>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.LIKE,
+        field: 'flavour',
+        value: 's____%',
+      } as SingularCondition,
+    }, data);
+
+    expect(result).toEqual([data.test_data[0], data.test_data[1]]);
+  });
+
+  test('like operator handles regex characters as literals', () => {
+    const result = execute<Record<string, unknown>>({
+      ...query,
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.LIKE,
+        field: 'flavour',
+        value: '.*',
+      } as SingularCondition,
+    }, data);
+
+    expect(result).toHaveLength(0);
+  });
+});

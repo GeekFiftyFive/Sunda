@@ -21,7 +21,10 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
     value: number,
     expected: { min: number, max: number },
   ) => value < expected.max && value > expected.min,
-  LIKE: (value: string, expected: string) => value.includes(expected),
+  LIKE: (value: string, expected: string) => {
+    const regex = `^${expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/gm, '.*').replace(/_/gm, '.')}$`;
+    return new RegExp(regex).test(value);
+  },
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
 };
 
