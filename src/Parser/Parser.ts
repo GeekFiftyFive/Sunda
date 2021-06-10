@@ -59,14 +59,21 @@ const parseValue = (value: string): unknown => {
     return numeric;
   }
 
-  const regex = /"(.*)"/gm;
-  const match = regex.exec(value);
+  let regex = /"(.*)"/gm;
+  let match = regex.exec(value);
 
-  if (!match) {
-    throw new Error(`Could not parse value ${value}`);
+  if (match) {
+    return match[1];
   }
 
-  return match[1];
+  regex = /'(.*)'/gm;
+  match = regex.exec(value);
+
+  if (match) {
+    return match[1];
+  }
+
+  throw new Error(`Could not parse value ${value}`);
 };
 
 const indexOfCaseInsensitive = (value: string, arr: string[]): number => {

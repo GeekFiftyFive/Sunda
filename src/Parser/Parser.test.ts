@@ -45,6 +45,24 @@ describe('test parser', () => {
     });
   });
 
+  test('parse valid query with single quotes', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '\'value\'', ';'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      table: 'tableName',
+      condition: {
+        boolean: BooleanType.NONE,
+        field: 'field',
+        value: 'value',
+        comparison: Comparison.EQ,
+      },
+    });
+  });
+
   test('parser should parse numeric values', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '10', ';'];
     const query = parse(tokens);
