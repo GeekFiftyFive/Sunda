@@ -1,0 +1,13 @@
+{
+  "fruit": [
+    {
+      "name": "apple"
+    },
+    {
+      "name": "orange"
+    },
+    {
+      "name": "grape"
+    }
+  ]
+}
