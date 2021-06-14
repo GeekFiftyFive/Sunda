@@ -15,7 +15,7 @@ export const executeQuery = <T>(query: string, data: Record<string, unknown[]>):
 
 if (require.main === module) {
   if (process.argv.length < 3) {
-    console.error('Usage: squirrel <input-path>');
+    console.error('Usage: sunda <input-path>');
     process.exit(1);
   }
   const inputPath = process.argv[2];
