@@ -227,6 +227,18 @@ describe('test parser', () => {
       },
     }));
   });
+
+  test('parser should handle \'distinct\' keyword', () => {
+    const tokens = ['SELECT', 'DISTINCT', 'name', ',', 'age', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual(expect.objectContaining({
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['name', 'age'],
+      },
+    }));
+  });
 });
 
 describe('test parser error handling', () => {
