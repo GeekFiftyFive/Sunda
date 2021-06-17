@@ -95,6 +95,16 @@ const handleCondition = (
   throw new Error('Could not identify condition! There must be a parser bug!');
 };
 
+const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => {
+  if (fields.length !== 1) {
+    throw new Error('DISTINCT only supports individual fields!');
+  }
+
+  const values = new Set<T>(data.map((value) => value[fields[0]] as T));
+
+  return Array.from(values);
+};
+
 export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {
   const table = data[query.table];
 
@@ -106,19 +116,20 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
     (entry: Record<string, unknown>) => handleCondition(query.condition, entry),
   );
 
-  if (query.projection.type === ProjectionType.ALL) {
-    return filtered;
-  }
-
-  if (query.projection.type === ProjectionType.SELECTED) {
-    return filtered.map((value: Record<string, unknown>) => {
-      const obj: Record<string, unknown> = {};
-      query.projection.fields.forEach((field) => {
-        obj[field] = value[field];
+  switch (query.projection.type) {
+    case ProjectionType.ALL:
+      return filtered;
+    case ProjectionType.SELECTED:
+      return filtered.map((value: Record<string, unknown>) => {
+        const obj: Record<string, unknown> = {};
+        query.projection.fields.forEach((field) => {
+          obj[field] = value[field];
+        });
+        return obj as T;
       });
-      return obj as T;
-    });
+    case ProjectionType.DISTINCT:
+      return distinct(query.projection.fields, filtered);
+    default:
+      throw new Error('Unsupported projection type');
   }
-
-  throw new Error('Unsupported projection type');
 };

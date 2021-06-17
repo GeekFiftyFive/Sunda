@@ -324,3 +324,38 @@ describe('test executor handles like operator', () => {
     expect(result).toHaveLength(0);
   });
 });
+
+describe('test executor handles distinct', () => {
+  const data = {
+    test_data: [
+      {
+        first_name: 'James',
+        age: 24,
+      },
+      {
+        first_name: 'Amy',
+        age: 20,
+      },
+      {
+        first_name: 'James',
+        age: 50,
+      },
+      {
+        first_name: 'Amy',
+        age: 20,
+      },
+    ],
+  };
+
+  test('handles distinct keyword in basic case with one field', () => {
+    const result = execute<Record<string, unknown>>({
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['first_name'],
+      },
+      table: 'test_data',
+    }, data);
+
+    expect(result).toEqual(['James', 'Amy']);
+  });
+});
