@@ -100,9 +100,13 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
     throw new Error('DISTINCT only supports individual fields!');
   }
 
-  const values = new Set<T>(data.map((value) => value[fields[0]] as T));
+  const values = new Set(data.map((value) => value[fields[0]]));
 
-  return Array.from(values);
+  return Array.from(values).map((value) => {
+    const obj: Record<string, unknown> = {};
+    obj[fields[0]] = value;
+    return obj as T;
+  });
 };
 
 export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {
