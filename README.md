@@ -55,3 +55,27 @@ Fields on the objects in the array can be accessed as if they were columns. Usin
   }
 ]
 ~~~
+
+## JSONL Support
+
+As well as individual JSON objects, Sunda also supports JSONL files. These are collections of JSON objects delimited by new lines. When using a JSONL file, one table will exist with the name `root`.
+
+Say, for example, our file contained the following:
+
+~~~
+{ "type": "Sofa", "colour": "red", "material": "leather" }
+{ "type": "Chair", "colour": "brown", "material": "oak" }
+{ "type": "Curtains", "colour": "red", "material": "fabric" }
+{ "type": "Table", "colour": "brown", "material": "oak" }
+~~~
+
+Running `SELECT * FROM root` would yield the following results:
+
+~~~
+[
+  { type: 'Sofa', colour: 'red', material: 'leather' },
+  { type: 'Chair', colour: 'brown', material: 'oak' },
+  { type: 'Curtains', colour: 'red', material: 'fabric' },
+  { type: 'Table', colour: 'brown', material: 'oak' }
+]
+~~~
