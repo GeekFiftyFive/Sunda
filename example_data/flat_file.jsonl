@@ -1,0 +1,4 @@
+{ "type": "Sofa", "colour": "red", "material": "leather" }
+{ "type": "Chair", "colour": "brown", "material": "oak" }
+{ "type": "Curtains", "colour": "red", "material": "fabric" }
+{ "type": "Table", "colour": "brown", "material": "oak" }
