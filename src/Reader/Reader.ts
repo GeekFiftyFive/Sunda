@@ -1,1 +1,13 @@
-export const read = (input: string): Record<string, unknown[]> => JSON.parse(input);
+export const read = (input: string): Record<string, unknown[]> => {
+  try {
+    // Attempt to parse input as a JSON object
+    return JSON.parse(input);
+  } catch (e) {
+    // Do nothing
+  }
+
+  // Assume file is a flat file
+  return {
+    root: input.split('\n').filter((item) => item !== '').map((item) => JSON.parse(item)),
+  };
+};
