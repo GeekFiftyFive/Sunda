@@ -96,17 +96,34 @@ const handleCondition = (
 };
 
 const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => {
-  if (fields.length !== 1) {
-    throw new Error('DISTINCT only supports individual fields!');
-  }
+  const values: Record<string, unknown>[] = [];
 
-  const values = new Set(data.map((value) => value[fields[0]]));
+  // TODO: This is pretty naive and could do with optimisation and cleaning up
+  data.forEach((entry) => {
+    let unique = true;
 
-  return Array.from(values).map((value) => {
-    const obj: Record<string, unknown> = {};
-    obj[fields[0]] = value;
-    return obj as T;
+    values.forEach((value) => {
+      let matches = 0;
+      fields.forEach((field) => {
+        if (entry[field] === value[field]) {
+          matches += 1;
+        }
+      });
+      if (matches === fields.length) {
+        unique = false;
+      }
+    });
+
+    if (unique) {
+      const newValue: Record<string, unknown> = {};
+      fields.forEach((field) => {
+        newValue[field] = entry[field];
+      });
+      values.push(newValue);
+    }
   });
+
+  return values as T[];
 };
 
 export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {

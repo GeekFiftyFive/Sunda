@@ -359,15 +359,15 @@ describe('test executor handles distinct', () => {
     expect(result).toEqual([{ first_name: 'James' }, { first_name: 'Amy' }]);
   });
 
-  /* test('handles distinct keyword in case with multiple fields', () => {
+  test('handles distinct keyword in case with multiple fields', () => {
     const result = execute<Record<string, unknown>>({
       projection: {
         type: ProjectionType.DISTINCT,
-        fields: ['first_name'],
+        fields: ['first_name', 'age'],
       },
       table: 'test_data',
     }, data);
 
-    expect(result).toEqual(['James', 'Amy']);
-  }); */
+    expect(result).toEqual([{ first_name: 'James', age: 24 }, { first_name: 'Amy', age: 20 }, { first_name: 'James', age: 50 }]);
+  });
 });
