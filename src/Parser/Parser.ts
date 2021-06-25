@@ -19,7 +19,8 @@ export enum Comparison {
 
 export enum ProjectionType {
   ALL,
-  SELECTED
+  SELECTED,
+  DISTINCT
 }
 
 export interface Condition {
@@ -146,11 +147,14 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
     };
   }
 
+  const type = tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
+  const offset = type === ProjectionType.DISTINCT ? 1 : 0;
+
   const fields: string[] = [];
-  let consumedTokens = 0;
+  let consumedTokens = offset;
 
   while (tokens[consumedTokens].toLowerCase() !== 'from') {
-    if (consumedTokens % 2 === 0) {
+    if (consumedTokens % 2 === offset) {
       fields.push(tokens[consumedTokens]);
     } else if (tokens[consumedTokens] !== ',') {
       throw new Error('Remapping column names is not currently supported!');
@@ -160,7 +164,7 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
 
   return {
     projection: {
-      type: ProjectionType.SELECTED,
+      type,
       fields,
     },
     tokens: tokens.slice(consumedTokens),
