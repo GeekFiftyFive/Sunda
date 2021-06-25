@@ -1,7 +1,15 @@
 export const read = (input: string): Record<string, unknown[]> => {
   try {
     // Attempt to parse input as a JSON object
-    return JSON.parse(input);
+    const content = JSON.parse(input);
+
+    if (Array.isArray(content)) {
+      return {
+        root: content,
+      };
+    }
+
+    return content;
   } catch (e) {
     // Do nothing
   }
