@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { execute } from './Executor';
 import { parse } from './Parser';
 import { tokenise } from './Tokeniser';
+import { read } from './Reader';
 
 export const executeQuery = <T>(query: string, data: Record<string, unknown[]>): T[] => {
   const tokens = tokenise(query);
@@ -19,7 +20,7 @@ if (require.main === module) {
     process.exit(1);
   }
   const inputPath = process.argv[2];
-  const dataset = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+  const dataset = read(fs.readFileSync(inputPath, 'utf8'));
 
   const rl = readline.createInterface({
     input: process.stdin,
