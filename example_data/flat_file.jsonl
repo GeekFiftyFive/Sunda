@@ -1,4 +1,4 @@
-{ "type": "Sofa", "colour": "red", "material": "leather" }
-{ "type": "Chair", "colour": "brown", "material": "oak" }
-{ "type": "Curtains", "colour": "red", "material": "fabric" }
-{ "type": "Table", "colour": "brown", "material": "oak" }
+{ "type": "Sofa", "colour": "red", "material": "leather", "purchase-date": "2021-08-20T15:57:59+0000" }
+{ "type": "Chair", "colour": "brown", "material": "oak", "purchase-date": "2018-07-15T16:47:59+0000" }
+{ "type": "Curtains", "colour": "red", "material": "fabric", "purchase-date": "2021-08-20T15:57:59+0000" }
+{ "type": "Table", "colour": "brown", "material": "oak", "purchase-date": "2018-07-15T16:47:59+0000" }
