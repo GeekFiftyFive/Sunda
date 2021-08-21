@@ -55,4 +55,9 @@ describe('test tokeniser', () => {
     const actual = tokenise('SELECT name, age  FROM table;');
     expect(actual).toEqual(['SELECT', 'name', ',', 'age', 'FROM', 'table', ';']);
   });
+
+  test('can tokenise field names with no alphanumeric characters', () => {
+    const actual = tokenise('SELECT first-name, last-name FROM cool_people;');
+    expect(actual).toEqual(['SELECT', 'first-name', ',', 'last-name', 'FROM', 'cool_people', ';']);
+  });
 });
