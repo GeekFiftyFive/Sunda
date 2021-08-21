@@ -60,4 +60,9 @@ describe('test tokeniser', () => {
     const actual = tokenise('SELECT first-name, last-name FROM cool_people;');
     expect(actual).toEqual(['SELECT', 'first-name', ',', 'last-name', 'FROM', 'cool_people', ';']);
   });
+
+  test('can tokenise aggregate functions', () => {
+    const actual = tokenise('SELECT COUNT(DISTINCT colour) FROM furniture;');
+    expect(actual).toEqual(['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture', ';']);
+  });
 });
