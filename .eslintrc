@@ -2,9 +2,11 @@
     "root": true,
     "parser": "@typescript-eslint/parser",
     "plugins": [
-      "@typescript-eslint"
+      "@typescript-eslint",
+      "prettier"
     ],
     "rules": {
+      "prettier/prettier": "error",
       "import/prefer-default-export": "off",
       "import/extensions": "off",
       "no-shadow": "off",
@@ -14,7 +16,8 @@
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
-      "airbnb-base"
+      "airbnb-base",
+      "prettier"
     ],
     "settings": {
       "import/resolver": {

@@ -16,6 +16,9 @@ export const read = (input: string): Record<string, unknown[]> => {
 
   // Assume file is a flat file
   return {
-    root: input.split('\n').filter((item) => !/^\s*$/.test(item)).map((item) => JSON.parse(item)),
+    root: input
+      .split('\n')
+      .filter((item) => !/^\s*$/.test(item))
+      .map((item) => JSON.parse(item)),
   };
 };

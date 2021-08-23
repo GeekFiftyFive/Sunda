@@ -1,6 +1,12 @@
 import { execute } from '.';
 import {
-  ProjectionType, Query, BooleanType, Comparison, SingularCondition, ConditionPair,
+  ProjectionType,
+  Query,
+  BooleanType,
+  Comparison,
+  SingularCondition,
+  ConditionPair,
+  AggregateType,
 } from '../Parser';
 
 describe('test executeQuery', () => {
@@ -9,6 +15,7 @@ describe('test executeQuery', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'test_data',
     };
 
@@ -28,6 +35,7 @@ describe('test executeQuery', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'test_data',
     };
 
@@ -50,94 +58,105 @@ describe('test executeQuery', () => {
       ],
     };
 
-    let result = execute<Record<string, number>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.EQ,
-        field: 'Apples',
-        value: 10,
-      } as SingularCondition,
-    }, data);
-
-    expect(result).toEqual([
-      data.test_data[0], data.test_data[1],
-    ]);
-
-    result = execute<Record<string, number>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.GTE,
-        field: 'Grapes',
-        value: 10,
-      } as SingularCondition,
-    }, data);
-
-    expect(result).toEqual([
-      data.test_data[1], data.test_data[2],
-    ]);
-
-    result = execute<Record<string, number>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.AND,
-        lhs: {
-          boolean: BooleanType.NONE,
-          comparison: Comparison.GTE,
-          field: 'Grapes',
-          value: 10,
-        } as SingularCondition,
-        rhs: {
+    let result = execute<Record<string, number>>(
+      {
+        ...query,
+        condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
           field: 'Apples',
           value: 10,
         } as SingularCondition,
-      } as ConditionPair,
-    }, data);
-
-    expect(result).toEqual([data.test_data[1]]);
-
-    result = execute<Record<string, number>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.OR,
-        lhs: {
-          boolean: BooleanType.NONE,
-          comparison: Comparison.EQ,
-          field: 'Pairs',
-          value: 5,
-        } as SingularCondition,
-        rhs: {
-          boolean: BooleanType.NONE,
-          comparison: Comparison.EQ,
-          field: 'Oranges',
-          value: 5,
-        } as SingularCondition,
-      } as ConditionPair,
-    }, data);
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
 
-    result = execute<Record<string, number>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.OR,
-        lhs: {
-          boolean: BooleanType.NOT,
-          comparison: Comparison.EQ,
-          field: 'Pairs',
-          value: 5,
-        } as SingularCondition,
-        rhs: {
+    result = execute<Record<string, number>>(
+      {
+        ...query,
+        condition: {
           boolean: BooleanType.NONE,
-          comparison: Comparison.EQ,
-          field: 'Oranges',
-          value: 5,
+          comparison: Comparison.GTE,
+          field: 'Grapes',
+          value: 10,
         } as SingularCondition,
-      } as ConditionPair,
-    }, data);
+      },
+      data,
+    );
+
+    expect(result).toEqual([data.test_data[1], data.test_data[2]]);
+
+    result = execute<Record<string, number>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.AND,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.GTE,
+            field: 'Grapes',
+            value: 10,
+          } as SingularCondition,
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Apples',
+            value: 10,
+          } as SingularCondition,
+        } as ConditionPair,
+      },
+      data,
+    );
+
+    expect(result).toEqual([data.test_data[1]]);
+
+    result = execute<Record<string, number>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.OR,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Pairs',
+            value: 5,
+          } as SingularCondition,
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Oranges',
+            value: 5,
+          } as SingularCondition,
+        } as ConditionPair,
+      },
+      data,
+    );
+
+    expect(result).toEqual([data.test_data[0], data.test_data[1]]);
+
+    result = execute<Record<string, number>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.OR,
+          lhs: {
+            boolean: BooleanType.NOT,
+            comparison: Comparison.EQ,
+            field: 'Pairs',
+            value: 5,
+          } as SingularCondition,
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Oranges',
+            value: 5,
+          } as SingularCondition,
+        } as ConditionPair,
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[0]]);
   });
@@ -170,6 +189,7 @@ describe('test executeQuery', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'test_data',
       condition: {
         boolean: BooleanType.NONE,
@@ -210,22 +230,25 @@ describe('test executeQuery', () => {
         type: ProjectionType.SELECTED,
         fields: ['firstName', 'surname'],
       },
+      aggregation: AggregateType.NONE,
       table: 'test_data',
     };
 
     const result = execute<Record<string, string>>(query, data);
-    expect(result).toEqual([{
-      firstName: 'Barry',
-      surname: 'Smith',
-    },
-    {
-      firstName: 'Sarah',
-      surname: 'Davis',
-    },
-    {
-      firstName: 'Moe',
-      surname: 'Simon',
-    }]);
+    expect(result).toEqual([
+      {
+        firstName: 'Barry',
+        surname: 'Smith',
+      },
+      {
+        firstName: 'Sarah',
+        surname: 'Davis',
+      },
+      {
+        firstName: 'Moe',
+        surname: 'Simon',
+      },
+    ]);
   });
 });
 
@@ -251,75 +274,91 @@ describe('test executor handles like operator', () => {
     projection: {
       type: ProjectionType.ALL,
     },
+    aggregation: AggregateType.NONE,
     table: 'test_data',
   };
 
   test('like operator properly handles % at beginning and end', () => {
-    const result = execute<Record<string, unknown>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.LIKE,
-        field: 'name',
-        value: '%ea%',
-      } as SingularCondition,
-    }, data);
+    const result = execute<Record<string, unknown>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.LIKE,
+          field: 'name',
+          value: '%ea%',
+        } as SingularCondition,
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
   });
 
   test('like operator properly handles % at end', () => {
-    const result = execute<Record<string, unknown>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.LIKE,
-        field: 'name',
-        value: 's%',
-      } as SingularCondition,
-    }, data);
+    const result = execute<Record<string, unknown>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.LIKE,
+          field: 'name',
+          value: 's%',
+        } as SingularCondition,
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[1]]);
   });
 
   test('like operator properly handles % at the beginning', () => {
-    const result = execute<Record<string, unknown>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.LIKE,
-        field: 'flavour',
-        value: '%our',
-      } as SingularCondition,
-    }, data);
+    const result = execute<Record<string, unknown>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.LIKE,
+          field: 'flavour',
+          value: '%our',
+        } as SingularCondition,
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[2]]);
   });
 
   test('like operator properly handles _', () => {
-    const result = execute<Record<string, unknown>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.LIKE,
-        field: 'flavour',
-        value: 's____%',
-      } as SingularCondition,
-    }, data);
+    const result = execute<Record<string, unknown>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.LIKE,
+          field: 'flavour',
+          value: 's____%',
+        } as SingularCondition,
+      },
+      data,
+    );
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
   });
 
   test('like operator handles regex characters as literals', () => {
-    const result = execute<Record<string, unknown>>({
-      ...query,
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison: Comparison.LIKE,
-        field: 'flavour',
-        value: '.*',
-      } as SingularCondition,
-    }, data);
+    const result = execute<Record<string, unknown>>(
+      {
+        ...query,
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.LIKE,
+          field: 'flavour',
+          value: '.*',
+        } as SingularCondition,
+      },
+      data,
+    );
 
     expect(result).toHaveLength(0);
   });
@@ -348,26 +387,38 @@ describe('test executor handles distinct', () => {
   };
 
   test('handles distinct keyword in basic case with one field', () => {
-    const result = execute<Record<string, unknown>>({
-      projection: {
-        type: ProjectionType.DISTINCT,
-        fields: ['first_name'],
+    const result = execute<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['first_name'],
+        },
+        aggregation: AggregateType.NONE,
+        table: 'test_data',
       },
-      table: 'test_data',
-    }, data);
+      data,
+    );
 
     expect(result).toEqual([{ first_name: 'James' }, { first_name: 'Amy' }]);
   });
 
   test('handles distinct keyword in case with multiple fields', () => {
-    const result = execute<Record<string, unknown>>({
-      projection: {
-        type: ProjectionType.DISTINCT,
-        fields: ['first_name', 'age'],
+    const result = execute<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['first_name', 'age'],
+        },
+        aggregation: AggregateType.NONE,
+        table: 'test_data',
       },
-      table: 'test_data',
-    }, data);
+      data,
+    );
 
-    expect(result).toEqual([{ first_name: 'James', age: 24 }, { first_name: 'Amy', age: 20 }, { first_name: 'James', age: 50 }]);
+    expect(result).toEqual([
+      { first_name: 'James', age: 24 },
+      { first_name: 'Amy', age: 20 },
+      { first_name: 'James', age: 50 },
+    ]);
   });
 });

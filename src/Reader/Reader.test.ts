@@ -30,15 +30,21 @@ describe('test reader handles JSON objects', () => {
 });
 
 describe('test reader handles flat files', () => {
-  test('flat files are converted into a JSON object with a single field called \'root\'', () => {
-    const input = sourceData.reduce((previous, current) => `${previous}\n${JSON.stringify(current)}`, '');
+  test("flat files are converted into a JSON object with a single field called 'root'", () => {
+    const input = sourceData.reduce(
+      (previous, current) => `${previous}\n${JSON.stringify(current)}`,
+      '',
+    );
     expect(read(input)).toEqual({
       root: sourceData,
     });
   });
 
   test('flat files with CRLF line endings are properly supported', () => {
-    const input = sourceData.reduce((previous, current) => `${previous}\r\n${JSON.stringify(current)}`, '');
+    const input = sourceData.reduce(
+      (previous, current) => `${previous}\r\n${JSON.stringify(current)}`,
+      '',
+    );
     expect(read(input)).toEqual({
       root: sourceData,
     });
@@ -46,7 +52,7 @@ describe('test reader handles flat files', () => {
 });
 
 describe('test reader handles root level arrays', () => {
-  test('root level arrays are converted into a JSON object with a single field called \'root\'', () => {
+  test("root level arrays are converted into a JSON object with a single field called 'root'", () => {
     expect(read(JSON.stringify(sourceData))).toEqual({
       root: sourceData,
     });

@@ -1,3 +1,1 @@
-import { execute } from './Executor';
-
-export { execute };
+export * from './Executor';

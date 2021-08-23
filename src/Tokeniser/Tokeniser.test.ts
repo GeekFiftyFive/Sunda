@@ -22,8 +22,8 @@ describe('test tokeniser', () => {
   });
 
   test('tokenise valid simple command with single quotes', () => {
-    const actual = tokenise('SELECT * FROM table WHERE field=\'value\';');
-    expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field', '=', '\'value\'', ';']);
+    const actual = tokenise("SELECT * FROM table WHERE field='value';");
+    expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field', '=', "'value'", ';']);
   });
 
   test('can tokenise all comparison operators', () => {
@@ -42,13 +42,38 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise two string conditions', () => {
-    const actual = tokenise('select * from cats where breed = "British Shorthair" or breed = "Bengal"');
-    expect(actual).toEqual(['select', '*', 'from', 'cats', 'where', 'breed', '=', '"British Shorthair"', 'or', 'breed', '=', '"Bengal"']);
+    const actual = tokenise(
+      'select * from cats where breed = "British Shorthair" or breed = "Bengal"',
+    );
+    expect(actual).toEqual([
+      'select',
+      '*',
+      'from',
+      'cats',
+      'where',
+      'breed',
+      '=',
+      '"British Shorthair"',
+      'or',
+      'breed',
+      '=',
+      '"Bengal"',
+    ]);
   });
 
   test('can tokenise JSON path field names', () => {
     const actual = tokenise('SELECT * FROM table WHERE field.subfield="value";');
-    expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field.subfield', '=', '"value"', ';']);
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      'field.subfield',
+      '=',
+      '"value"',
+      ';',
+    ]);
   });
 
   test('can tokenise projections', () => {
@@ -63,6 +88,16 @@ describe('test tokeniser', () => {
 
   test('can tokenise aggregate functions', () => {
     const actual = tokenise('SELECT COUNT(DISTINCT colour) FROM furniture;');
-    expect(actual).toEqual(['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture', ';']);
+    expect(actual).toEqual([
+      'SELECT',
+      'COUNT',
+      '(',
+      'DISTINCT',
+      'colour',
+      ')',
+      'FROM',
+      'furniture',
+      ';',
+    ]);
   });
 });

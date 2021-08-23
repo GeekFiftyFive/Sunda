@@ -1,6 +1,4 @@
-import {
-  BooleanType, Comparison, parse, ProjectionType,
-} from './Parser';
+import { AggregateType, BooleanType, Comparison, parse, ProjectionType } from './Parser';
 
 describe('test parser', () => {
   test('parse simple valid query', () => {
@@ -11,6 +9,7 @@ describe('test parser', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
     });
   });
@@ -23,6 +22,7 @@ describe('test parser', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
     });
   });
@@ -35,6 +35,7 @@ describe('test parser', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.NONE,
@@ -46,13 +47,14 @@ describe('test parser', () => {
   });
 
   test('parse valid query with single quotes', () => {
-    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '\'value\'', ';'];
+    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', "'value'", ';'];
     const query = parse(tokens);
 
     expect(query).toEqual({
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.NONE,
@@ -71,6 +73,7 @@ describe('test parser', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.NONE,
@@ -81,14 +84,29 @@ describe('test parser', () => {
     });
   });
 
-  test('parser should handle \'and\' in the where clause', () => {
-    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field1', '=', '10', 'and', 'field2', 'LIKE', '"value"', ';'];
+  test("parser should handle 'and' in the where clause", () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'tableName',
+      'WHERE',
+      'field1',
+      '=',
+      '10',
+      'and',
+      'field2',
+      'LIKE',
+      '"value"',
+      ';',
+    ];
     const query = parse(tokens);
 
     expect(query).toEqual({
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.AND,
@@ -108,14 +126,29 @@ describe('test parser', () => {
     });
   });
 
-  test('parser should handle \'or\' in the where clause', () => {
-    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field1', '=', '10', 'or', 'field2', 'LIKE', '"value"', ';'];
+  test("parser should handle 'or' in the where clause", () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'tableName',
+      'WHERE',
+      'field1',
+      '=',
+      '10',
+      'or',
+      'field2',
+      'LIKE',
+      '"value"',
+      ';',
+    ];
     const query = parse(tokens);
 
     expect(query).toEqual({
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.OR,
@@ -135,14 +168,33 @@ describe('test parser', () => {
     });
   });
 
-  test('parser should handle \'and\' and \'or\' in the where clause', () => {
-    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field1', '=', '10', 'or', 'field2', 'LIKE', '"value"', 'and', 'field3', '>=', '8', ';'];
+  test("parser should handle 'and' and 'or' in the where clause", () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'tableName',
+      'WHERE',
+      'field1',
+      '=',
+      '10',
+      'or',
+      'field2',
+      'LIKE',
+      '"value"',
+      'and',
+      'field3',
+      '>=',
+      '8',
+      ';',
+    ];
     const query = parse(tokens);
 
     expect(query).toEqual({
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.OR,
@@ -171,7 +223,7 @@ describe('test parser', () => {
     });
   });
 
-  test('parser should handle \'not\' in the where clause', () => {
+  test("parser should handle 'not' in the where clause", () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'NOT', 'field1', '=', '10'];
     const query = parse(tokens);
 
@@ -179,6 +231,7 @@ describe('test parser', () => {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.NOT,
@@ -189,14 +242,30 @@ describe('test parser', () => {
     });
   });
 
-  test('parser should handle \'not\' and \'and\' in the where clause', () => {
-    const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'not', 'field1', '=', '10', 'and', 'field2', 'LIKE', '"value"', ';'];
+  test("parser should handle 'not' and 'and' in the where clause", () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'tableName',
+      'WHERE',
+      'not',
+      'field1',
+      '=',
+      '10',
+      'and',
+      'field2',
+      'LIKE',
+      '"value"',
+      ';',
+    ];
     const query = parse(tokens);
 
     expect(query).toEqual({
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       table: 'tableName',
       condition: {
         boolean: BooleanType.AND,
@@ -220,29 +289,48 @@ describe('test parser', () => {
     const tokens = ['SELECT', 'name', ',', 'age', 'FROM', 'tableName'];
     const query = parse(tokens);
 
-    expect(query).toEqual(expect.objectContaining({
-      projection: {
-        type: ProjectionType.SELECTED,
-        fields: ['name', 'age'],
-      },
-    }));
+    expect(query).toEqual(
+      expect.objectContaining({
+        projection: {
+          type: ProjectionType.SELECTED,
+          fields: ['name', 'age'],
+        },
+      }),
+    );
   });
 
-  test('parser should handle \'distinct\' keyword', () => {
+  test("parser should handle 'distinct' keyword", () => {
     const tokens = ['SELECT', 'DISTINCT', 'name', ',', 'age', 'FROM', 'tableName'];
     const query = parse(tokens);
 
-    expect(query).toEqual(expect.objectContaining({
-      projection: {
-        type: ProjectionType.DISTINCT,
-        fields: ['name', 'age'],
-      },
-    }));
+    expect(query).toEqual(
+      expect.objectContaining({
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['name', 'age'],
+        },
+      }),
+    );
+  });
+
+  test("parser should handle 'count' aggregate function", () => {
+    const tokens = ['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture'];
+    const query = parse(tokens);
+
+    expect(query).toEqual(
+      expect.objectContaining({
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['colour'],
+        },
+        aggregation: AggregateType.COUNT,
+      }),
+    );
   });
 });
 
 describe('test parser error handling', () => {
   test('get sensible error when empty query parsed', () => {
-    expect(() => parse([])).toThrow(new Error('Expected \'SELECT\''));
+    expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
   });
 });
