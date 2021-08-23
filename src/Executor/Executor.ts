@@ -1,4 +1,5 @@
 import {
+  AggregateType,
   BooleanType,
   Comparison,
   Condition,
@@ -132,20 +133,31 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
     ? table
     : table.filter((entry: Record<string, unknown>) => handleCondition(query.condition, entry));
 
+  let output: unknown[];
+
   switch (query.projection.type) {
     case ProjectionType.ALL:
-      return filtered;
+      output = filtered;
+      break;
     case ProjectionType.SELECTED:
-      return filtered.map((value: Record<string, unknown>) => {
+      output = filtered.map((value: Record<string, unknown>) => {
         const obj: Record<string, unknown> = {};
         query.projection.fields.forEach((field) => {
           obj[field] = value[field];
         });
         return obj as T;
       });
+      break;
     case ProjectionType.DISTINCT:
-      return distinct(query.projection.fields, filtered);
+      output = distinct(query.projection.fields, filtered);
+      break;
     default:
       throw new Error('Unsupported projection type');
   }
+
+  if (query.aggregation === AggregateType.COUNT) {
+    return [{ count: output.length } as unknown] as T[];
+  }
+
+  return output as T[];
 };

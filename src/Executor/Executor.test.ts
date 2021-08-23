@@ -28,6 +28,24 @@ describe('test executeQuery', () => {
     expect(result).toEqual([1, 2, 3, 4, 5]);
   });
 
+  test('exceute valid simple query with count aggregate function', () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.COUNT,
+      table: 'test_data',
+    };
+
+    const data = {
+      test_data: [1, 2, 3, 4, 5],
+    };
+
+    const result = execute<number>(query, data);
+
+    expect(result).toEqual([{ count: 5 }]);
+  });
+
   test('execute query with simple where clause on numeric values', () => {
     // TODO: Add test coverage for other comparison types
     // TODO: Break this out into smaller tests
@@ -420,5 +438,21 @@ describe('test executor handles distinct', () => {
       { first_name: 'Amy', age: 20 },
       { first_name: 'James', age: 50 },
     ]);
+  });
+
+  test('handles count aggregation over distinct keyword in case with multiple fields', () => {
+    const result = execute<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['first_name', 'age'],
+        },
+        aggregation: AggregateType.COUNT,
+        table: 'test_data',
+      },
+      data,
+    );
+
+    expect(result).toEqual([{ count: 3 }]);
   });
 });
