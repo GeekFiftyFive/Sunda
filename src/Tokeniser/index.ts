@@ -1,3 +1,1 @@
-import { tokenise } from './Tokeniser';
-
-export { tokenise };
+export * from './Tokeniser';

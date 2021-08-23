@@ -2,7 +2,7 @@ export enum BooleanType {
   AND = 'AND',
   OR = 'OR',
   NONE = 'NONE',
-  NOT = 'NOT'
+  NOT = 'NOT',
 }
 
 export enum Comparison {
@@ -14,13 +14,18 @@ export enum Comparison {
   LTE = '<=',
   BETWEEN = 'BETWEEN',
   LIKE = 'LIKE',
-  IN = 'IN'
+  IN = 'IN',
 }
 
 export enum ProjectionType {
   ALL,
   SELECTED,
-  DISTINCT
+  DISTINCT,
+}
+
+export enum AggregateType {
+  NONE,
+  COUNT,
 }
 
 export interface Condition {
@@ -45,13 +50,16 @@ export interface Projection {
 
 export interface Query {
   projection: Projection;
+  aggregation: AggregateType;
   table: string;
   condition?: Condition;
 }
 
-export const isSingularCondition = (object: Condition): object is SingularCondition => 'comparison' in object && 'field' in object && 'value' in object;
+export const isSingularCondition = (object: Condition): object is SingularCondition =>
+  'comparison' in object && 'field' in object && 'value' in object;
 
-export const isConditionPair = (object: Condition): object is ConditionPair => 'lhs' in object && 'rhs' in object;
+export const isConditionPair = (object: Condition): object is ConditionPair =>
+  'lhs' in object && 'rhs' in object;
 
 const parseValue = (value: string): unknown => {
   const numeric = Number.parseFloat(value);
@@ -82,7 +90,7 @@ const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
   return index >= 0 ? index : arr.indexOf(value.toLowerCase());
 };
 
-const parseCondition = (tokens: string[]): { condition: Condition, tokens: string[] } => {
+const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
     throw new Error('Invalid condition in WHERE clause');
@@ -137,23 +145,40 @@ const parseCondition = (tokens: string[]): { condition: Condition, tokens: strin
   };
 };
 
-const parseProjection = (tokens: string[]): { projection: Projection, tokens: string[] } => {
+const parseSelection = (
+  tokens: string[],
+): { projection: Projection; aggregation: AggregateType; tokens: string[] } => {
   if (tokens[0] === '*') {
     return {
       projection: {
         type: ProjectionType.ALL,
       },
+      aggregation: AggregateType.NONE,
       tokens: tokens.slice(1),
     };
   }
 
-  const type = tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
+  if (tokens[0].toLowerCase() === 'count') {
+    const lParenIdx = tokens.findIndex((token) => token === '(');
+    const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
+    return {
+      projection,
+      aggregation: AggregateType.COUNT,
+      tokens: newTokens.slice(1),
+    };
+  }
+
+  const type =
+    tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
   const fields: string[] = [];
   let consumedTokens = offset;
 
-  while (tokens[consumedTokens].toLowerCase() !== 'from') {
+  while (
+    tokens[consumedTokens].toLowerCase() !== 'from' &&
+    tokens[consumedTokens].toLowerCase() !== ')'
+  ) {
     if (consumedTokens % 2 === offset) {
       fields.push(tokens[consumedTokens]);
     } else if (tokens[consumedTokens] !== ',') {
@@ -167,6 +192,7 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
       type,
       fields,
     },
+    aggregation: AggregateType.NONE,
     tokens: tokens.slice(consumedTokens),
   };
 };
@@ -174,18 +200,17 @@ const parseProjection = (tokens: string[]): { projection: Projection, tokens: st
 export const parse = (input: string[]): Query => {
   let query: Query;
   let projection: Projection;
+  let aggregation: AggregateType;
   let tokens = input;
 
   if (tokens.length === 0) {
-    throw new Error('Expected \'SELECT\'');
+    throw new Error("Expected 'SELECT'");
   }
 
   if (tokens[0].toLowerCase() === 'select') {
-    const parsed = parseProjection(tokens.splice(1));
-    tokens = parsed.tokens;
-    projection = parsed.projection;
+    ({ tokens, projection, aggregation } = parseSelection(tokens.splice(1)));
   } else {
-    throw new Error('Expected \'SELECT\'');
+    throw new Error("Expected 'SELECT'");
   }
 
   if (tokens[0].toLowerCase() === 'from') {
@@ -193,9 +218,10 @@ export const parse = (input: string[]): Query => {
     query = {
       projection,
       table: tokens[0],
+      aggregation,
     };
   } else {
-    throw new Error('Expected \'FROM\'');
+    throw new Error("Expected 'FROM'");
   }
 
   tokens = tokens.slice(1);

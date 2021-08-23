@@ -1,4 +1,5 @@
 import {
+  AggregateType,
   BooleanType,
   Comparison,
   Condition,
@@ -17,12 +18,13 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
   '<': (value: number, expected: number) => value < expected,
   '>=': (value: number, expected: number) => value >= expected,
   '<=': (value: number, expected: number) => value <= expected,
-  BETWEEN: (
-    value: number,
-    expected: { min: number, max: number },
-  ) => value < expected.max && value > expected.min,
+  BETWEEN: (value: number, expected: { min: number; max: number }) =>
+    value < expected.max && value > expected.min,
   LIKE: (value: string, expected: string) => {
-    const regex = `^${expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/gm, '.*').replace(/_/gm, '.')}$`;
+    const regex = `^${expected
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/%/gm, '.*')
+      .replace(/_/gm, '.')}$`;
     return new RegExp(regex).test(value);
   },
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
@@ -63,10 +65,7 @@ const handleSingularCondition = (
   return condition.boolean === BooleanType.NOT ? !evaluated : evaluated;
 };
 
-const handleConditionPair = (
-  condition: ConditionPair,
-  entry: Record<string, unknown>,
-): boolean => {
+const handleConditionPair = (condition: ConditionPair, entry: Record<string, unknown>): boolean => {
   if (condition.boolean === BooleanType.AND) {
     // eslint-disable-next-line no-use-before-define
     return handleCondition(condition.lhs, entry) && handleCondition(condition.rhs, entry);
@@ -77,13 +76,10 @@ const handleConditionPair = (
     return handleCondition(condition.lhs, entry) || handleCondition(condition.rhs, entry);
   }
 
-  throw new Error('Only \'AND\' and \'OR\' supported at present!');
+  throw new Error("Only 'AND' and 'OR' supported at present!");
 };
 
-const handleCondition = (
-  condition: Condition,
-  entry: Record<string, unknown>,
-): boolean => {
+const handleCondition = (condition: Condition, entry: Record<string, unknown>): boolean => {
   if (isSingularCondition(condition)) {
     return handleSingularCondition(condition, entry);
   }
@@ -133,24 +129,35 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
     throw new Error(`${query.table} is not an array!`);
   }
 
-  const filtered = !query.condition ? table : table.filter(
-    (entry: Record<string, unknown>) => handleCondition(query.condition, entry),
-  );
+  const filtered = !query.condition
+    ? table
+    : table.filter((entry: Record<string, unknown>) => handleCondition(query.condition, entry));
+
+  let output: unknown[];
 
   switch (query.projection.type) {
     case ProjectionType.ALL:
-      return filtered;
+      output = filtered;
+      break;
     case ProjectionType.SELECTED:
-      return filtered.map((value: Record<string, unknown>) => {
+      output = filtered.map((value: Record<string, unknown>) => {
         const obj: Record<string, unknown> = {};
         query.projection.fields.forEach((field) => {
           obj[field] = value[field];
         });
         return obj as T;
       });
+      break;
     case ProjectionType.DISTINCT:
-      return distinct(query.projection.fields, filtered);
+      output = distinct(query.projection.fields, filtered);
+      break;
     default:
       throw new Error('Unsupported projection type');
   }
+
+  if (query.aggregation === AggregateType.COUNT) {
+    return [{ count: output.length } as unknown] as T[];
+  }
+
+  return output as T[];
 };
