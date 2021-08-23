@@ -313,6 +313,19 @@ describe('test parser', () => {
     );
   });
 
+  test('parse simple count aggregation', () => {
+    const tokens = ['SELECT', 'COUNT', '(', '*', ')', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.COUNT,
+      table: 'tableName',
+    });
+  });
+
   test("parser should handle 'count' aggregate function", () => {
     const tokens = ['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture'];
     const query = parse(tokens);

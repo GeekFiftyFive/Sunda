@@ -160,9 +160,11 @@ const parseSelection = (
 
   if (tokens[0].toLowerCase() === 'count') {
     const lParenIdx = tokens.findIndex((token) => token === '(');
+    const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
     return {
-      ...parseSelection(tokens.slice(lParenIdx + 1)),
+      projection,
       aggregation: AggregateType.COUNT,
+      tokens: newTokens.slice(1),
     };
   }
 
@@ -183,10 +185,6 @@ const parseSelection = (
       throw new Error('Remapping column names is not currently supported!');
     }
     consumedTokens += 1;
-    if (tokens[consumedTokens].toLowerCase() === ')') {
-      // FIXME: This feels pretty hacky
-      consumedTokens += 1;
-    }
   }
 
   return {
