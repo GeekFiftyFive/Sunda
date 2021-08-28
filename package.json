@@ -1,6 +1,6 @@
 {
   "name": "sunda",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Tool to query JSON input using SQL style syntax",
   "main": "dist/index.js",
   "repository": {
@@ -41,5 +41,6 @@
   "bin": "./dist/index.js",
   "files": [
     "/dist"
-  ]
+  ],
+  "keywords": ["sql", "query", "cli"]
 }
