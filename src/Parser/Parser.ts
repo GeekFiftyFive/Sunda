@@ -26,6 +26,8 @@ export enum ProjectionType {
 export enum AggregateType {
   NONE,
   COUNT,
+  SUM,
+  AVG,
 }
 
 export interface Condition {
