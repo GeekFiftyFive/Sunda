@@ -160,12 +160,18 @@ const parseSelection = (
     };
   }
 
-  if (tokens[0].toLowerCase() === 'count') {
+  const aggregates: Record<string, AggregateType> = {
+    count: AggregateType.COUNT,
+    sum: AggregateType.SUM,
+    avg: AggregateType.AVG,
+  };
+
+  if (Object.keys(aggregates).includes(tokens[0].toLowerCase())) {
     const lParenIdx = tokens.findIndex((token) => token === '(');
     const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
     return {
       projection,
-      aggregation: AggregateType.COUNT,
+      aggregation: aggregates[tokens[0].toLowerCase()],
       tokens: newTokens.slice(1),
     };
   }

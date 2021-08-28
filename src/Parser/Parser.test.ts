@@ -313,7 +313,7 @@ describe('test parser', () => {
     );
   });
 
-  test('parse simple count aggregation', () => {
+  test("parse simple 'count' aggregation", () => {
     const tokens = ['SELECT', 'COUNT', '(', '*', ')', 'FROM', 'tableName'];
     const query = parse(tokens);
 
@@ -326,7 +326,7 @@ describe('test parser', () => {
     });
   });
 
-  test("parser should handle 'count' aggregate function", () => {
+  test("parser should handle distinct 'count' aggregate function", () => {
     const tokens = ['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture'];
     const query = parse(tokens);
 
@@ -339,6 +339,32 @@ describe('test parser', () => {
         aggregation: AggregateType.COUNT,
       }),
     );
+  });
+
+  test("parse simple 'sum' aggregation", () => {
+    const tokens = ['SELECT', 'SUM', '(', '*', ')', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.SUM,
+      table: 'tableName',
+    });
+  });
+
+  test("parse simple 'avg' aggregation", () => {
+    const tokens = ['SELECT', 'AVG', '(', '*', ')', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.AVG,
+      table: 'tableName',
+    });
   });
 });
 
