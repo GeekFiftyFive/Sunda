@@ -1,3 +1,4 @@
+import { createObjectDataSource } from '../ObjectDataSource';
 import { execute } from '.';
 import {
   ProjectionType,
@@ -9,8 +10,13 @@ import {
   AggregateType,
 } from '../Parser';
 
+const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
+  const datasource = createObjectDataSource(data);
+  return execute<T>(query, datasource);
+};
+
 describe('test executeQuery', () => {
-  test('exceute valid simple query', () => {
+  test('exceute valid simple query', async () => {
     const query: Query = {
       projection: {
         type: ProjectionType.ALL,
@@ -23,12 +29,12 @@ describe('test executeQuery', () => {
       test_data: [1, 2, 3, 4, 5],
     };
 
-    const result = execute<number>(query, data);
+    const result = await wrapAndExec<number>(query, data);
 
     expect(result).toEqual([1, 2, 3, 4, 5]);
   });
 
-  test('exceute valid simple query with count aggregate function', () => {
+  test('exceute valid simple query with count aggregate function', async () => {
     const query: Query = {
       projection: {
         type: ProjectionType.ALL,
@@ -41,12 +47,12 @@ describe('test executeQuery', () => {
       test_data: [1, 2, 3, 4, 5],
     };
 
-    const result = execute<number>(query, data);
+    const result = await wrapAndExec<number>(query, data);
 
     expect(result).toEqual([{ count: 5 }]);
   });
 
-  test('execute query with simple where clause on numeric values', () => {
+  test('execute query with simple where clause on numeric values', async () => {
     // TODO: Add test coverage for other comparison types
     // TODO: Break this out into smaller tests
     const query: Query = {
@@ -76,7 +82,7 @@ describe('test executeQuery', () => {
       ],
     };
 
-    let result = execute<Record<string, number>>(
+    let result = await wrapAndExec<Record<string, number>>(
       {
         ...query,
         condition: {
@@ -91,7 +97,7 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
 
-    result = execute<Record<string, number>>(
+    result = await wrapAndExec<Record<string, number>>(
       {
         ...query,
         condition: {
@@ -106,7 +112,7 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[1], data.test_data[2]]);
 
-    result = execute<Record<string, number>>(
+    result = await wrapAndExec<Record<string, number>>(
       {
         ...query,
         condition: {
@@ -130,7 +136,7 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[1]]);
 
-    result = execute<Record<string, number>>(
+    result = await wrapAndExec<Record<string, number>>(
       {
         ...query,
         condition: {
@@ -154,7 +160,7 @@ describe('test executeQuery', () => {
 
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
 
-    result = execute<Record<string, number>>(
+    result = await wrapAndExec<Record<string, number>>(
       {
         ...query,
         condition: {
@@ -179,7 +185,7 @@ describe('test executeQuery', () => {
     expect(result).toEqual([data.test_data[0]]);
   });
 
-  test('can dig into the structure of an object using json path', () => {
+  test('can dig into the structure of an object using json path', async () => {
     const data = {
       test_data: [
         {
@@ -217,12 +223,12 @@ describe('test executeQuery', () => {
       } as SingularCondition,
     };
 
-    const result = execute<Record<string, unknown>>(query, data);
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
 
     expect(result).toEqual([data.test_data[1]]);
   });
 
-  test('executor handles projections', () => {
+  test('executor handles projections', async () => {
     const data = {
       test_data: [
         {
@@ -252,7 +258,7 @@ describe('test executeQuery', () => {
       table: 'test_data',
     };
 
-    const result = execute<Record<string, string>>(query, data);
+    const result = await wrapAndExec<Record<string, string>>(query, data);
     expect(result).toEqual([
       {
         firstName: 'Barry',
@@ -296,8 +302,8 @@ describe('test executor handles like operator', () => {
     table: 'test_data',
   };
 
-  test('like operator properly handles % at beginning and end', () => {
-    const result = execute<Record<string, unknown>>(
+  test('like operator properly handles % at beginning and end', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         ...query,
         condition: {
@@ -313,8 +319,8 @@ describe('test executor handles like operator', () => {
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
   });
 
-  test('like operator properly handles % at end', () => {
-    const result = execute<Record<string, unknown>>(
+  test('like operator properly handles % at end', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         ...query,
         condition: {
@@ -330,8 +336,8 @@ describe('test executor handles like operator', () => {
     expect(result).toEqual([data.test_data[1]]);
   });
 
-  test('like operator properly handles % at the beginning', () => {
-    const result = execute<Record<string, unknown>>(
+  test('like operator properly handles % at the beginning', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         ...query,
         condition: {
@@ -347,8 +353,8 @@ describe('test executor handles like operator', () => {
     expect(result).toEqual([data.test_data[2]]);
   });
 
-  test('like operator properly handles _', () => {
-    const result = execute<Record<string, unknown>>(
+  test('like operator properly handles _', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         ...query,
         condition: {
@@ -364,8 +370,8 @@ describe('test executor handles like operator', () => {
     expect(result).toEqual([data.test_data[0], data.test_data[1]]);
   });
 
-  test('like operator handles regex characters as literals', () => {
-    const result = execute<Record<string, unknown>>(
+  test('like operator handles regex characters as literals', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         ...query,
         condition: {
@@ -404,8 +410,8 @@ describe('test executor handles distinct', () => {
     ],
   };
 
-  test('handles distinct keyword in basic case with one field', () => {
-    const result = execute<Record<string, unknown>>(
+  test('handles distinct keyword in basic case with one field', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         projection: {
           type: ProjectionType.DISTINCT,
@@ -420,8 +426,8 @@ describe('test executor handles distinct', () => {
     expect(result).toEqual([{ first_name: 'James' }, { first_name: 'Amy' }]);
   });
 
-  test('handles distinct keyword in case with multiple fields', () => {
-    const result = execute<Record<string, unknown>>(
+  test('handles distinct keyword in case with multiple fields', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         projection: {
           type: ProjectionType.DISTINCT,
@@ -440,8 +446,8 @@ describe('test executor handles distinct', () => {
     ]);
   });
 
-  test('handles count aggregation over distinct keyword in case with multiple fields', () => {
-    const result = execute<Record<string, unknown>>(
+  test('handles count aggregation over distinct keyword in case with multiple fields', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
       {
         projection: {
           type: ProjectionType.DISTINCT,
