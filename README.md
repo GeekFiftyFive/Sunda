@@ -109,7 +109,7 @@ SELECT COUNT(DISTINCT frosting, flavour) FROM cupcakes
 
 ### `SUM`
 
-Sum can only be used on single fields entirely comprised of numeric values. It will return the sum of all the values in the given field. Take the schema from the previous example, but this time let's add an additional `"price"` field, which will contain prices as numeric value:
+Sum can only be used on single fields entirely comprised of numeric values. It will return the sum of all the values in the given field. Take the schema from the previous example, but this time let's add an additional `"price"` field, which will contain prices as numeric values:
 
 ~~~
 {
@@ -127,6 +127,16 @@ If we wish to find the total cost of all cupcakes in the dataset, this could be 
 
 ~~~
 SELECT SUM(price) FROM cupcakes
+~~~
+
+If we had 3 entries with prices of 5, 3 and 1, we'd get this output:
+
+~~~
+[
+  {
+    sum: 9
+  }
+]
 ~~~
 
 Attempting to execute a `SUM` against multiple fields, a wildcard or a field containing non numeric values will result in errors.
