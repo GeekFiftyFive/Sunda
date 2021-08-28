@@ -1,3 +1,4 @@
+import { DataSource } from '../CommonTypes';
 import {
   AggregateType,
   BooleanType,
@@ -122,12 +123,14 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
   return values as T[];
 };
 
-export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] => {
-  const table = data[query.table];
+export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
+  const maybeTable = await datasource.getTable(query.table);
 
-  if (!Array.isArray(table)) {
-    throw new Error(`${query.table} is not an array!`);
+  if (maybeTable.isEmpty()) {
+    throw new Error(`${query.table} is not a valid table!`);
   }
+
+  const table = await maybeTable.getValue().readFullTable();
 
   const filtered = !query.condition
     ? table
@@ -149,7 +152,7 @@ export const execute = <T>(query: Query, data: Record<string, unknown[]>): T[] =
       });
       break;
     case ProjectionType.DISTINCT:
-      output = distinct(query.projection.fields, filtered);
+      output = distinct(query.projection.fields, filtered as Record<string, unknown>[]);
       break;
     default:
       throw new Error('Unsupported projection type');

@@ -26,10 +26,10 @@ describe('End to end tests', () => {
     ],
   };
 
-  test('simple query with conditional', () => {
+  test('simple query with conditional', async () => {
     const query = 'SELECT * FROM tableName WHERE value>10';
 
-    const actual = executeQuery<{ tableName: string; value: number }>(query, data);
+    const actual = await executeQuery<{ tableName: string; value: number }>(query, data);
     expect(actual).toEqual([
       {
         name: 'Test 1',
@@ -44,10 +44,10 @@ describe('End to end tests', () => {
     ]);
   });
 
-  test("simple query with 'AND' conditional", () => {
+  test("simple query with 'AND' conditional", async () => {
     const query = 'SELECT * FROM tableName WHERE value >= 10 AND id > 5';
 
-    const actual = executeQuery<{ tableName: string; value: number }>(query, data);
+    const actual = await executeQuery<{ tableName: string; value: number }>(query, data);
     expect(actual).toEqual([
       {
         name: 'Test 3',
