@@ -500,4 +500,20 @@ describe('AVG and SUM aggregates', () => {
 
     expect(result).toEqual([{ avg: 2.5 }]);
   });
+
+  test("handles valid 'SUM' query", async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.SELECTED,
+          fields: ['price'],
+        },
+        aggregation: AggregateType.SUM,
+        table: 'treats',
+      },
+      data,
+    );
+
+    expect(result).toEqual([{ sum: 10 }]);
+  });
 });

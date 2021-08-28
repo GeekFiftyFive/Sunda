@@ -172,6 +172,16 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
             ) as number) / output.length,
         } as unknown,
       ] as T[];
+    case AggregateType.SUM:
+      return [
+        {
+          sum: output.reduce(
+            (acc: number, current: Record<string, number>) =>
+              acc + current[query.projection.fields[0]],
+            0,
+          ) as number,
+        } as unknown,
+      ] as T[];
     default:
       return output as T[];
   }
