@@ -162,26 +162,27 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     case AggregateType.COUNT:
       return [{ count: output.length } as unknown] as T[];
     case AggregateType.AVG:
-      return [
-        {
-          avg:
-            (output.reduce(
-              (acc: number, current: Record<string, number>) =>
-                acc + current[query.projection.fields[0]],
-              0,
-            ) as number) / output.length,
-        } as unknown,
-      ] as T[];
-    case AggregateType.SUM:
-      return [
-        {
-          sum: output.reduce(
-            (acc: number, current: Record<string, number>) =>
-              acc + current[query.projection.fields[0]],
-            0,
-          ) as number,
-        } as unknown,
-      ] as T[];
+    case AggregateType.SUM: {
+      const sum = output.reduce((acc: number, current: Record<string, number>) => {
+        const val = current[query.projection.fields[0]];
+
+        if (typeof val !== 'number') {
+          throw new Error(
+            `Cannot use '${
+              query.aggregation === AggregateType.SUM ? 'SUM' : 'AVG'
+            }' on non numeric field`,
+          );
+        }
+
+        return acc + val;
+      }, 0) as number;
+
+      if (query.aggregation === AggregateType.SUM) {
+        return [{ sum }] as unknown as T[];
+      }
+
+      return [{ avg: sum / output.length }] as unknown as T[];
+    }
     default:
       return output as T[];
   }

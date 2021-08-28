@@ -516,4 +516,36 @@ describe('AVG and SUM aggregates', () => {
 
     expect(result).toEqual([{ sum: 10 }]);
   });
+
+  test("executor throws an error when non numeric field passed to 'SUM' aggregation", async () => {
+    await expect(
+      wrapAndExec<Record<string, unknown>>(
+        {
+          projection: {
+            type: ProjectionType.SELECTED,
+            fields: ['name'],
+          },
+          aggregation: AggregateType.SUM,
+          table: 'treats',
+        },
+        data,
+      ),
+    ).rejects.toThrowError("Cannot use 'SUM' on non numeric field");
+  });
+
+  test("executor throws an error when non numeric field passed to 'AVG' aggregation", async () => {
+    await expect(
+      wrapAndExec<Record<string, unknown>>(
+        {
+          projection: {
+            type: ProjectionType.SELECTED,
+            fields: ['name'],
+          },
+          aggregation: AggregateType.AVG,
+          table: 'treats',
+        },
+        data,
+      ),
+    ).rejects.toThrowError("Cannot use 'AVG' on non numeric field");
+  });
 });
