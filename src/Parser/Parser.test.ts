@@ -313,7 +313,7 @@ describe('test parser', () => {
     );
   });
 
-  test('parse simple count aggregation', () => {
+  test("parse simple 'count' aggregation", () => {
     const tokens = ['SELECT', 'COUNT', '(', '*', ')', 'FROM', 'tableName'];
     const query = parse(tokens);
 
@@ -326,7 +326,7 @@ describe('test parser', () => {
     });
   });
 
-  test("parser should handle 'count' aggregate function", () => {
+  test("parser should handle distinct 'count' aggregate function", () => {
     const tokens = ['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture'];
     const query = parse(tokens);
 
@@ -339,6 +339,62 @@ describe('test parser', () => {
         aggregation: AggregateType.COUNT,
       }),
     );
+  });
+
+  test("parse simple 'sum' aggregation", () => {
+    const tokens = ['SELECT', 'SUM', '(', 'fieldName', ')', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['fieldName'],
+      },
+      aggregation: AggregateType.SUM,
+      table: 'tableName',
+    });
+  });
+
+  test("parse simple 'avg' aggregation", () => {
+    const tokens = ['SELECT', 'AVG', '(', 'fieldName', ')', 'FROM', 'tableName'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['fieldName'],
+      },
+      aggregation: AggregateType.AVG,
+      table: 'tableName',
+    });
+  });
+
+  test("'sum' with multiple fields throws an error", () => {
+    const tokens = ['SELECT', 'SUM', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
+
+    expect(() => parse(tokens)).toThrowError(
+      "Cannot use 'SUM' aggregation with multiple field names",
+    );
+  });
+
+  test("'avg' with multiple fields throws an error", () => {
+    const tokens = ['SELECT', 'AVG', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
+
+    expect(() => parse(tokens)).toThrowError(
+      "Cannot use 'AVG' aggregation with multiple field names",
+    );
+  });
+
+  test("'sum' with wildcard throws an error", () => {
+    const tokens = ['SELECT', 'SUM', '(', '*', ')', 'FROM', 'tableName'];
+
+    expect(() => parse(tokens)).toThrowError("Cannot use 'SUM' aggregation with wildcard");
+  });
+
+  test("'avg' with wildcard throws an error", () => {
+    const tokens = ['SELECT', 'AVG', '(', '*', ')', 'FROM', 'tableName'];
+
+    expect(() => parse(tokens)).toThrowError("Cannot use 'AVG' aggregation with wildcard");
   });
 });
 

@@ -462,3 +462,90 @@ describe('test executor handles distinct', () => {
     expect(result).toEqual([{ count: 3 }]);
   });
 });
+
+describe('AVG and SUM aggregates', () => {
+  const data = {
+    treats: [
+      {
+        name: 'Chocolate',
+        price: 1.5,
+      },
+      {
+        name: 'Muffin',
+        price: 3,
+      },
+      {
+        name: 'Cake',
+        price: 3.5,
+      },
+      {
+        name: 'Scone',
+        price: 2,
+      },
+    ],
+  };
+
+  test("handles valid 'AVG' query", async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.SELECTED,
+          fields: ['price'],
+        },
+        aggregation: AggregateType.AVG,
+        table: 'treats',
+      },
+      data,
+    );
+
+    expect(result).toEqual([{ avg: 2.5 }]);
+  });
+
+  test("handles valid 'SUM' query", async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.SELECTED,
+          fields: ['price'],
+        },
+        aggregation: AggregateType.SUM,
+        table: 'treats',
+      },
+      data,
+    );
+
+    expect(result).toEqual([{ sum: 10 }]);
+  });
+
+  test("executor throws an error when non numeric field passed to 'SUM' aggregation", async () => {
+    await expect(
+      wrapAndExec<Record<string, unknown>>(
+        {
+          projection: {
+            type: ProjectionType.SELECTED,
+            fields: ['name'],
+          },
+          aggregation: AggregateType.SUM,
+          table: 'treats',
+        },
+        data,
+      ),
+    ).rejects.toThrowError("Cannot use 'SUM' on non numeric field");
+  });
+
+  test("executor throws an error when non numeric field passed to 'AVG' aggregation", async () => {
+    await expect(
+      wrapAndExec<Record<string, unknown>>(
+        {
+          projection: {
+            type: ProjectionType.SELECTED,
+            fields: ['name'],
+          },
+          aggregation: AggregateType.AVG,
+          table: 'treats',
+        },
+        data,
+      ),
+    ).rejects.toThrowError("Cannot use 'AVG' on non numeric field");
+  });
+});

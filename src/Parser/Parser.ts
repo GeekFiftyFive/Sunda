@@ -26,6 +26,8 @@ export enum ProjectionType {
 export enum AggregateType {
   NONE,
   COUNT,
+  SUM,
+  AVG,
 }
 
 export interface Condition {
@@ -158,12 +160,33 @@ const parseSelection = (
     };
   }
 
-  if (tokens[0].toLowerCase() === 'count') {
+  const aggregates: Record<string, AggregateType> = {
+    count: AggregateType.COUNT,
+    sum: AggregateType.SUM,
+    avg: AggregateType.AVG,
+  };
+
+  if (Object.keys(aggregates).includes(tokens[0].toLowerCase())) {
     const lParenIdx = tokens.findIndex((token) => token === '(');
     const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
+
+    const aggregation = aggregates[tokens[0].toLowerCase()];
+
+    if (aggregation === AggregateType.AVG || aggregation === AggregateType.SUM) {
+      if (projection.type === ProjectionType.ALL) {
+        throw new Error(`Cannot use '${tokens[0].toUpperCase()}' aggregation with wildcard`);
+      }
+
+      if (projection.fields.length > 1) {
+        throw new Error(
+          `Cannot use '${tokens[0].toUpperCase()}' aggregation with multiple field names`,
+        );
+      }
+    }
+
     return {
       projection,
-      aggregation: AggregateType.COUNT,
+      aggregation,
       tokens: newTokens.slice(1),
     };
   }

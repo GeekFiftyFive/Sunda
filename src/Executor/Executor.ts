@@ -158,9 +158,32 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       throw new Error('Unsupported projection type');
   }
 
-  if (query.aggregation === AggregateType.COUNT) {
-    return [{ count: output.length } as unknown] as T[];
-  }
+  switch (query.aggregation) {
+    case AggregateType.COUNT:
+      return [{ count: output.length } as unknown] as T[];
+    case AggregateType.AVG:
+    case AggregateType.SUM: {
+      const sum = output.reduce((acc: number, current: Record<string, number>) => {
+        const val = current[query.projection.fields[0]];
 
-  return output as T[];
+        if (typeof val !== 'number') {
+          throw new Error(
+            `Cannot use '${
+              query.aggregation === AggregateType.SUM ? 'SUM' : 'AVG'
+            }' on non numeric field`,
+          );
+        }
+
+        return acc + val;
+      }, 0) as number;
+
+      if (query.aggregation === AggregateType.SUM) {
+        return [{ sum }] as unknown as T[];
+      }
+
+      return [{ avg: sum / output.length }] as unknown as T[];
+    }
+    default:
+      return output as T[];
+  }
 };
