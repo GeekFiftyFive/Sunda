@@ -9,6 +9,8 @@ import { tokenise } from './Tokeniser';
 import { read } from './Reader';
 import { createObjectDataSource } from './ObjectDataSource';
 
+export * from './CommonTypes';
+
 export const executeQuery = async <T>(
   query: string,
   data: Record<string, unknown[]>,
