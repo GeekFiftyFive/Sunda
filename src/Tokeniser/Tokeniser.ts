@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-unused-vars
 export const tokenise = (input: string): string[] => {
-  const regex =
-    /\s*(\*|[0-9]+\.[0-9]+|[\w|.|-]+|\w+|,|\(|\)|<=|>=|<>|<|>|=|;|"[^".]*"|'[^'.]*')/gim;
+  const regex = /\s*(\*|[0-9]+\.[0-9]+|[\w|.|-]+|\w+|,|\(|\)|<=|>=|<>|<|>|=|;|"[^"]*"|'[^']*')/gim;
   return [...input.matchAll(regex)].map((match) => match[1]);
 };
