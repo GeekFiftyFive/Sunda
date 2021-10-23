@@ -43,7 +43,7 @@ describe('test tokeniser', () => {
 
   test('can tokenise two string conditions', () => {
     const actual = tokenise(
-      'select * from cats where breed = "British Shorthair" or breed = "Bengal"',
+      'select * from cats where breed = \'British Shorthair\' or breed = "Bengal"',
     );
     expect(actual).toEqual([
       'select',
@@ -53,7 +53,7 @@ describe('test tokeniser', () => {
       'where',
       'breed',
       '=',
-      '"British Shorthair"',
+      "'British Shorthair'",
       'or',
       'breed',
       '=',
@@ -98,6 +98,20 @@ describe('test tokeniser', () => {
       'FROM',
       'furniture',
       ';',
+    ]);
+  });
+
+  test('can tokenise string containing special characters', () => {
+    const actual = tokenise('SELECT * FROM fruit WHERE price.exVAT="£0.30"');
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'fruit',
+      'WHERE',
+      'price.exVAT',
+      '=',
+      '"£0.30"',
     ]);
   });
 });

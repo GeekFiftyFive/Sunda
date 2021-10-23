@@ -1,13 +1,25 @@
 {
   "fruit": [
     {
-      "name": "apple"
+      "name": "apple",
+      "price": {
+        "exVAT": "£0.30",
+        "incVAT": "£0.36"
+      }
     },
     {
-      "name": "orange"
+      "name": "orange",
+      "price": {
+        "exVAT": "£0.40",
+        "incVAT": "£0.48"
+      }
     },
     {
-      "name": "grape"
+      "name": "grape",
+      "price": {
+        "exVAT": "£0.05",
+        "incVAT": "£0.06"
+      }
     }
   ]
 }
