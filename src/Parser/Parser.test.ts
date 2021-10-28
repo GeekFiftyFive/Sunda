@@ -368,6 +368,12 @@ describe('test parser', () => {
       table: 'tableName',
     });
   });
+});
+
+describe('test parser error handling', () => {
+  test('get sensible error when empty query parsed', () => {
+    expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
+  });
 
   test("'sum' with multiple fields throws an error", () => {
     const tokens = ['SELECT', 'SUM', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
@@ -395,11 +401,5 @@ describe('test parser', () => {
     const tokens = ['SELECT', 'AVG', '(', '*', ')', 'FROM', 'tableName'];
 
     expect(() => parse(tokens)).toThrowError("Cannot use 'AVG' aggregation with wildcard");
-  });
-});
-
-describe('test parser error handling', () => {
-  test('get sensible error when empty query parsed', () => {
-    expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
   });
 });
