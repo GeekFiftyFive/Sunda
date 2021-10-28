@@ -11,6 +11,7 @@ describe('test parser', () => {
       },
       aggregation: AggregateType.NONE,
       table: 'tableName',
+      joins: [],
     });
   });
 
@@ -24,6 +25,7 @@ describe('test parser', () => {
       },
       aggregation: AggregateType.NONE,
       table: 'tableName',
+      joins: [],
     });
   });
 
@@ -43,6 +45,7 @@ describe('test parser', () => {
         value: 'value',
         comparison: Comparison.EQ,
       },
+      joins: [],
     });
   });
 
@@ -62,6 +65,7 @@ describe('test parser', () => {
         value: 'value',
         comparison: Comparison.EQ,
       },
+      joins: [],
     });
   });
 
@@ -81,6 +85,7 @@ describe('test parser', () => {
         value: 10,
         comparison: Comparison.EQ,
       },
+      joins: [],
     });
   });
 
@@ -123,6 +128,7 @@ describe('test parser', () => {
           comparison: Comparison.LIKE,
         },
       },
+      joins: [],
     });
   });
 
@@ -165,6 +171,7 @@ describe('test parser', () => {
           comparison: Comparison.LIKE,
         },
       },
+      joins: [],
     });
   });
 
@@ -220,6 +227,7 @@ describe('test parser', () => {
           },
         },
       },
+      joins: [],
     });
   });
 
@@ -239,6 +247,7 @@ describe('test parser', () => {
         value: 10,
         comparison: Comparison.EQ,
       },
+      joins: [],
     });
   });
 
@@ -282,6 +291,7 @@ describe('test parser', () => {
           comparison: Comparison.LIKE,
         },
       },
+      joins: [],
     });
   });
 
@@ -295,6 +305,7 @@ describe('test parser', () => {
           type: ProjectionType.SELECTED,
           fields: ['name', 'age'],
         },
+        joins: [],
       }),
     );
   });
@@ -309,6 +320,7 @@ describe('test parser', () => {
           type: ProjectionType.DISTINCT,
           fields: ['name', 'age'],
         },
+        joins: [],
       }),
     );
   });
@@ -323,6 +335,7 @@ describe('test parser', () => {
       },
       aggregation: AggregateType.COUNT,
       table: 'tableName',
+      joins: [],
     });
   });
 
@@ -337,6 +350,7 @@ describe('test parser', () => {
           fields: ['colour'],
         },
         aggregation: AggregateType.COUNT,
+        joins: [],
       }),
     );
   });
@@ -352,6 +366,7 @@ describe('test parser', () => {
       },
       aggregation: AggregateType.SUM,
       table: 'tableName',
+      joins: [],
     });
   });
 
@@ -366,6 +381,53 @@ describe('test parser', () => {
       },
       aggregation: AggregateType.AVG,
       table: 'tableName',
+      joins: [],
+    });
+  });
+
+  test('parse simple join', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'JOIN',
+      'users',
+      'WHERE',
+      'posts.PosterID',
+      '=',
+      'users.ID',
+      'and',
+      'users.Name',
+      '=',
+      '"George"',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'posts.PosterID',
+          value: {
+            field: 'users.ID',
+          },
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'users.Name',
+          value: 'George',
+        },
+      },
+      joins: [{ table: 'users' }],
     });
   });
 });

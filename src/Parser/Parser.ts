@@ -30,6 +30,11 @@ export enum AggregateType {
   AVG,
 }
 
+export interface Join {
+  table: string;
+  alias?: string;
+}
+
 export interface Condition {
   boolean: BooleanType;
 }
@@ -54,6 +59,7 @@ export interface Query {
   projection: Projection;
   aggregation: AggregateType;
   table: string;
+  joins: Join[];
   condition?: Condition;
 }
 
@@ -84,7 +90,9 @@ const parseValue = (value: string): unknown => {
     return match[1];
   }
 
-  throw new Error(`Could not parse value ${value}`);
+  return {
+    field: value,
+  };
 };
 
 const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
@@ -220,6 +228,13 @@ const parseSelection = (
   };
 };
 
+const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } =>
+  // TODO: Extend
+  ({
+    joins: [{ table: tokens[1] }],
+    tokens: tokens.slice(2),
+  });
+
 export const parse = (input: string[]): Query => {
   let query: Query;
   let projection: Projection;
@@ -242,12 +257,22 @@ export const parse = (input: string[]): Query => {
       projection,
       table: tokens[0],
       aggregation,
+      joins: [],
     };
   } else {
     throw new Error("Expected 'FROM'");
   }
 
   tokens = tokens.slice(1);
+
+  if (tokens[0] && tokens[0].toLowerCase() === 'join') {
+    const { tokens: newTokens, joins } = parseJoins(tokens);
+    tokens = newTokens;
+    query = {
+      ...query,
+      joins,
+    };
+  }
 
   if (tokens[0] && tokens[0].toLowerCase() === 'where') {
     const parsed = parseCondition(tokens.splice(1));
