@@ -89,7 +89,7 @@ const handleSingularCondition = (
 
   const evaluated = comparison(value, condition.value);
   const fullEntry: Record<string, unknown> = joinedTableName
-    ? { ...entry, [joinedTableName]: { ...joinedEntry } }
+    ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
     : { ...entry };
 
   if (
@@ -212,9 +212,11 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
 
   const filtered = !query.condition
     ? table
-    : table.filter((entry: Record<string, unknown>) =>
-        handleCondition(query.condition, entry, query.table, joinTables),
-      );
+    : table
+        .map((entry: Record<string, unknown>) =>
+          handleCondition(query.condition, entry, query.table, joinTables),
+        )
+        .filter((entry: unknown) => !!entry);
 
   let output: unknown[];
 
