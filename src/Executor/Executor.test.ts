@@ -23,6 +23,7 @@ describe('test executeQuery', () => {
       },
       aggregation: AggregateType.NONE,
       table: 'test_data',
+      joins: [],
     };
 
     const data = {
@@ -41,6 +42,7 @@ describe('test executeQuery', () => {
       },
       aggregation: AggregateType.COUNT,
       table: 'test_data',
+      joins: [],
     };
 
     const data = {
@@ -61,6 +63,7 @@ describe('test executeQuery', () => {
       },
       aggregation: AggregateType.NONE,
       table: 'test_data',
+      joins: [],
     };
 
     const data = {
@@ -221,6 +224,7 @@ describe('test executeQuery', () => {
         field: 'address.city',
         value: 'Clowntown',
       } as SingularCondition,
+      joins: [],
     };
 
     const result = await wrapAndExec<Record<string, unknown>>(query, data);
@@ -256,6 +260,7 @@ describe('test executeQuery', () => {
       },
       aggregation: AggregateType.NONE,
       table: 'test_data',
+      joins: [],
     };
 
     const result = await wrapAndExec<Record<string, string>>(query, data);
@@ -300,6 +305,7 @@ describe('test executor handles like operator', () => {
     },
     aggregation: AggregateType.NONE,
     table: 'test_data',
+    joins: [],
   };
 
   test('like operator properly handles % at beginning and end', async () => {
@@ -419,6 +425,7 @@ describe('test executor handles distinct', () => {
         },
         aggregation: AggregateType.NONE,
         table: 'test_data',
+        joins: [],
       },
       data,
     );
@@ -435,6 +442,7 @@ describe('test executor handles distinct', () => {
         },
         aggregation: AggregateType.NONE,
         table: 'test_data',
+        joins: [],
       },
       data,
     );
@@ -455,6 +463,7 @@ describe('test executor handles distinct', () => {
         },
         aggregation: AggregateType.COUNT,
         table: 'test_data',
+        joins: [],
       },
       data,
     );
@@ -494,6 +503,7 @@ describe('AVG and SUM aggregates', () => {
         },
         aggregation: AggregateType.AVG,
         table: 'treats',
+        joins: [],
       },
       data,
     );
@@ -510,6 +520,7 @@ describe('AVG and SUM aggregates', () => {
         },
         aggregation: AggregateType.SUM,
         table: 'treats',
+        joins: [],
       },
       data,
     );
@@ -527,6 +538,7 @@ describe('AVG and SUM aggregates', () => {
           },
           aggregation: AggregateType.SUM,
           table: 'treats',
+          joins: [],
         },
         data,
       ),
@@ -543,9 +555,97 @@ describe('AVG and SUM aggregates', () => {
           },
           aggregation: AggregateType.AVG,
           table: 'treats',
+          joins: [],
         },
         data,
       ),
     ).rejects.toThrowError("Cannot use 'AVG' on non numeric field");
+  });
+});
+
+describe('executor can handle joins', () => {
+  const data = {
+    posts: [
+      {
+        ID: 1,
+        PosterID: 1,
+      },
+      {
+        ID: 2,
+        PosterID: 1,
+      },
+      {
+        ID: 3,
+        PosterID: 2,
+      },
+      {
+        ID: 4,
+        PosterID: 2,
+      },
+    ],
+    users: [
+      {
+        ID: 1,
+        Name: 'George',
+      },
+      {
+        ID: 2,
+        Name: 'Fred',
+      },
+    ],
+  };
+
+  test('executor handles singular join with no alias', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.ALL,
+        },
+        aggregation: AggregateType.NONE,
+        table: 'posts',
+        condition: {
+          boolean: BooleanType.AND,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'posts.PosterID',
+            value: {
+              field: 'users.ID',
+            },
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'users.Name',
+            value: 'George',
+          },
+        } as ConditionPair,
+        joins: [{ table: 'users' }],
+      },
+      data,
+    );
+
+    expect(result).toEqual([
+      {
+        posts: {
+          ID: 1,
+          PosterID: 1,
+        },
+        users: {
+          ID: 1,
+          Name: 'George',
+        },
+      },
+      {
+        posts: {
+          ID: 2,
+          PosterID: 1,
+        },
+        users: {
+          ID: 1,
+          Name: 'George',
+        },
+      },
+    ]);
   });
 });

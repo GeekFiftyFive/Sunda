@@ -114,4 +114,26 @@ describe('test tokeniser', () => {
       '"£0.30"',
     ]);
   });
+
+  test('can tokenise a basic join', () => {
+    const actual = tokenise(
+      'SELECT * FROM posts JOIN users WHERE posts.PosterID = users.ID and users.Name = "George"',
+    );
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'JOIN',
+      'users',
+      'WHERE',
+      'posts.PosterID',
+      '=',
+      'users.ID',
+      'and',
+      'users.Name',
+      '=',
+      '"George"',
+    ]);
+  });
 });

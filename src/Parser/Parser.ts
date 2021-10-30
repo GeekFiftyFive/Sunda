@@ -30,6 +30,11 @@ export enum AggregateType {
   AVG,
 }
 
+export interface Join {
+  table: string;
+  alias?: string;
+}
+
 export interface Condition {
   boolean: BooleanType;
 }
@@ -54,6 +59,7 @@ export interface Query {
   projection: Projection;
   aggregation: AggregateType;
   table: string;
+  joins: Join[];
   condition?: Condition;
 }
 
@@ -84,7 +90,9 @@ const parseValue = (value: string): unknown => {
     return match[1];
   }
 
-  throw new Error(`Could not parse value ${value}`);
+  return {
+    field: value,
+  };
 };
 
 const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
@@ -220,6 +228,17 @@ const parseSelection = (
   };
 };
 
+const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
+  // TODO: Extend
+  if (tokens[2].toLowerCase() !== 'where' && tokens[2].toLowerCase() !== 'on') {
+    throw new Error('Multiple joins and aliases not currently supported');
+  }
+  return {
+    joins: [{ table: tokens[1] }],
+    tokens: tokens.slice(2),
+  };
+};
+
 export const parse = (input: string[]): Query => {
   let query: Query;
   let projection: Projection;
@@ -242,6 +261,7 @@ export const parse = (input: string[]): Query => {
       projection,
       table: tokens[0],
       aggregation,
+      joins: [],
     };
   } else {
     throw new Error("Expected 'FROM'");
@@ -249,10 +269,39 @@ export const parse = (input: string[]): Query => {
 
   tokens = tokens.slice(1);
 
+  if (tokens[0] && tokens[0].toLowerCase() === 'join') {
+    const { tokens: newTokens, joins } = parseJoins(tokens);
+    tokens = newTokens;
+    query = {
+      ...query,
+      joins,
+    };
+  }
+
+  // TODO: Should be handled by parseJoins
+  let joinCondition: Condition | undefined;
+
+  if (tokens[0] && tokens[0].toLowerCase() === 'on') {
+    joinCondition = parseCondition(tokens.slice(1, 4)).condition;
+    tokens = tokens.splice(4);
+  }
+
   if (tokens[0] && tokens[0].toLowerCase() === 'where') {
     const parsed = parseCondition(tokens.splice(1));
     tokens = parsed.tokens;
-    query.condition = parsed.condition;
+
+    if (!joinCondition) {
+      query.condition = parsed.condition;
+    } else {
+      // TODO: Using 'on' and just joining on a value via the where clause have
+      // slightly different behaviours, but here we are treating them the same.
+      // This is OK for a first pass, but should be implemented properly at some point
+      query.condition = {
+        boolean: BooleanType.AND,
+        lhs: joinCondition,
+        rhs: parsed.condition,
+      } as ConditionPair;
+    }
   }
 
   if (tokens.length !== 0 && tokens[0] !== ';') {

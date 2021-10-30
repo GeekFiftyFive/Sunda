@@ -34,11 +34,16 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
 export const followJsonPath = <T>(
   path: string,
   entry: Record<string, T> | Record<string, Record<string, T>> | undefined,
+  tableName: string,
 ): T => {
   const tokens = path.split('.');
 
   if (tokens.length === 1) {
     return (entry as Record<string, T>)[tokens[0]];
+  }
+
+  if (tokens[0] === tableName) {
+    return followJsonPath<T>(tokens.slice(1).join('.'), entry, tableName);
   }
 
   const next = (entry as Record<string, Record<string, T>>)[tokens[0]];
@@ -47,46 +52,98 @@ export const followJsonPath = <T>(
     return undefined;
   }
 
-  return followJsonPath<T>(tokens.slice(1).join('.'), next);
+  return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
 const handleSingularCondition = (
   condition: SingularCondition,
   entry: Record<string, unknown>,
-): boolean => {
-  const value = followJsonPath<unknown>(condition.field, entry);
+  tableName: string,
+  joinTables: Record<string, unknown[]>,
+): Record<string, unknown> | undefined => {
+  const value = followJsonPath<unknown>(condition.field, entry, tableName);
 
   if (value === undefined) {
-    return false;
+    return undefined;
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const evaluated = comparison(value, condition.value);
+  const isJoin = typeof condition.value === 'object';
+  let joinedTableName: string | undefined;
+  let joinedEntry: Record<string, unknown> = {};
 
-  return condition.boolean === BooleanType.NOT ? !evaluated : evaluated;
+  if (typeof condition.value === 'object') {
+    // TODO: Need to improve typing surrounding comparison values to avoid this kind of mess
+    // eslint-disable-next-line prefer-destructuring
+    joinedTableName = (condition.value as { field: string }).field.split('.')[0];
+    joinedEntry = joinTables[joinedTableName].find((joinedEntry) => {
+      const joinValue = followJsonPath<unknown>(
+        (condition.value as { field: string }).field,
+        joinedEntry as Record<string, unknown>,
+        joinedTableName,
+      );
+
+      return joinValue === value;
+    }) as Record<string, unknown>;
+  }
+
+  const evaluated = comparison(value, condition.value);
+  const fullEntry: Record<string, unknown> = joinedTableName
+    ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
+    : { ...entry };
+
+  if (
+    (condition.boolean === BooleanType.NOT && !evaluated) ||
+    (condition.boolean !== BooleanType.NOT && evaluated) ||
+    isJoin
+  ) {
+    return fullEntry;
+  }
+
+  return undefined;
 };
 
-const handleConditionPair = (condition: ConditionPair, entry: Record<string, unknown>): boolean => {
+const handleConditionPair = (
+  condition: ConditionPair,
+  entry: Record<string, unknown>,
+  tableName: string,
+  joinTables: Record<string, unknown[]>,
+): Record<string, unknown> | undefined => {
   if (condition.boolean === BooleanType.AND) {
     // eslint-disable-next-line no-use-before-define
-    return handleCondition(condition.lhs, entry) && handleCondition(condition.rhs, entry);
+    const fullEntry = handleCondition(condition.lhs, entry, tableName, joinTables);
+    if (!fullEntry) {
+      return undefined;
+    }
+    // eslint-disable-next-line no-use-before-define
+    return handleCondition(condition.rhs, fullEntry, tableName, joinTables);
   }
 
   if (condition.boolean === BooleanType.OR) {
     // eslint-disable-next-line no-use-before-define
-    return handleCondition(condition.lhs, entry) || handleCondition(condition.rhs, entry);
+    const fullEntry = handleCondition(condition.lhs, entry, tableName, joinTables);
+    if (fullEntry) {
+      return fullEntry;
+    }
+    // eslint-disable-next-line no-use-before-define
+    return handleCondition(condition.rhs, entry, tableName, joinTables);
   }
 
   throw new Error("Only 'AND' and 'OR' supported at present!");
 };
 
-const handleCondition = (condition: Condition, entry: Record<string, unknown>): boolean => {
+const handleCondition = (
+  condition: Condition,
+  entry: Record<string, unknown>,
+  tableName: string,
+  joinTables: Record<string, unknown[]>,
+): Record<string, unknown> | undefined => {
   if (isSingularCondition(condition)) {
-    return handleSingularCondition(condition, entry);
+    return handleSingularCondition(condition, entry, tableName, joinTables);
   }
 
   if (isConditionPair(condition)) {
-    return handleConditionPair(condition, entry);
+    return handleConditionPair(condition, entry, tableName, joinTables);
   }
 
   throw new Error('Could not identify condition! There must be a parser bug!');
@@ -132,9 +189,34 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
 
   const table = await maybeTable.getValue().readFullTable();
 
+  const joinTables = await query.joins
+    .reduce(
+      async (accPromise, join) => {
+        const acc = await accPromise;
+        const maybe = await datasource.getTable(join.table);
+
+        if (maybe.isEmpty()) {
+          throw new Error(`Could not satisfy join on table with name ${join.table}`);
+        }
+
+        acc[join.table] = await maybe.getValue().readFullTable();
+        return acc;
+      },
+      new Promise<Record<string, unknown[]>>((resolve) => {
+        resolve({});
+      }),
+    )
+    .catch((err) => {
+      throw err;
+    });
+
   const filtered = !query.condition
     ? table
-    : table.filter((entry: Record<string, unknown>) => handleCondition(query.condition, entry));
+    : table
+        .map((entry: Record<string, unknown>) =>
+          handleCondition(query.condition, entry, query.table, joinTables),
+        )
+        .filter((entry: unknown) => !!entry);
 
   let output: unknown[];
 
