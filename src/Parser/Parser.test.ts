@@ -385,7 +385,7 @@ describe('test parser', () => {
     });
   });
 
-  test('parse simple join', () => {
+  test('parse simple join using where condition', () => {
     const tokens = [
       'SELECT',
       '*',
@@ -398,6 +398,52 @@ describe('test parser', () => {
       '=',
       'users.ID',
       'and',
+      'users.Name',
+      '=',
+      '"George"',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'posts.PosterID',
+          value: {
+            field: 'users.ID',
+          },
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'users.Name',
+          value: 'George',
+        },
+      },
+      joins: [{ table: 'users' }],
+    });
+  });
+
+  test("parse simple join using 'on'", () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'JOIN',
+      'users',
+      'ON',
+      'posts.PosterID',
+      '=',
+      'users.ID',
+      'WHERE',
       'users.Name',
       '=',
       '"George"',

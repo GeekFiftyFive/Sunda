@@ -228,12 +228,16 @@ const parseSelection = (
   };
 };
 
-const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } =>
+const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
   // TODO: Extend
-  ({
+  if (tokens[2].toLowerCase() !== 'where' && tokens[2].toLowerCase() !== 'on') {
+    throw new Error('Multiple joins and aliases not currently supported');
+  }
+  return {
     joins: [{ table: tokens[1] }],
     tokens: tokens.slice(2),
-  });
+  };
+};
 
 export const parse = (input: string[]): Query => {
   let query: Query;
@@ -274,10 +278,30 @@ export const parse = (input: string[]): Query => {
     };
   }
 
+  // TODO: Should be handled by parseJoins
+  let joinCondition: Condition | undefined;
+
+  if (tokens[0] && tokens[0].toLowerCase() === 'on') {
+    joinCondition = parseCondition(tokens.slice(1, 4)).condition;
+    tokens = tokens.splice(4);
+  }
+
   if (tokens[0] && tokens[0].toLowerCase() === 'where') {
     const parsed = parseCondition(tokens.splice(1));
     tokens = parsed.tokens;
-    query.condition = parsed.condition;
+
+    if (!joinCondition) {
+      query.condition = parsed.condition;
+    } else {
+      // TODO: Using 'on' and just joining on a value via the where clause have
+      // slightly different behaviours, but here we are treating them the same.
+      // This is OK for a first pass, but should be implemented properly at some point
+      query.condition = {
+        boolean: BooleanType.AND,
+        lhs: joinCondition,
+        rhs: parsed.condition,
+      } as ConditionPair;
+    }
   }
 
   if (tokens.length !== 0 && tokens[0] !== ';') {
