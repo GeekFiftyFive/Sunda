@@ -562,3 +562,78 @@ describe('AVG and SUM aggregates', () => {
     ).rejects.toThrowError("Cannot use 'AVG' on non numeric field");
   });
 });
+
+describe('executor can handle joins', () => {
+  const data = {
+    posts: [
+      {
+        ID: 1,
+        PosterID: 1,
+      },
+      {
+        ID: 2,
+        PosterID: 1,
+      },
+      {
+        ID: 3,
+        PosterID: 2,
+      },
+      {
+        ID: 4,
+        PosterID: 2,
+      },
+    ],
+    users: [
+      {
+        ID: 1,
+        Name: 'George',
+      },
+      {
+        ID: 2,
+        Name: 'Fred',
+      },
+    ],
+  };
+
+  test('executor handles singular join with no alias', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.ALL,
+        },
+        aggregation: AggregateType.NONE,
+        table: 'posts',
+        condition: {
+          boolean: BooleanType.AND,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'posts.PosterID',
+            value: {
+              field: 'users.ID',
+            },
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'users.Name',
+            value: 'George',
+          },
+        } as ConditionPair,
+        joins: [{ table: 'users' }],
+      },
+      data,
+    );
+
+    expect(result).toEqual([
+      {
+        ID: 1,
+        PosterID: 1,
+      },
+      {
+        ID: 2,
+        PosterID: 1,
+      },
+    ]);
+  });
+});
