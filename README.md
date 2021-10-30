@@ -247,6 +247,67 @@ Will result in this error:
 Cannot use 'AVG' on non numeric field
 ~~~
 
+## Joins
+
+At the time of writing, Sunda has fairly limited support for joins. Only inner joins are supported, and only one can be used in a query, and the fields must be addressed via the table name. I.e. the `AS` keyword is not supported at present.
+
+Say, we have the following schema:
+
+~~~
+{
+  "posts": [
+    {
+      "ID": <number>,
+      "PosterID" <number>
+    }
+  ],
+  "users": [
+    {
+      "ID": <number>,
+      "Name": <string>
+    }
+  ]
+}
+~~~
+
+Where `PosterID` can be treated as a foreign key, targetting the `ID` field in the `users` table.
+
+If we wish to get all of the posts where the poster has `Name` equal to `"Luz"` we can run either of the following queries:
+
+~~~
+// joining using condition in 'on' clause
+SELECT * FROM posts JOIN users ON posts.PosterID = users.ID WHERE users.Name = 'Luz';
+
+// joining using condition in 'where' clause
+SELECT * FROM posts JOIN users WHERE posts.PosterID = users.ID AND users.Name = 'Luz';
+~~~
+
+Both of the above queries will bring back data in the following format:
+
+~~~
+[
+  {
+    "posts": {
+      "ID": <number>,
+      "PosterID": <number>
+    }
+    "users": {
+      "ID": <number>,
+      "Name": <string>
+    }
+  }
+]
+~~~
+
+I.e. an array will be returned containing objects. Each object will have a field corresponding to each table name. These objects will follow the same schema as their original table.
+
+### Join Shortcomings
+
+Support for joins in Sunda is in its infancy. In addition to the previously highlighted restrictions, there are currently a few more 'gotchas', as outlined below:
+
+* It is currently not possible to pull out individual fields in the `SELECT` clause when a join is in use, only a wildcard can be used
+* When using an `OR` in the `WHERE` condition, any values matched via the use of `OR` will not pull back joined values from other tables
+
 ## JSONL Support
 
 As well as individual JSON objects, Sunda also supports JSONL files. These are collections of JSON objects delimited by new lines. When using a JSONL file, one table will exist with the name `root`.
