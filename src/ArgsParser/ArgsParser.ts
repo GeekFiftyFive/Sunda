@@ -32,6 +32,10 @@ export const createArgsParser =
         return mapped;
       }
 
+      if (!param && (!defaultKey || mapped[defaultKey] !== undefined)) {
+        throw new Error(`Invalid flag '${arg}'`);
+      }
+
       if (defaultKey && !param) {
         // eslint-disable-next-line no-param-reassign
         mapped[defaultKey] = arg;

@@ -76,4 +76,27 @@ describe('ArgsParser', () => {
       },
     );
   });
+
+  test('an exception is thrown when an invalid flag is passed in', () => {
+    const parser = createArgsParser([
+      {
+        key: 'flag1',
+        shorthand: '--f1',
+        longhand: '--flag_one',
+      },
+      {
+        key: 'flag2',
+        shorthand: '--f2',
+        longhand: '--flag_two',
+      },
+      {
+        key: 'default',
+        default: true,
+      },
+    ]);
+
+    expect(() => parser(['default', '--f1', 'flag 1 value', '--g1', 'invalid value'])).toThrowError(
+      new Error("Invalid flag '--g1'"),
+    );
+  });
 });
