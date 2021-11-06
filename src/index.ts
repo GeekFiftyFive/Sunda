@@ -55,7 +55,7 @@ const startStreamMode = async (query: string, inputPath?: string, outputPath?: s
       accumulated += chunk.toString();
     });
     readStream.on('close', () => {
-      resolve(JSON.parse(accumulated));
+      resolve(read(accumulated));
     });
     readStream.on('error', reject);
   });
