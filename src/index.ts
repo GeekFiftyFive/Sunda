@@ -120,9 +120,14 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  if (!query) {
-    startRepl(inputPath as string);
-  } else {
-    startStreamMode(query as string, inputPath as string, outputPath as string);
+  try {
+    if (!query) {
+      startRepl(inputPath as string);
+    } else {
+      startStreamMode(query as string, inputPath as string, outputPath as string);
+    }
+  } catch (err) {
+    console.error((err as { message: string }).message);
+    process.exit(1);
   }
 }
