@@ -77,7 +77,8 @@ export const createArgsParser = (
       },
       [{} as Record<string, string>, {} as Record<string, string>, {} as Record<string, boolean>],
     );
-    const defaultKey = argInputs.find((input) => input.default)?.key;
+    const defaultInput = argInputs.find((input) => input.default);
+    const defaultKey = defaultInput ? defaultInput.key : undefined;
     let param: string;
     const map = args.reduce((mapped, arg) => {
       if (longhandMap[arg] || shorthandMap[arg]) {
