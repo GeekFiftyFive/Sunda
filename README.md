@@ -1,5 +1,7 @@
 # Sunda
 
+[![Node.js Package](https://github.com/GeekFiftyFive/Sunda/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/GeekFiftyFive/Sunda/actions/workflows/npm-publish.yml) [![Node.js Test](https://github.com/GeekFiftyFive/Sunda/actions/workflows/test-package.yml/badge.svg)](https://github.com/GeekFiftyFive/Sunda/actions/workflows/test-package.yml)
+
 ## Introduction
 
 Sunda allows you to query JSON objects using a subset of SQL. It includes a simple REPL as exporting the main end-to-end query execution method, allowing it be used programatically as well as being a useful CLI utility.
