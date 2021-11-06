@@ -93,7 +93,17 @@ if (require.main === module) {
       shorthand: '-q',
     },
   ]);
-  const { outputPath, inputPath, query } = argsParser(process.argv.slice(2));
+
+  let parserOutput: Record<string, string>;
+
+  try {
+    parserOutput = argsParser(process.argv.slice(2));
+  } catch (err) {
+    console.error((err as { message: string }).message);
+    process.exit(1);
+  }
+
+  const { outputPath, inputPath, query } = parserOutput;
 
   if (outputPath && inputPath && !query) {
     console.error('Cannot specify output location when running in REPL mode');
