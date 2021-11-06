@@ -32,7 +32,7 @@ export const createArgsParser =
         return mapped;
       }
 
-      if (!param && (!defaultKey || mapped[defaultKey] !== undefined)) {
+      if (!param && (!defaultKey || mapped[defaultKey])) {
         throw new Error(`Invalid flag '${arg}'`);
       }
 
@@ -43,9 +43,6 @@ export const createArgsParser =
 
       if (param) {
         const key = longhandMap[param] || shorthandMap[param];
-        if (!key) {
-          throw new Error(`Invalid parameter '${param}'`);
-        }
         // eslint-disable-next-line no-param-reassign
         mapped[key] = arg;
         param = undefined;
