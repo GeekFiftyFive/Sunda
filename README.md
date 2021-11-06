@@ -26,6 +26,8 @@ And this query will do the same, but instead of writing the output to `stdout` i
 sunda -q 'select count(*) from root' -o output.json
 ~~~
 
+Additionally, using the flags `--help` or `-h` will print the command usage.
+
 ## Syntax
 
 As previously mentioned, Sunda implements a subset of SQL. At this point, it allows for combining conditions using `NOT`, `AND` and `OR`, and performing comparisons on field values using `=`, `<>`, `>`, `<`, `>=`, `<=`, and `LIKE`. These comparison operators behave as one would expect from SQL.
