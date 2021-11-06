@@ -6,7 +6,27 @@ Sunda allows you to query JSON objects using a subset of SQL. It includes a simp
 
 ## Running
 
-The REPL can be ran using `npx sunda` or `sunda` (if it has been installed globally), and the only parameter it takes is the name of the file containing the JSON you wish to query.
+To start Sunda in REPL mode, simply run Sunda using `npx sunda`, or just `sunda` if it has been globally installed, and pass in a filename, like so:
+
+~~~
+sunda <filename.json>
+~~~
+
+Additionally, Sunda can take a query as a command line argument, using `-q` or `--query`. This will read the JSON file (if specified) or read from `stdin` (if no file is specified) and write the query results to the output file (if specified via `-o` or `--output`) or to `stdout` if no output file has been specified.
+
+For example, the following command will read data from `stdin`, execute the query `select count(*) from root` against the dataset and then write the result to `stdout`.
+
+~~~
+sunda -q 'select count(*) from root'
+~~~
+
+And this query will do the same, but instead of writing the output to `stdout` it will be written to a file named `output.json`:
+
+~~~
+sunda -q 'select count(*) from root' -o output.json
+~~~
+
+Additionally, using the flags `--help` or `-h` will print the command usage.
 
 ## Syntax
 
