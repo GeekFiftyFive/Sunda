@@ -17,7 +17,7 @@ export const createArgsParser = (
 } => ({
   dumpUsage: (name: string, logFunction: logger) => {
     const getFlagString = (input: ArgInput) =>
-      `${input.longhand ?? ''}${input.longhand ? ', ' : ''}${input.shorthand ?? ''}`;
+      `${input.longhand || ''}${input.longhand ? ', ' : ''}${input.shorthand || ''}`;
 
     const longestFlagsLength = argInputs.reduce((longest, current) => {
       const flagString = getFlagString(current);
@@ -33,8 +33,8 @@ export const createArgsParser = (
     const usage = argInputs.reduce(
       (usage, current) =>
         !current.default
-          ? `${usage} [${current.longhand ?? ''} ${current.longhand ? '| ' : ''}${
-              current.shorthand ?? ''
+          ? `${usage} [${current.longhand || ''} ${current.longhand ? '| ' : ''}${
+              current.shorthand || ''
             }]`
           : usage,
       `Usage: ${name} ${defaultInput ? `<${defaultInput.description}>` : ''}`,
@@ -81,7 +81,7 @@ export const createArgsParser = (
     let param: string;
     const map = args.reduce((mapped, arg) => {
       if (longhandMap[arg] || shorthandMap[arg]) {
-        const key = longhandMap[arg] ?? shorthandMap[arg];
+        const key = longhandMap[arg] || shorthandMap[arg];
         if (noInputs[key]) {
           // eslint-disable-next-line no-param-reassign
           mapped[key] = true;
