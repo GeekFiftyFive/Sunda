@@ -72,29 +72,34 @@ const startStreamMode = async (query: string, inputPath?: string, outputPath?: s
 };
 
 if (require.main === module) {
-  if (process.argv.length < 3) {
-    console.error('Usage: sunda <input-path>');
-    process.exit(1);
-  }
-
-  const argsParser = createArgsParser([
+  const { parser: argsParser, dumpUsage } = createArgsParser([
     {
       key: 'inputPath',
       default: true,
+      description: 'input file name',
     },
     {
       key: 'outputPath',
       longhand: '--output',
       shorthand: '-o',
+      description: 'Specifies a file to write query output to',
     },
     {
       key: 'query',
       longhand: '--query',
       shorthand: '-q',
+      description: 'Query to run against the dataset',
+    },
+    {
+      key: 'help',
+      longhand: '--help',
+      shorthand: '-h',
+      description: 'Prints command usage',
+      noInput: true,
     },
   ]);
 
-  let parserOutput: Record<string, string>;
+  let parserOutput: Record<string, string | boolean>;
 
   try {
     parserOutput = argsParser(process.argv.slice(2));
@@ -103,16 +108,21 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const { outputPath, inputPath, query } = parserOutput;
+  const { outputPath, inputPath, query, help } = parserOutput;
 
   if (outputPath && inputPath && !query) {
     console.error('Cannot specify output location when running in REPL mode');
     process.exit(1);
   }
 
+  if ((!outputPath && !inputPath && !query) || help) {
+    dumpUsage('sunda', console.log);
+    process.exit(1);
+  }
+
   if (!query) {
-    startRepl(inputPath);
+    startRepl(inputPath as string);
   } else {
-    startStreamMode(query, inputPath, outputPath);
+    startStreamMode(query as string, inputPath as string, outputPath as string);
   }
 }
