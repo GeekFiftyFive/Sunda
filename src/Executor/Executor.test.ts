@@ -392,6 +392,64 @@ describe('test executor handles like operator', () => {
 
     expect(result).toHaveLength(0);
   });
+
+  test('can execute selection of subfield', async () => {
+    const dataWithSubField = {
+      users: [
+        {
+          name: 'Eda',
+          address: {
+            line1: '123 Street Lane',
+            line2: 'Fake Town',
+          },
+        },
+        {
+          name: 'Lillith',
+          address: {
+            line1: '123 Street Lane',
+            line2: 'Fake Town',
+          },
+        },
+        {
+          name: 'Anne',
+          address: {
+            line1: '456 Road Street',
+            line2: 'Fake City',
+          },
+        },
+        {
+          name: 'Marcy',
+          address: {
+            line1: '456 Road Street',
+            line2: 'Fake City',
+          },
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'address.line1',
+        value: '123 Street Lane',
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, dataWithSubField);
+
+    expect(result).toEqual([
+      { address: { line1: '123 Street Lane' } },
+      { address: { line1: '123 Street Lane' } },
+    ]);
+  });
 });
 
 describe('test executor handles distinct', () => {
