@@ -31,10 +31,11 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
   IN: (value: unknown[], expected: unknown) => value.includes(expected),
 };
 
+// TODO: This should be dealt with in the parser
 export const followJsonPath = <T>(
   path: string,
   entry: Record<string, T> | Record<string, Record<string, T>> | undefined,
-  tableName: string,
+  tableName?: string,
 ): T => {
   const tokens = path.split('.');
 
@@ -228,7 +229,33 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       output = filtered.map((value: Record<string, unknown>) => {
         const obj: Record<string, unknown> = {};
         query.projection.fields.forEach((field) => {
-          obj[field] = value[field];
+          const pathTokens = field.split('.');
+          if (pathTokens.length === 1) {
+            obj[field] = value[field];
+          } else {
+            const fieldValue = followJsonPath(field, value);
+            const assignSubValue = (
+              target: Record<string, unknown>,
+              tokens: string[],
+              toAssign: unknown,
+            ) => {
+              if (tokens.length === 1) {
+                // eslint-disable-next-line no-param-reassign
+                target[tokens[0]] = toAssign;
+              } else {
+                if (!target[tokens[0]]) {
+                  // eslint-disable-next-line no-param-reassign
+                  target[tokens[0]] = {};
+                }
+                assignSubValue(
+                  target[tokens[0]] as Record<string, unknown>,
+                  tokens.slice(1),
+                  toAssign,
+                );
+              }
+            };
+            assignSubValue(obj, pathTokens, fieldValue);
+          }
         });
         return obj as T;
       });
