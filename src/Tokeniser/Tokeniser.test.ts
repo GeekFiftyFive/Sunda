@@ -136,4 +136,37 @@ describe('test tokeniser', () => {
       '"George"',
     ]);
   });
+
+  test('can tokenise subfields in select statement', () => {
+    const actual = tokenise(
+      "SELECT address.line1 FROM users WHERE address.line1 = '123 Street Lane'",
+    );
+    expect(actual).toEqual([
+      'SELECT',
+      'address.line1',
+      'FROM',
+      'users',
+      'WHERE',
+      'address.line1',
+      '=',
+      "'123 Street Lane'",
+    ]);
+  });
+
+  test('can tokenise subfields in distinct statement', () => {
+    const actual = tokenise(
+      "SELECT DISTINCT address.line1 FROM users WHERE address.line1 = '123 Street Lane'",
+    );
+    expect(actual).toEqual([
+      'SELECT',
+      'DISTINCT',
+      'address.line1',
+      'FROM',
+      'users',
+      'WHERE',
+      'address.line1',
+      '=',
+      "'123 Street Lane'",
+    ]);
+  });
 });

@@ -394,6 +394,85 @@ describe('test executor handles like operator', () => {
   });
 });
 
+describe('test executor handles subfields in select', () => {
+  const data = {
+    users: [
+      {
+        name: 'Eda',
+        address: {
+          line1: '123 Street Lane',
+          line2: 'Fake Town',
+        },
+      },
+      {
+        name: 'Lillith',
+        address: {
+          line1: '123 Street Lane',
+          line2: 'Fake Town',
+        },
+      },
+      {
+        name: 'Anne',
+        address: {
+          line1: '456 Road Street',
+          line2: 'Fake City',
+        },
+      },
+      {
+        name: 'Marcy',
+        address: {
+          line1: '456 Road Street',
+          line2: 'Fake City',
+        },
+      },
+    ],
+  };
+
+  test('can execute selection of subfield', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'address.line1',
+        value: '123 Street Lane',
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      { address: { line1: '123 Street Lane' } },
+      { address: { line1: '123 Street Lane' } },
+    ]);
+  });
+
+  test('can execute selection of subfield with distinct', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      { address: { line1: '123 Street Lane' } },
+      { address: { line1: '456 Road Street' } },
+    ]);
+  });
+});
+
 describe('test executor handles distinct', () => {
   const data = {
     test_data: [

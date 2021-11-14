@@ -476,6 +476,67 @@ describe('test parser', () => {
       joins: [{ table: 'users' }],
     });
   });
+
+  test('parse subfield in select statement', () => {
+    const tokens = [
+      'SELECT',
+      'address.line1',
+      'FROM',
+      'users',
+      'WHERE',
+      'address.line1',
+      '=',
+      "'123 Street Lane'",
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'address.line1',
+        value: '123 Street Lane',
+      },
+      joins: [],
+    });
+  });
+
+  test('parse subfield in distinct statement', () => {
+    const tokens = [
+      'SELECT',
+      'DISTINCT',
+      'address.line1',
+      'FROM',
+      'users',
+      'WHERE',
+      'address.line1',
+      '=',
+      "'123 Street Lane'",
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        field: 'address.line1',
+        value: '123 Street Lane',
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
