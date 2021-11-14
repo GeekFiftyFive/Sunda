@@ -392,41 +392,43 @@ describe('test executor handles like operator', () => {
 
     expect(result).toHaveLength(0);
   });
+});
+
+describe('test executor handles subfields in select', () => {
+  const data = {
+    users: [
+      {
+        name: 'Eda',
+        address: {
+          line1: '123 Street Lane',
+          line2: 'Fake Town',
+        },
+      },
+      {
+        name: 'Lillith',
+        address: {
+          line1: '123 Street Lane',
+          line2: 'Fake Town',
+        },
+      },
+      {
+        name: 'Anne',
+        address: {
+          line1: '456 Road Street',
+          line2: 'Fake City',
+        },
+      },
+      {
+        name: 'Marcy',
+        address: {
+          line1: '456 Road Street',
+          line2: 'Fake City',
+        },
+      },
+    ],
+  };
 
   test('can execute selection of subfield', async () => {
-    const dataWithSubField = {
-      users: [
-        {
-          name: 'Eda',
-          address: {
-            line1: '123 Street Lane',
-            line2: 'Fake Town',
-          },
-        },
-        {
-          name: 'Lillith',
-          address: {
-            line1: '123 Street Lane',
-            line2: 'Fake Town',
-          },
-        },
-        {
-          name: 'Anne',
-          address: {
-            line1: '456 Road Street',
-            line2: 'Fake City',
-          },
-        },
-        {
-          name: 'Marcy',
-          address: {
-            line1: '456 Road Street',
-            line2: 'Fake City',
-          },
-        },
-      ],
-    };
-
     const query: Query = {
       projection: {
         type: ProjectionType.SELECTED,
@@ -443,11 +445,30 @@ describe('test executor handles like operator', () => {
       joins: [],
     };
 
-    const result = await wrapAndExec<Record<string, unknown>>(query, dataWithSubField);
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
 
     expect(result).toEqual([
       { address: { line1: '123 Street Lane' } },
       { address: { line1: '123 Street Lane' } },
+    ]);
+  });
+
+  test('can execute selection of subfield with distinct', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['address.line1'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'users',
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      { address: { line1: '123 Street Lane' } },
+      { address: { line1: '456 Road Street' } },
     ]);
   });
 });

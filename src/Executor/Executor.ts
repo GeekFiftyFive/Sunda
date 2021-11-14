@@ -56,6 +56,19 @@ export const followJsonPath = <T>(
   return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
+const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
+  if (tokens.length === 1) {
+    // eslint-disable-next-line no-param-reassign
+    target[tokens[0]] = toAssign;
+  } else {
+    if (!target[tokens[0]]) {
+      // eslint-disable-next-line no-param-reassign
+      target[tokens[0]] = {};
+    }
+    assignSubValue(target[tokens[0]] as Record<string, unknown>, tokens.slice(1), toAssign);
+  }
+};
+
 const handleSingularCondition = (
   condition: SingularCondition,
   entry: Record<string, unknown>,
@@ -160,7 +173,7 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
     values.forEach((value) => {
       let matches = 0;
       fields.forEach((field) => {
-        if (entry[field] === value[field]) {
+        if (followJsonPath(field, entry) === followJsonPath(field, value)) {
           matches += 1;
         }
       });
@@ -172,7 +185,7 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
     if (unique) {
       const newValue: Record<string, unknown> = {};
       fields.forEach((field) => {
-        newValue[field] = entry[field];
+        assignSubValue(newValue, field.split('.'), followJsonPath(field, entry));
       });
       values.push(newValue);
     }
@@ -230,32 +243,8 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
         const obj: Record<string, unknown> = {};
         query.projection.fields.forEach((field) => {
           const pathTokens = field.split('.');
-          if (pathTokens.length === 1) {
-            obj[field] = value[field];
-          } else {
-            const fieldValue = followJsonPath(field, value);
-            const assignSubValue = (
-              target: Record<string, unknown>,
-              tokens: string[],
-              toAssign: unknown,
-            ) => {
-              if (tokens.length === 1) {
-                // eslint-disable-next-line no-param-reassign
-                target[tokens[0]] = toAssign;
-              } else {
-                if (!target[tokens[0]]) {
-                  // eslint-disable-next-line no-param-reassign
-                  target[tokens[0]] = {};
-                }
-                assignSubValue(
-                  target[tokens[0]] as Record<string, unknown>,
-                  tokens.slice(1),
-                  toAssign,
-                );
-              }
-            };
-            assignSubValue(obj, pathTokens, fieldValue);
-          }
+          const fieldValue = followJsonPath(field, value);
+          assignSubValue(obj, pathTokens, fieldValue);
         });
         return obj as T;
       });
