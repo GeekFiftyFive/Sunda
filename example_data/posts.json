@@ -2,19 +2,23 @@
   "posts": [
     {
       "ID": 1,
-      "PosterID": 1
+      "PosterID": 1,
+      "Views": 10
     },
     {
       "ID": 2,
-      "PosterID": 1
+      "PosterID": 1,
+      "Views": 12
     },
     {
       "ID": 3,
-      "PosterID": 2
+      "PosterID": 2,
+      "Views": 9
     },
     {
       "ID": 4,
-      "PosterID": 2
+      "PosterID": 2,
+      "Views": 9
     }
   ],
   "users": [

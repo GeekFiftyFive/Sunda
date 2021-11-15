@@ -110,3 +110,51 @@ describe('End to end tests of aggregate queries', () => {
     expect(actual).toEqual([{ count: 4 }]);
   });
 });
+
+describe('Complex queries', () => {
+  test('complex query with join and projection of subfield', async () => {
+    const data = {
+      users: [
+        {
+          name: 'Katara',
+          id: 1,
+        },
+        {
+          name: 'Sokka',
+          id: 2,
+        },
+        {
+          name: 'Aang',
+          id: 3,
+        },
+      ],
+      posts: [
+        {
+          title: 'Post 1',
+          posterId: 1,
+          views: 20,
+        },
+        {
+          title: 'Post 2',
+          posterId: 1,
+          views: 10,
+        },
+        {
+          title: 'Post 3',
+          posterId: 2,
+          views: 12,
+        },
+        {
+          title: 'Post 4',
+          posterId: 3,
+          views: 9,
+        },
+      ],
+    };
+
+    const query =
+      'SELECT DISTINCT users.name FROM posts JOIN users WHERE posts.posterId = users.id AND posts.views >= 10';
+    const actual = await executeQueryFromObject<{ users: { name: string } }>(query, data);
+    expect(actual).toEqual([{ users: { name: 'Katara' } }, { users: { name: 'Sokka' } }]);
+  });
+});
