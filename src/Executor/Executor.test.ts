@@ -648,18 +648,22 @@ describe('executor can handle joins', () => {
       {
         ID: 1,
         PosterID: 1,
+        Views: 10,
       },
       {
         ID: 2,
         PosterID: 1,
+        Views: 11,
       },
       {
         ID: 3,
         PosterID: 2,
+        Views: 12,
       },
       {
         ID: 4,
         PosterID: 2,
+        Views: 8,
       },
     ],
     users: [
@@ -722,6 +726,51 @@ describe('executor can handle joins', () => {
         },
         users: {
           ID: 1,
+          Name: 'George',
+        },
+      },
+    ]);
+  });
+
+  test('executor handles join with no constraint on joined table', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.DISTINCT,
+          fields: ['users.Name'],
+        },
+        aggregation: AggregateType.NONE,
+        table: 'posts',
+        condition: {
+          boolean: BooleanType.AND,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'posts.PosterId',
+            value: {
+              field: 'users.ID',
+            },
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.GTE,
+            field: 'posts.Views',
+            value: 10,
+          },
+        } as ConditionPair,
+        joins: [{ table: 'users' }],
+      },
+      data,
+    );
+
+    expect(result).toEqual([
+      {
+        users: {
+          Name: 'Fred',
+        },
+      },
+      {
+        users: {
           Name: 'George',
         },
       },
