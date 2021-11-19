@@ -748,7 +748,7 @@ describe('executor can handle joins', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'posts.PosterId',
+            field: 'posts.PosterID',
             value: {
               field: 'users.ID',
             },
