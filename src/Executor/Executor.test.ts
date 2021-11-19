@@ -713,6 +713,7 @@ describe('executor can handle joins', () => {
         posts: {
           ID: 1,
           PosterID: 1,
+          Views: 10,
         },
         users: {
           ID: 1,
@@ -723,6 +724,7 @@ describe('executor can handle joins', () => {
         posts: {
           ID: 2,
           PosterID: 1,
+          Views: 11,
         },
         users: {
           ID: 1,
