@@ -768,12 +768,12 @@ describe('executor can handle joins', () => {
     expect(result).toEqual([
       {
         users: {
-          Name: 'Fred',
+          Name: 'George',
         },
       },
       {
         users: {
-          Name: 'George',
+          Name: 'Fred',
         },
       },
     ]);
