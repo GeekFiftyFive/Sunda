@@ -169,4 +169,28 @@ describe('test tokeniser', () => {
       "'123 Street Lane'",
     ]);
   });
+
+  test('can tokenise join with no constraint on joined table', () => {
+    const actual = tokenise(
+      'SELECT DISTINCT users.name FROM posts JOIN users WHERE posts.posterId = users.id AND posts.views >= 10',
+    );
+
+    expect(actual).toEqual([
+      'SELECT',
+      'DISTINCT',
+      'users.name',
+      'FROM',
+      'posts',
+      'JOIN',
+      'users',
+      'WHERE',
+      'posts.posterId',
+      '=',
+      'users.id',
+      'AND',
+      'posts.views',
+      '>=',
+      '10',
+    ]);
+  });
 });
