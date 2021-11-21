@@ -431,6 +431,54 @@ describe('test parser', () => {
     });
   });
 
+  test('can parse join with no constraint on joined table', () => {
+    const tokens = [
+      'SELECT',
+      'DISTINCT',
+      'users.Name',
+      'FROM',
+      'posts',
+      'JOIN',
+      'users',
+      'WHERE',
+      'posts.PosterId',
+      '=',
+      'users.ID',
+      'AND',
+      'posts.Views',
+      '>=',
+      '10',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.DISTINCT,
+        fields: ['users.Name'],
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'posts.PosterId',
+          value: {
+            field: 'users.ID',
+          },
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.GTE,
+          field: 'posts.Views',
+          value: 10,
+        },
+      },
+      joins: [{ table: 'users' }],
+    });
+  });
+
   test("parse simple join using 'on'", () => {
     const tokens = [
       'SELECT',

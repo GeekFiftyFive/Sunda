@@ -44,7 +44,10 @@ export const followJsonPath = <T>(
   }
 
   if (tokens[0] === tableName) {
-    return followJsonPath<T>(tokens.slice(1).join('.'), entry, tableName);
+    const rootLevelResolution = followJsonPath<T>(tokens.slice(1).join('.'), entry, tableName);
+    if (rootLevelResolution) {
+      return rootLevelResolution;
+    }
   }
 
   const next = (entry as Record<string, Record<string, T>>)[tokens[0]];
