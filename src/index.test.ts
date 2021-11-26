@@ -163,6 +163,20 @@ describe('Complex queries', () => {
     expect(actual).toEqual([{ users: { name: 'Katara' } }, { users: { name: 'Sokka' } }]);
   });
 
+  test("join using 'OR' conditional", async () => {
+    const query =
+      "SELECT posts.title, posts.views FROM posts JOIN users ON posts.posterId = users.id WHERE users.name = 'Aang' OR users.id = 1";
+    const actual = await executeQueryFromObject<{ users: { name: string; id: number } }>(
+      query,
+      data,
+    );
+    expect(actual).toEqual([
+      { posts: { title: 'Post 1', views: 20 } },
+      { posts: { title: 'Post 2', views: 10 } },
+      { posts: { title: 'Post 4', views: 9 } },
+    ]);
+  });
+
   test("query including 'like' condition", async () => {
     const query = 'SELECT * FROM users WHERE users.name like "%a"';
     const actual = await executeQueryFromObject<{ users: { name: string; id: number } }>(
