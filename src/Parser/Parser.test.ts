@@ -587,6 +587,61 @@ describe('test parser', () => {
   });
 });
 
+describe("test parsing 'IN' operator", () => {
+  test('parse in operator with numeric values', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'posts', 'WHERE', 'ID', 'IN', '(', '1', ',', '3', ')'];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.IN,
+        field: 'ID',
+        value: [1, 3],
+      },
+      joins: [],
+    });
+  });
+
+  test('parse in operator with string values', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'Title',
+      'IN',
+      '(',
+      "'Hello, world'",
+      ',',
+      "'Goodbye all!'",
+      ')',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.IN,
+        field: 'Title',
+        value: ['Hello, world', 'Goodbye all!'],
+      },
+      joins: [],
+    });
+  });
+});
+
 describe('test parser error handling', () => {
   test('get sensible error when empty query parsed', () => {
     expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));

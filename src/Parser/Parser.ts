@@ -100,6 +100,55 @@ const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
   return index >= 0 ? index : arr.indexOf(value.toLowerCase());
 };
 
+const isSet = (tokens: string[]): boolean => {
+  if (tokens[0] !== '(') {
+    return false;
+  }
+
+  for (let i = 1; i < tokens.length; i += 1) {
+    if (tokens[i] === ')') {
+      return true;
+    }
+
+    if (i % 2 === 0 && tokens[i] !== ',') {
+      return false;
+    }
+  }
+
+  return false;
+};
+
+const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } => {
+  if (tokens[0] !== '(') {
+    throw new Error('Not a valid set');
+  }
+
+  const toReturn = {
+    setValue: [] as unknown[],
+    consumed: 1,
+  };
+
+  for (let i = 1; i < tokens.length; i += 1) {
+    if (tokens[i] === ')') {
+      toReturn.consumed += 1;
+      break;
+    }
+
+    if (i % 2 === 0 && tokens[i] !== ',') {
+      throw new Error('Not a valid set');
+    }
+
+    if (i % 2 === 1) {
+      const value = parseValue(tokens[i]);
+      toReturn.setValue.push(value);
+    }
+
+    toReturn.consumed += 1;
+  }
+
+  return toReturn;
+};
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
@@ -144,14 +193,24 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     offset = 1;
   }
 
+  const valueIsSet = isSet(tokens.slice(2 + offset));
+  let setValue: unknown[];
+  let consumed = 1;
+
+  if (valueIsSet) {
+    const parsedSet = parseSet(tokens.slice(2 + offset));
+    setValue = parsedSet.setValue;
+    consumed = parsedSet.consumed;
+  }
+
   return {
     condition: {
       boolean,
       comparison: tokens[1 + offset] as Comparison,
       field: tokens[0 + offset],
-      value: parseValue(tokens[2 + offset]),
+      value: valueIsSet ? setValue : parseValue(tokens[2 + offset]),
     } as SingularCondition,
-    tokens: tokens.slice(3 + offset),
+    tokens: tokens.slice(2 + offset + consumed),
   };
 };
 
