@@ -28,7 +28,7 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
       .replace(/_/gm, '.')}$`;
     return new RegExp(regex).test(value);
   },
-  IN: (value: unknown[], expected: unknown) => value.includes(expected),
+  IN: (value: unknown, expected: unknown[]) => expected.includes(value),
 };
 
 // TODO: This should be dealt with in the parser
@@ -85,11 +85,11 @@ const handleSingularCondition = (
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const isJoin = typeof condition.value === 'object';
+  const isJoin = typeof condition.value === 'object' && !Array.isArray(condition.value);
   let joinedTableName: string | undefined;
   let joinedEntry: Record<string, unknown> = {};
 
-  if (typeof condition.value === 'object') {
+  if (typeof condition.value === 'object' && !Array.isArray(condition.value)) {
     // TODO: Need to improve typing surrounding comparison values to avoid this kind of mess
     // eslint-disable-next-line prefer-destructuring
     joinedTableName = (condition.value as { field: string }).field.split('.')[0];

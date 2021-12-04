@@ -193,4 +193,40 @@ describe('test tokeniser', () => {
       '10',
     ]);
   });
+
+  test('can tokenise in operator with numerical values', () => {
+    const actual = tokenise('SELECT * FROM posts WHERE ID IN (1, 3)');
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'ID',
+      'IN',
+      '(',
+      '1',
+      ',',
+      '3',
+      ')',
+    ]);
+  });
+
+  test('can tokenise in operator with string values', () => {
+    const actual = tokenise("SELECT * FROM posts WHERE Title IN ('Hello, world', 'Goodbye all!')");
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'Title',
+      'IN',
+      '(',
+      "'Hello, world'",
+      ',',
+      "'Goodbye all!'",
+      ')',
+    ]);
+  });
 });
