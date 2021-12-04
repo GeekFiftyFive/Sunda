@@ -32,7 +32,7 @@ Additionally, using the flags `--help` or `-h` will print the command usage.
 
 ## Syntax
 
-As previously mentioned, Sunda implements a subset of SQL. At this point, it allows for combining conditions using `NOT`, `AND` and `OR`, and performing comparisons on field values using `=`, `<>`, `>`, `<`, `>=`, `<=`, and `LIKE`. These comparison operators behave as one would expect from SQL.
+As previously mentioned, Sunda implements a subset of SQL. At this point, it allows for combining conditions using `NOT`, `AND` and `OR`, and performing comparisons on field values using `=`, `<>`, `>`, `<`, `>=`, `<=`, `LIKE`, and `IN`. These comparison operators behave as one would expect from SQL.
 
 Fields on the root level object are treated as tables (if they are an array). For example, if the JSON you are querying looks like this:
 
