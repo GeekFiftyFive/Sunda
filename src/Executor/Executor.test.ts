@@ -779,3 +779,104 @@ describe('executor can handle joins', () => {
     ]);
   });
 });
+
+describe("executor can handle 'IN' operator", () => {
+  const data = {
+    posts: [
+      {
+        ID: 1,
+        PosterID: 1,
+        Views: 10,
+        Title: 'Hello, world',
+      },
+      {
+        ID: 2,
+        PosterID: 1,
+        Views: 11,
+        Title: 'Hello, all',
+      },
+      {
+        ID: 3,
+        PosterID: 2,
+        Views: 12,
+        Title: 'Goodbye, folks!',
+      },
+      {
+        ID: 4,
+        PosterID: 2,
+        Views: 8,
+        Title: 'Goodbye all!',
+      },
+    ],
+  };
+
+  test("executor can handle 'IN' operator with numeric values", async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.ALL,
+        },
+        aggregation: AggregateType.NONE,
+        table: 'posts',
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.IN,
+          field: 'ID',
+          value: [1, 3],
+        } as SingularCondition,
+        joins: [],
+      },
+      data,
+    );
+
+    expect(result).toEqual([
+      {
+        ID: 1,
+        PosterID: 1,
+        Views: 10,
+        Title: 'Hello, world',
+      },
+      {
+        ID: 3,
+        PosterID: 2,
+        Views: 12,
+        Title: 'Goodbye, folks!',
+      },
+    ]);
+  });
+
+  test("executor can handle 'IN' operator with string values", async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.ALL,
+        },
+        aggregation: AggregateType.NONE,
+        table: 'posts',
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.IN,
+          field: 'Title',
+          value: ['Hello, world', 'Goodbye all!'],
+        } as SingularCondition,
+        joins: [],
+      },
+      data,
+    );
+
+    expect(result).toEqual([
+      {
+        ID: 1,
+        PosterID: 1,
+        Views: 10,
+        Title: 'Hello, world',
+      },
+      {
+        ID: 4,
+        PosterID: 2,
+        Views: 8,
+        Title: 'Goodbye all!',
+      },
+    ]);
+  });
+});
