@@ -109,6 +109,24 @@ describe('End to end tests of aggregate queries', () => {
     const actual = await executeQueryFromObject<{ count: number }>(query, data);
     expect(actual).toEqual([{ count: 4 }]);
   });
+
+  test("simple query with 'in' operator", async () => {
+    const query = 'SELECT * FROM tableName WHERE name IN ("Test 1", "Test 4")';
+
+    const actual = await executeQueryFromObject<Record<string, unknown>>(query, data);
+    expect(actual).toEqual([
+      {
+        name: 'Test 1',
+        value: 20,
+        id: 1,
+      },
+      {
+        name: 'Test 4',
+        value: 10,
+        id: 11,
+      },
+    ]);
+  });
 });
 
 describe('Complex queries', () => {
