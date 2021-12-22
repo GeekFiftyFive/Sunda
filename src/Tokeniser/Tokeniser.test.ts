@@ -229,4 +229,24 @@ describe('test tokeniser', () => {
       ')',
     ]);
   });
+
+  test('can tokenise brackets', () => {
+    const actual = tokenise("SELECT * FROM posts WHERE (ID = 1 and Title = 'Hello, world')");
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      '(',
+      'ID',
+      '=',
+      '1',
+      'and',
+      'Title',
+      '=',
+      "'Hello, world'",
+      ')',
+    ]);
+  });
 });
