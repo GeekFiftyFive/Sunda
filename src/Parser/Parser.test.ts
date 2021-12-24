@@ -642,6 +642,65 @@ describe("test parsing 'IN' operator", () => {
   });
 });
 
+describe('test parsing brackets', () => {
+  test('parse simple expression containing bracketed condition', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      '(',
+      'Title',
+      '=',
+      "'Goodbye all!'",
+      'or',
+      'Title',
+      '=',
+      "'Hello, world'",
+      ')',
+      'and',
+      'Views',
+      '>',
+      '10',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.AND,
+        lhs: {
+          boolean: BooleanType.OR,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Title',
+            value: 'Goodbye all!',
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'Title',
+            value: 'Hello, world',
+          },
+        },
+        rhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.GT,
+          field: 'Views',
+          value: 10,
+        },
+      },
+      joins: [],
+    });
+  });
+});
+
 describe('test parser error handling', () => {
   test('get sensible error when empty query parsed', () => {
     expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
