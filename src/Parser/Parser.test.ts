@@ -699,6 +699,83 @@ describe('test parsing brackets', () => {
       joins: [],
     });
   });
+
+  test('parse more complex expression with nested brackets', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'Title',
+      '=',
+      "'Goodbye all!'",
+      'OR',
+      '(',
+      '(',
+      'Value',
+      'IN',
+      '(',
+      '1',
+      ',',
+      '2',
+      ')',
+      'OR',
+      'Views',
+      '>',
+      '10',
+      ')',
+      'OR',
+      'ID',
+      '=',
+      '10',
+      ')',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      table: 'posts',
+      condition: {
+        boolean: BooleanType.OR,
+        lhs: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.EQ,
+          field: 'Title',
+          value: 'Goodbye all!',
+        },
+        rhs: {
+          boolean: BooleanType.OR,
+          lhs: {
+            boolean: BooleanType.OR,
+            lhs: {
+              boolean: BooleanType.NONE,
+              comparison: Comparison.IN,
+              field: 'Value',
+              value: [1, 2],
+            },
+            rhs: {
+              boolean: BooleanType.NONE,
+              comparison: Comparison.GT,
+              field: 'Views',
+              value: 10,
+            },
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            field: 'ID',
+            value: 10,
+          },
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {

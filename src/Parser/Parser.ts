@@ -197,9 +197,18 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     }
   }
 
-  const orIndex = indexOfCaseInsensitive('or', tokens);
+  const orIndex = tokens.reduce((orIndex, token, index) => {
+    if (orIndex >= 0) {
+      return orIndex;
+    }
+    if (token.toLowerCase() === 'or' && !isInBracketedExpression(index, bracketPairs)) {
+      return index;
+    }
+
+    return orIndex;
+  }, -1);
   // TODO: Deduplicate
-  if (orIndex >= 0 && !isInBracketedExpression(orIndex, bracketPairs)) {
+  if (orIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
     const rhs = parseCondition(tokens.slice(orIndex + 1)).condition;
     return {
@@ -212,9 +221,18 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     };
   }
 
-  const andIndex = indexOfCaseInsensitive('and', tokens);
+  const andIndex = tokens.reduce((andIndex, token, index) => {
+    if (andIndex >= 0) {
+      return andIndex;
+    }
+    if (token.toLowerCase() === 'and' && !isInBracketedExpression(index, bracketPairs)) {
+      return index;
+    }
 
-  if (andIndex >= 0 && !isInBracketedExpression(andIndex, bracketPairs)) {
+    return andIndex;
+  }, -1);
+
+  if (andIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
     const rhs = parseCondition(tokens.slice(andIndex + 1)).condition;
     return {
@@ -227,8 +245,10 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     };
   }
 
-  if (bracketPairs.length > 0 && bracketPairs[0].start === 0) {
-    return parseCondition(tokens.slice(bracketPairs[0].start + 1, bracketPairs[0].end));
+  const enclosingBracketPair = bracketPairs.find((pair) => pair.start === 0);
+
+  if (enclosingBracketPair) {
+    return parseCondition(tokens.slice(enclosingBracketPair.start + 1, enclosingBracketPair.end));
   }
 
   let boolean = BooleanType.NONE;
