@@ -95,11 +95,6 @@ const parseValue = (value: string): unknown => {
   };
 };
 
-const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
-  const index = arr.indexOf(value.toUpperCase());
-  return index >= 0 ? index : arr.indexOf(value.toLowerCase());
-};
-
 const isSet = (tokens: string[]): boolean => {
   if (tokens[0] !== '(') {
     return false;
