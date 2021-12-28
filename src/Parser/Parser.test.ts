@@ -720,7 +720,7 @@ describe('test parsing brackets', () => {
       ',',
       '2',
       ')',
-      'OR',
+      'AND',
       'Views',
       '>',
       '10',
@@ -751,7 +751,7 @@ describe('test parsing brackets', () => {
         rhs: {
           boolean: BooleanType.OR,
           lhs: {
-            boolean: BooleanType.OR,
+            boolean: BooleanType.AND,
             lhs: {
               boolean: BooleanType.NONE,
               comparison: Comparison.IN,

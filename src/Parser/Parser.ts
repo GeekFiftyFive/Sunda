@@ -156,6 +156,22 @@ const isInBracketedExpression = (
     return index > bracketPair.start && index < bracketPair.end;
   }, false);
 
+const firstUnbracketedIndex = (
+  searchValue: string,
+  tokens: string[],
+  bracketPairs: { start: number; end: number }[],
+) =>
+  tokens.reduce((orIndex, token, index) => {
+    if (orIndex >= 0) {
+      return orIndex;
+    }
+    if (token.toLowerCase() === searchValue && !isInBracketedExpression(index, bracketPairs)) {
+      return index;
+    }
+
+    return orIndex;
+  }, -1);
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
@@ -192,16 +208,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     }
   }
 
-  const orIndex = tokens.reduce((orIndex, token, index) => {
-    if (orIndex >= 0) {
-      return orIndex;
-    }
-    if (token.toLowerCase() === 'or' && !isInBracketedExpression(index, bracketPairs)) {
-      return index;
-    }
-
-    return orIndex;
-  }, -1);
+  const orIndex = firstUnbracketedIndex('or', tokens, bracketPairs);
   // TODO: Deduplicate
   if (orIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
@@ -216,16 +223,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     };
   }
 
-  const andIndex = tokens.reduce((andIndex, token, index) => {
-    if (andIndex >= 0) {
-      return andIndex;
-    }
-    if (token.toLowerCase() === 'and' && !isInBracketedExpression(index, bracketPairs)) {
-      return index;
-    }
-
-    return andIndex;
-  }, -1);
+  const andIndex = firstUnbracketedIndex('and', tokens, bracketPairs);
 
   if (andIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
