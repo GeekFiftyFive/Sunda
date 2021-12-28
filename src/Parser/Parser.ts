@@ -95,11 +95,6 @@ const parseValue = (value: string): unknown => {
   };
 };
 
-const indexOfCaseInsensitive = (value: string, arr: string[]): number => {
-  const index = arr.indexOf(value.toUpperCase());
-  return index >= 0 ? index : arr.indexOf(value.toLowerCase());
-};
-
 const isSet = (tokens: string[]): boolean => {
   if (tokens[0] !== '(') {
     return false;
@@ -149,13 +144,71 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
   return toReturn;
 };
 
+const isInBracketedExpression = (
+  index: number,
+  bracketPairs: { start: number; end: number }[],
+): boolean =>
+  bracketPairs.reduce((toReturn, bracketPair) => {
+    if (toReturn) {
+      return toReturn;
+    }
+
+    return index > bracketPair.start && index < bracketPair.end;
+  }, false);
+
+const firstUnbracketedIndex = (
+  searchValue: string,
+  tokens: string[],
+  bracketPairs: { start: number; end: number }[],
+) =>
+  tokens.reduce((orIndex, token, index) => {
+    if (orIndex >= 0) {
+      return orIndex;
+    }
+    if (token.toLowerCase() === searchValue && !isInBracketedExpression(index, bracketPairs)) {
+      return index;
+    }
+
+    return orIndex;
+  }, -1);
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
     throw new Error('Invalid condition in WHERE clause');
   }
 
-  const orIndex = indexOfCaseInsensitive('or', tokens);
+  // Match brackets if there are any (and they are not part of an array)
+  let bracketIndex = tokens.findIndex((token) => token === '(');
+  const bracketPairs: { start: number; end: number }[] = [];
+
+  if (bracketIndex > -1) {
+    // Ensure bracket is not part of an array
+    if (tokens[bracketIndex - 1] !== 'IN') {
+      // Peek tokens and look for matching close bracket
+      const brackets = [];
+      do {
+        if (bracketIndex >= tokens.length) {
+          throw new Error('Could not find matching bracket pairs!');
+        }
+
+        if (tokens[bracketIndex] === '(') {
+          brackets.push(bracketIndex);
+        }
+
+        if (tokens[bracketIndex] === ')') {
+          const startIndex = brackets.pop();
+          bracketPairs.push({
+            start: startIndex,
+            end: bracketIndex,
+          });
+        }
+        bracketIndex += 1;
+      } while (brackets.length > 0);
+    }
+  }
+
+  const orIndex = firstUnbracketedIndex('or', tokens, bracketPairs);
   // TODO: Deduplicate
   if (orIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
@@ -170,7 +223,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     };
   }
 
-  const andIndex = indexOfCaseInsensitive('and', tokens);
+  const andIndex = firstUnbracketedIndex('and', tokens, bracketPairs);
 
   if (andIndex >= 0) {
     const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
@@ -183,6 +236,12 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
       } as ConditionPair,
       tokens: [], // FIXME: Actually properly figure out what's been consumed
     };
+  }
+
+  const enclosingBracketPair = bracketPairs.find((pair) => pair.start === 0);
+
+  if (enclosingBracketPair) {
+    return parseCondition(tokens.slice(enclosingBracketPair.start + 1, enclosingBracketPair.end));
   }
 
   let boolean = BooleanType.NONE;

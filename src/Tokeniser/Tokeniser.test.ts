@@ -229,4 +229,30 @@ describe('test tokeniser', () => {
       ')',
     ]);
   });
+
+  test('can tokenise brackets', () => {
+    const actual = tokenise(
+      "SELECT * FROM posts WHERE (Title = 'Goodbye all!' or Title = 'Hello, world') and Views > 10",
+    );
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      '(',
+      'Title',
+      '=',
+      "'Goodbye all!'",
+      'or',
+      'Title',
+      '=',
+      "'Hello, world'",
+      ')',
+      'and',
+      'Views',
+      '>',
+      '10',
+    ]);
+  });
 });
