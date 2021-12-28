@@ -149,15 +149,57 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
   return toReturn;
 };
 
+const isInBracketedExpression = (
+  index: number,
+  bracketPairs: { start: number; end: number }[],
+): boolean =>
+  bracketPairs.reduce((toReturn, bracketPair) => {
+    if (toReturn) {
+      return toReturn;
+    }
+
+    return index > bracketPair.start && index < bracketPair.end;
+  }, false);
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
     throw new Error('Invalid condition in WHERE clause');
   }
 
+  // Match brackets if there are any (and they are not part of an array)
+  let bracketIndex = tokens.findIndex((token) => token === '(');
+  const bracketPairs: { start: number; end: number }[] = [];
+
+  if (bracketIndex > -1) {
+    // Ensure bracket is not part of an array
+    if (tokens[bracketIndex - 1] !== 'IN') {
+      // Peek tokens and look for matching close bracket
+      const brackets = [];
+      do {
+        if (bracketIndex >= tokens.length) {
+          throw new Error('Could not find matching bracket pairs!');
+        }
+
+        if (tokens[bracketIndex] === '(') {
+          brackets.push(bracketIndex);
+        }
+
+        if (tokens[bracketIndex] === ')') {
+          const startIndex = brackets.pop();
+          bracketPairs.push({
+            start: startIndex,
+            end: bracketIndex,
+          });
+        }
+        bracketIndex += 1;
+      } while (brackets.length > 0);
+    }
+  }
+
   const orIndex = indexOfCaseInsensitive('or', tokens);
   // TODO: Deduplicate
-  if (orIndex >= 0) {
+  if (orIndex >= 0 && !isInBracketedExpression(orIndex, bracketPairs)) {
     const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
     const rhs = parseCondition(tokens.slice(orIndex + 1)).condition;
     return {
@@ -172,7 +214,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
 
   const andIndex = indexOfCaseInsensitive('and', tokens);
 
-  if (andIndex >= 0) {
+  if (andIndex >= 0 && !isInBracketedExpression(andIndex, bracketPairs)) {
     const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
     const rhs = parseCondition(tokens.slice(andIndex + 1)).condition;
     return {
@@ -183,6 +225,10 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
       } as ConditionPair,
       tokens: [], // FIXME: Actually properly figure out what's been consumed
     };
+  }
+
+  if (bracketPairs.length > 0 && bracketPairs[0].start === 0) {
+    return parseCondition(tokens.slice(bracketPairs[0].start + 1, bracketPairs[0].end));
   }
 
   let boolean = BooleanType.NONE;
