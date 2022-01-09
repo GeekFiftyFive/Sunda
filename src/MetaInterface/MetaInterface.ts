@@ -20,9 +20,7 @@ export const executeMetaCommand = async (
     tables.forEach((table) => {
       logFunction(table.name);
     });
-  }
-
-  if (tokens.length > 1 && tokens[0] === 'dump_schema') {
+  } else if (tokens.length > 1 && tokens[0] === 'dump_schema') {
     const tableName = tokens[1];
 
     const maybeTable = await datasource.getTable(tableName);
@@ -51,5 +49,7 @@ export const executeMetaCommand = async (
     const printableSchema = getPrintableSchema(await table.getSchema());
 
     logFunction(printableSchema);
+  } else {
+    throw new Error(`Invalid Meta command ${command}`);
   }
 };

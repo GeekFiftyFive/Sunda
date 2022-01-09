@@ -10,6 +10,7 @@ import { read } from './Reader';
 import { createObjectDataSource } from './ObjectDataSource';
 import { DataSource } from './CommonTypes';
 import { createArgsParser } from './ArgsParser';
+import { executeMetaCommand } from './MetaInterface';
 
 export * from './CommonTypes';
 
@@ -35,11 +36,19 @@ const startRepl = (inputPath: string) => {
   rl.setPrompt('sunda> ');
   rl.prompt();
   rl.on('line', async (input: string) => {
+    const firstCharacter = input.substring(0, 1);
+
     try {
-      console.log(await executeQueryFromObject(input, dataset));
+      if (firstCharacter === '!') {
+        // This is a MetaInterface command
+        await executeMetaCommand(input.substring(1), createObjectDataSource(dataset), console.log);
+      } else {
+        console.log(await executeQueryFromObject(input, dataset));
+      }
     } catch (e) {
       console.error(e.message);
     }
+
     rl.prompt();
   });
   rl.on('close', process.exit);
