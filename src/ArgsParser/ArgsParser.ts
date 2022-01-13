@@ -1,3 +1,5 @@
+import { logger } from '../CommonTypes/Logger';
+
 export interface ArgInput {
   key: string;
   default?: boolean;
@@ -6,8 +8,6 @@ export interface ArgInput {
   description?: string;
   noInput?: boolean;
 }
-
-type logger = (input: string) => void;
 
 export const createArgsParser = (
   argInputs: ArgInput[],
