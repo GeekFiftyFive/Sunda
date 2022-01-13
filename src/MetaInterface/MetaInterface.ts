@@ -11,6 +11,7 @@ const commandMappings: Record<
   string,
   (datasource: DataSource, logFunction: logger, args: string[]) => Promise<void>
 > = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   list_tables: async (datasource, logFunction, _args) => {
     const tables = await datasource.getTables();
 
@@ -51,6 +52,18 @@ const commandMappings: Record<
     const printableSchema = getPrintableSchema(await table.getSchema());
 
     logFunction(printableSchema);
+  },
+  help: async (_datasource, logFunction, _args) => {
+    const prompts: string[] = [
+      'MetaInterface Usage: !<command> [args]',
+      '',
+      'Commands:',
+      'list_tables                 List all tables in the datasource',
+      'dump_schema <table_name>    Dump the schema for the table with name <table_name>',
+      'help                        Print MetaInterface command usage instructions',
+    ];
+
+    prompts.forEach((prompt) => logFunction(prompt));
   },
 };
 
