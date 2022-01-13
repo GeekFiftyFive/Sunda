@@ -383,7 +383,7 @@ The available MetaInterface commands are as follows:
 | `dump_schema` | `table_name` | Dump the schema for the table with name `table_name` |
 | `help`        | None         | Print MetaInterface command usage instructions       |
 
-As an examples, say I wanted to dump the schema for a table named 'Users'. The command would be as follows:
+As an example, say I wanted to dump the schema for a table named 'Users'. The command would be as follows:
 
 ~~~
 sunda> !dump_schema Users
