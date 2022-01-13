@@ -7,21 +7,23 @@ interface PrintableSchema {
   [key: string]: string | PrintableSchema;
 }
 
-export const executeMetaCommand = async (
-  command: string,
-  datasource: DataSource,
-  logFunction: logger,
-): Promise<void> => {
-  const tokens = tokenise(command);
-
-  if (tokens.length === 1 && tokens[0] === 'list_tables') {
+const commandMappings: Record<
+  string,
+  (datasource: DataSource, logFunction: logger, args: string[]) => Promise<void>
+> = {
+  list_tables: async (datasource, logFunction, _args) => {
     const tables = await datasource.getTables();
 
     tables.forEach((table) => {
       logFunction(table.name);
     });
-  } else if (tokens.length > 1 && tokens[0] === 'dump_schema') {
-    const tableName = tokens[1];
+  },
+  dump_schema: async (datasource, logFunction, args) => {
+    if (args.length !== 1) {
+      throw new Error("Invalid arguments for MetaCommand 'dump_schema'");
+    }
+
+    const tableName = args[0];
 
     const maybeTable = await datasource.getTable(tableName);
 
@@ -49,7 +51,25 @@ export const executeMetaCommand = async (
     const printableSchema = getPrintableSchema(await table.getSchema());
 
     logFunction(printableSchema);
-  } else {
-    throw new Error(`Invalid Meta command ${command}`);
+  },
+};
+
+export const executeMetaCommand = async (
+  command: string,
+  datasource: DataSource,
+  logFunction: logger,
+): Promise<void> => {
+  const tokens = tokenise(command);
+
+  if (tokens.length < 1) {
+    throw new Error('Empty command passed to MetaInterface');
   }
+
+  const method = commandMappings[tokens[0]];
+
+  if (!method) {
+    throw new Error(`Invalid Meta command '${tokens[0]}'`);
+  }
+
+  await method(datasource, logFunction, tokens.slice(1));
 };
