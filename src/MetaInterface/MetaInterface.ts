@@ -57,7 +57,7 @@ const commandMappings: Record<
       'MetaInterface Usage: !<command> [args]',
       '',
       'Commands:',
-      'list_tables                 List all tables in the datasource',
+      'list_tables                 List all tables in the dataset',
       'dump_schema <table_name>    Dump the schema for the table with name <table_name>',
       'help                        Print MetaInterface command usage instructions',
     ];

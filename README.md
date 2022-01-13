@@ -368,3 +368,23 @@ It is also possible to load root level arrays. Take the following example, adapt
 ~~~
 
 The behaviour here is identical to the behaviour when dealing with JSONL files. The array will be loaded as a single table called `root`.
+
+## MetaInterface
+
+The MetaInterface is an interface built into the REPL intended to provide the user with additional information about the dataset being queried.
+
+At the time of writing, this MetaInterface is able to list all tables in the dataset, dump the schema for each table as well as provide usage information for the MetaInterface itself. All MetaInterface commands are prefixed with `!`. This is how the REPL distinguishes MetaInterface commands from queries.
+
+The available MetaInterface commands are as follows:
+
+| Command       | Arguments    | Functionality                                        |
+|---------------|--------------|------------------------------------------------------|
+| `list_tables` | None         | List all tables in the dataset                       |
+| `dump_schema` | `table_name` | Dump the schema for the table with name `table_name` |
+| `help`        | None         | Print MetaInterface command usage instructions       |
+
+As an examples, say I wanted to dump the schema for a table named 'Users'. The command would be as follows:
+
+~~~
+sunda> !dump_schema Users
+~~~

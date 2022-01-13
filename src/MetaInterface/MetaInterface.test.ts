@@ -82,7 +82,7 @@ describe('MetaInterface', () => {
     expect(mockLogger).toHaveBeenNthCalledWith(3, 'Commands:');
     expect(mockLogger).toHaveBeenNthCalledWith(
       4,
-      'list_tables                 List all tables in the datasource',
+      'list_tables                 List all tables in the dataset',
     );
     expect(mockLogger).toHaveBeenNthCalledWith(
       5,
