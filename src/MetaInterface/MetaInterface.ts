@@ -11,8 +11,7 @@ const commandMappings: Record<
   string,
   (datasource: DataSource, logFunction: logger, args: string[]) => Promise<void>
 > = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  list_tables: async (datasource, logFunction, _args) => {
+  list_tables: async (datasource, logFunction) => {
     const tables = await datasource.getTables();
 
     tables.forEach((table) => {
@@ -53,7 +52,7 @@ const commandMappings: Record<
 
     logFunction(printableSchema);
   },
-  help: async (_datasource, logFunction, _args) => {
+  help: async (_datasource, logFunction) => {
     const prompts: string[] = [
       'MetaInterface Usage: !<command> [args]',
       '',
