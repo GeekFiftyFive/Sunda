@@ -198,10 +198,10 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
 };
 
 export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
-  const maybeTable = await datasource.getTable(query.table);
+  const maybeTable = await datasource.getTable(query.dataset.value as string);
 
   if (maybeTable.isEmpty()) {
-    throw new Error(`${query.table} is not a valid table!`);
+    throw new Error(`${query.dataset.value as string} is not a valid table!`);
   }
 
   const table = await maybeTable.getValue().readFullTable();
@@ -231,7 +231,7 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     ? table
     : table
         .map((entry: Record<string, unknown>) =>
-          handleCondition(query.condition, entry, query.table, joinTables),
+          handleCondition(query.condition, entry, query.dataset.value as string, joinTables),
         )
         .filter((entry: unknown) => !!entry);
 

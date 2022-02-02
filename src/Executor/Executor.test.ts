@@ -8,6 +8,7 @@ import {
   SingularCondition,
   ConditionPair,
   AggregateType,
+  DataSetType,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -22,7 +23,7 @@ describe('test executeQuery', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'test_data',
+      dataset: { type: DataSetType.TABLE, value: 'test_data' },
       joins: [],
     };
 
@@ -41,7 +42,7 @@ describe('test executeQuery', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.COUNT,
-      table: 'test_data',
+      dataset: { type: DataSetType.TABLE, value: 'test_data' },
       joins: [],
     };
 
@@ -62,7 +63,7 @@ describe('test executeQuery', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'test_data',
+      dataset: { type: DataSetType.TABLE, value: 'test_data' },
       joins: [],
     };
 
@@ -217,7 +218,7 @@ describe('test executeQuery', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'test_data',
+      dataset: { type: DataSetType.TABLE, value: 'test_data' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
@@ -259,7 +260,7 @@ describe('test executeQuery', () => {
         fields: ['firstName', 'surname'],
       },
       aggregation: AggregateType.NONE,
-      table: 'test_data',
+      dataset: { type: DataSetType.TABLE, value: 'test_data' },
       joins: [],
     };
 
@@ -304,7 +305,7 @@ describe('test executor handles like operator', () => {
       type: ProjectionType.ALL,
     },
     aggregation: AggregateType.NONE,
-    table: 'test_data',
+    dataset: { type: DataSetType.TABLE, value: 'test_data' },
     joins: [],
   };
 
@@ -435,7 +436,7 @@ describe('test executor handles subfields in select', () => {
         fields: ['address.line1'],
       },
       aggregation: AggregateType.NONE,
-      table: 'users',
+      dataset: { type: DataSetType.TABLE, value: 'users' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
@@ -460,7 +461,7 @@ describe('test executor handles subfields in select', () => {
         fields: ['address.line1'],
       },
       aggregation: AggregateType.NONE,
-      table: 'users',
+      dataset: { type: DataSetType.TABLE, value: 'users' },
       joins: [],
     };
 
@@ -503,7 +504,7 @@ describe('test executor handles distinct', () => {
           fields: ['first_name'],
         },
         aggregation: AggregateType.NONE,
-        table: 'test_data',
+        dataset: { type: DataSetType.TABLE, value: 'test_data' },
         joins: [],
       },
       data,
@@ -520,7 +521,7 @@ describe('test executor handles distinct', () => {
           fields: ['first_name', 'age'],
         },
         aggregation: AggregateType.NONE,
-        table: 'test_data',
+        dataset: { type: DataSetType.TABLE, value: 'test_data' },
         joins: [],
       },
       data,
@@ -541,7 +542,7 @@ describe('test executor handles distinct', () => {
           fields: ['first_name', 'age'],
         },
         aggregation: AggregateType.COUNT,
-        table: 'test_data',
+        dataset: { type: DataSetType.TABLE, value: 'test_data' },
         joins: [],
       },
       data,
@@ -581,7 +582,7 @@ describe('AVG and SUM aggregates', () => {
           fields: ['price'],
         },
         aggregation: AggregateType.AVG,
-        table: 'treats',
+        dataset: { type: DataSetType.TABLE, value: 'treats' },
         joins: [],
       },
       data,
@@ -598,7 +599,7 @@ describe('AVG and SUM aggregates', () => {
           fields: ['price'],
         },
         aggregation: AggregateType.SUM,
-        table: 'treats',
+        dataset: { type: DataSetType.TABLE, value: 'treats' },
         joins: [],
       },
       data,
@@ -616,7 +617,7 @@ describe('AVG and SUM aggregates', () => {
             fields: ['name'],
           },
           aggregation: AggregateType.SUM,
-          table: 'treats',
+          dataset: { type: DataSetType.TABLE, value: 'treats' },
           joins: [],
         },
         data,
@@ -633,7 +634,7 @@ describe('AVG and SUM aggregates', () => {
             fields: ['name'],
           },
           aggregation: AggregateType.AVG,
-          table: 'treats',
+          dataset: { type: DataSetType.TABLE, value: 'treats' },
           joins: [],
         },
         data,
@@ -685,7 +686,7 @@ describe('executor can handle joins', () => {
           type: ProjectionType.ALL,
         },
         aggregation: AggregateType.NONE,
-        table: 'posts',
+        dataset: { type: DataSetType.TABLE, value: 'posts' },
         condition: {
           boolean: BooleanType.AND,
           lhs: {
@@ -742,7 +743,7 @@ describe('executor can handle joins', () => {
           fields: ['users.Name'],
         },
         aggregation: AggregateType.NONE,
-        table: 'posts',
+        dataset: { type: DataSetType.TABLE, value: 'posts' },
         condition: {
           boolean: BooleanType.AND,
           lhs: {
@@ -817,7 +818,7 @@ describe("executor can handle 'IN' operator", () => {
           type: ProjectionType.ALL,
         },
         aggregation: AggregateType.NONE,
-        table: 'posts',
+        dataset: { type: DataSetType.TABLE, value: 'posts' },
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,
@@ -852,7 +853,7 @@ describe("executor can handle 'IN' operator", () => {
           type: ProjectionType.ALL,
         },
         aggregation: AggregateType.NONE,
-        table: 'posts',
+        dataset: { type: DataSetType.TABLE, value: 'posts' },
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,

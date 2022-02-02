@@ -17,6 +17,11 @@ export enum Comparison {
   IN = 'IN',
 }
 
+export enum DataSetType {
+  TABLE,
+  SUBQUERY,
+}
+
 export enum ProjectionType {
   ALL,
   SELECTED,
@@ -55,10 +60,16 @@ export interface Projection {
   fields?: string[];
 }
 
+export interface DataSet {
+  type: DataSetType;
+  // eslint-disable-next-line no-use-before-define
+  value: string | Query;
+}
+
 export interface Query {
   projection: Projection;
   aggregation: AggregateType;
-  table: string;
+  dataset: DataSet;
   joins: Join[];
   condition?: Condition;
 }
@@ -377,7 +388,7 @@ export const parse = (input: string[]): Query => {
     tokens = tokens.slice(1);
     query = {
       projection,
-      table: tokens[0],
+      dataset: { type: DataSetType.TABLE, value: tokens[0] },
       aggregation,
       joins: [],
     };

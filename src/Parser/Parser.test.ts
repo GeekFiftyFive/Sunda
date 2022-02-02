@@ -1,4 +1,11 @@
-import { AggregateType, BooleanType, Comparison, parse, ProjectionType } from './Parser';
+import {
+  AggregateType,
+  BooleanType,
+  Comparison,
+  DataSetType,
+  parse,
+  ProjectionType,
+} from './Parser';
 
 describe('test parser', () => {
   test('parse simple valid query', () => {
@@ -10,7 +17,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       joins: [],
     });
   });
@@ -24,7 +31,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       joins: [],
     });
   });
@@ -38,7 +45,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
         field: 'field',
@@ -58,7 +65,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
         field: 'field',
@@ -78,7 +85,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
         field: 'field',
@@ -112,7 +119,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -155,7 +162,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.OR,
         lhs: {
@@ -202,7 +209,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.OR,
         lhs: {
@@ -240,7 +247,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NOT,
         field: 'field1',
@@ -275,7 +282,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -334,7 +341,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.COUNT,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       joins: [],
     });
   });
@@ -365,7 +372,7 @@ describe('test parser', () => {
         fields: ['fieldName'],
       },
       aggregation: AggregateType.SUM,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       joins: [],
     });
   });
@@ -380,7 +387,7 @@ describe('test parser', () => {
         fields: ['fieldName'],
       },
       aggregation: AggregateType.AVG,
-      table: 'tableName',
+      dataset: { type: DataSetType.TABLE, value: 'tableName' },
       joins: [],
     });
   });
@@ -409,7 +416,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -457,7 +464,7 @@ describe('test parser', () => {
         fields: ['users.Name'],
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -503,7 +510,7 @@ describe('test parser', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -544,7 +551,7 @@ describe('test parser', () => {
         fields: ['address.line1'],
       },
       aggregation: AggregateType.NONE,
-      table: 'users',
+      dataset: { type: DataSetType.TABLE, value: 'users' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
@@ -575,7 +582,7 @@ describe('test parser', () => {
         fields: ['address.line1'],
       },
       aggregation: AggregateType.NONE,
-      table: 'users',
+      dataset: { type: DataSetType.TABLE, value: 'users' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
@@ -597,7 +604,7 @@ describe("test parsing 'IN' operator", () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.IN,
@@ -630,7 +637,7 @@ describe("test parsing 'IN' operator", () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.IN,
@@ -671,7 +678,7 @@ describe('test parsing brackets', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.AND,
         lhs: {
@@ -739,7 +746,7 @@ describe('test parsing brackets', () => {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      table: 'posts',
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       condition: {
         boolean: BooleanType.OR,
         lhs: {
