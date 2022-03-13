@@ -330,6 +330,90 @@ Support for joins in Sunda is in its infancy. In addition to the previously high
 * It is currently not possible to pull out individual fields in the `SELECT` clause when a join is in use, only a wildcard can be used
 * When using an `OR` in the `WHERE` condition, any values matched via the use of `OR` will not pull back joined values from other tables
 
+## Subqueries
+
+Sunda has some support for sub queries. At present they require the use of an alias. The result of a subquery passed to an outer query will have each object nested in a field named after the chosen alias. Take this query for example:
+
+~~~
+SELECT * FROM (SELECT * FROM cats) as c
+~~~
+
+Assume that our dataset looks something like this:
+
+~~~
+{
+  "cats": [
+    {
+      "name": "Tom",
+      "breed": "Tabby",
+      "age": 5
+    },
+    {
+      "name": "Sarah",
+      "breed": "Maine Coon",
+      "age": 7
+    },
+    {
+      "name": "Rocket",
+      "breed": "Bengal",
+      "age": 2
+    },
+    {
+      "name": "Biscuits",
+      "breed": "British Shorthair",
+      "age": 10
+    },
+    {
+      "name": "Sam",
+      "breed": "Bengal",
+      "age": 14
+    }
+  ]
+}
+~~~
+
+The result of this query would look like this:
+
+~~~
+[
+  {
+    "c": {
+      "name": "Tom",
+      "breed": "Tabby",
+      "age": 5
+    }
+  },
+  {
+    "c": {
+      "name": "Sarah",
+      "breed": "Maine Coon",
+      "age": 7
+    }
+  },
+  {
+    "c": {
+      "name": "Rocket",
+      "breed": "Bengal",
+      "age": 2
+    }
+  },
+  {
+    "c": {
+      "name": "Biscuits",
+      "breed": "British Shorthair",
+      "age": 10
+    }
+  },
+  {
+    "c": {
+      "name": "Sam",
+      "breed": "Bengal",
+      "age": 14
+    }
+  }
+]
+~~~
+
 ## JSONL Support
 
 As well as individual JSON objects, Sunda also supports JSONL files. These are collections of JSON objects delimited by new lines. When using a JSONL file, one table will exist with the name `root`.
