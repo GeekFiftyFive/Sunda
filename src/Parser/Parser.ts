@@ -64,6 +64,7 @@ export interface DataSet {
   type: DataSetType;
   // eslint-disable-next-line no-use-before-define
   value: string | Query;
+  alias?: string;
 }
 
 export interface Query {
@@ -183,13 +184,7 @@ const firstUnbracketedIndex = (
     return orIndex;
   }, -1);
 
-const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
-  // TODO: This is extremely naive
-  if (tokens.length < 3) {
-    throw new Error('Invalid condition in WHERE clause');
-  }
-
-  // Match brackets if there are any (and they are not part of an array)
+const findBracketPairs = (tokens: string[]): { start: number; end: number }[] => {
   let bracketIndex = tokens.findIndex((token) => token === '(');
   const bracketPairs: { start: number; end: number }[] = [];
 
@@ -218,6 +213,18 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
       } while (brackets.length > 0);
     }
   }
+
+  return bracketPairs;
+};
+
+const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
+  // TODO: This is extremely naive
+  if (tokens.length < 3) {
+    throw new Error('Invalid condition in WHERE clause');
+  }
+
+  // Match brackets if there are any (and they are not part of an array)
+  const bracketPairs = findBracketPairs(tokens);
 
   const orIndex = firstUnbracketedIndex('or', tokens, bracketPairs);
   // TODO: Deduplicate
@@ -368,6 +375,42 @@ const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
   };
 };
 
+const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => {
+  let newTokens = tokens.slice(1);
+
+  if (newTokens[0] === '(') {
+    // Assume this is a sub-query
+    const bracketPairs = findBracketPairs(newTokens);
+
+    if (bracketPairs.length === 0 || bracketPairs[0].start !== 0) {
+      throw new Error('Could not find matching end bracket');
+    }
+
+    // eslint-disable-next-line no-use-before-define
+    const subquery = parse(newTokens.slice(bracketPairs[0].start + 1, bracketPairs[0].end));
+
+    newTokens = newTokens.slice(bracketPairs[0].end + 1);
+
+    if (newTokens[0] !== 'as') {
+      throw new Error('Expected an alias for subquery results');
+    }
+
+    return {
+      tokens: newTokens.slice(1),
+      dataset: {
+        type: DataSetType.SUBQUERY,
+        value: subquery,
+        alias: newTokens[1],
+      },
+    };
+  }
+
+  // Assume this is just a table name
+  // FIXME: Should have more error handling around this
+
+  return { tokens: newTokens, dataset: { type: DataSetType.TABLE, value: newTokens[0] } };
+};
+
 export const parse = (input: string[]): Query => {
   let query: Query;
   let projection: Projection;
@@ -385,10 +428,11 @@ export const parse = (input: string[]): Query => {
   }
 
   if (tokens[0].toLowerCase() === 'from') {
-    tokens = tokens.slice(1);
+    const parsedFrom = parseFrom(tokens);
+    tokens = parsedFrom.tokens;
     query = {
       projection,
-      dataset: { type: DataSetType.TABLE, value: tokens[0] },
+      dataset: parsedFrom.dataset,
       aggregation,
       joins: [],
     };

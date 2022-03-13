@@ -785,6 +785,60 @@ describe('test parsing brackets', () => {
   });
 });
 
+describe('test parser handles subqueries', () => {
+  test('parse basic subquery', () => {
+    const tokens = [
+      'SELECT',
+      'u.age',
+      'FROM',
+      '(',
+      'SELECT',
+      '*',
+      'FROM',
+      'users',
+      ')',
+      'as',
+      'u',
+      'WHERE',
+      'u.age',
+      '>',
+      '21',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['u.age'],
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.SUBQUERY,
+        alias: 'u',
+        value: {
+          projection: {
+            type: ProjectionType.ALL,
+          },
+          aggregation: AggregateType.NONE,
+          dataset: {
+            type: DataSetType.TABLE,
+            value: 'users',
+          },
+          joins: [],
+        },
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        field: 'u.age',
+        value: 21,
+      },
+      joins: [],
+    });
+  });
+});
+
 describe('test parser error handling', () => {
   test('get sensible error when empty query parsed', () => {
     expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
