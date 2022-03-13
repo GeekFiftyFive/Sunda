@@ -837,6 +837,61 @@ describe('test parser handles subqueries', () => {
       joins: [],
     });
   });
+
+  test('parse subquery containing brackets', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      '(',
+      'SELECT',
+      '*',
+      'FROM',
+      'users',
+      'WHERE',
+      'name',
+      'in',
+      '(',
+      "'Fred'",
+      ',',
+      "'Sammy'",
+      ')',
+      ')',
+      'as',
+      'u',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.SUBQUERY,
+        alias: 'u',
+        value: {
+          projection: {
+            type: ProjectionType.ALL,
+          },
+          aggregation: AggregateType.NONE,
+          dataset: {
+            type: DataSetType.TABLE,
+            value: 'users',
+          },
+          condition: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.IN,
+            field: 'name',
+            value: ['Fred', 'Sammy'],
+          },
+          joins: [],
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {

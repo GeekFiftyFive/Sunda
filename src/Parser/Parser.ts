@@ -283,7 +283,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
   return {
     condition: {
       boolean,
-      comparison: tokens[1 + offset] as Comparison,
+      comparison: tokens[1 + offset].toUpperCase() as Comparison,
       field: tokens[0 + offset],
       value: valueIsSet ? setValue : parseValue(tokens[2 + offset]),
     } as SingularCondition,
@@ -382,14 +382,20 @@ const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => 
     // Assume this is a sub-query
     const bracketPairs = findBracketPairs(newTokens);
 
-    if (bracketPairs.length === 0 || bracketPairs[0].start !== 0) {
+    if (bracketPairs.length === 0) {
+      throw new Error('Could not find matching end bracket');
+    }
+
+    const outerBracketPair = bracketPairs.find((bracketPair) => bracketPair.start === 0);
+
+    if (!outerBracketPair) {
       throw new Error('Could not find matching end bracket');
     }
 
     // eslint-disable-next-line no-use-before-define
-    const subquery = parse(newTokens.slice(bracketPairs[0].start + 1, bracketPairs[0].end));
+    const subquery = parse(newTokens.slice(outerBracketPair.start + 1, outerBracketPair.end));
 
-    newTokens = newTokens.slice(bracketPairs[0].end + 1);
+    newTokens = newTokens.slice(outerBracketPair.end + 1);
 
     if (newTokens[0] !== 'as') {
       throw new Error('Expected an alias for subquery results');
