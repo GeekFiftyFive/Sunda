@@ -881,3 +881,73 @@ describe("executor can handle 'IN' operator", () => {
     ]);
   });
 });
+
+describe('Executor can handle sub-queries', () => {
+  const data = {
+    users: [
+      {
+        name: 'Glendale',
+        age: 36,
+      },
+      {
+        name: 'Zulius',
+        age: 42,
+      },
+      {
+        name: 'Horse',
+        age: 20,
+      },
+      {
+        name: 'Rider',
+        age: 21,
+      },
+    ],
+  };
+
+  test('execute basic sub-query', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.SELECTED,
+        fields: ['u.age'],
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.SUBQUERY,
+        alias: 'u',
+        value: {
+          projection: {
+            type: ProjectionType.ALL,
+          },
+          aggregation: AggregateType.NONE,
+          dataset: {
+            type: DataSetType.TABLE,
+            value: 'users',
+          },
+          joins: [],
+        },
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        field: 'u.age',
+        value: 21,
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      {
+        u: {
+          age: 36,
+        },
+      },
+      {
+        u: {
+          age: 42,
+        },
+      },
+    ]);
+  });
+});

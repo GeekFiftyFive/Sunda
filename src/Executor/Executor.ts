@@ -198,13 +198,24 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
 };
 
 export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
-  const maybeTable = await datasource.getTable(query.dataset.value as string);
+  let sourceData: unknown[];
+  if (typeof query.dataset.value === 'object') {
+    // The dataset is a subquery
+    sourceData = await execute(query.dataset.value, datasource);
+    if (query.dataset.alias) {
+      sourceData = sourceData.map((datum) => ({
+        [query.dataset.alias]: datum,
+      }));
+    }
+  } else {
+    const maybeTable = await datasource.getTable(query.dataset.value as string);
 
-  if (maybeTable.isEmpty()) {
-    throw new Error(`${query.dataset.value as string} is not a valid table!`);
+    if (maybeTable.isEmpty()) {
+      throw new Error(`${query.dataset.value as string} is not a valid table!`);
+    }
+
+    sourceData = await maybeTable.getValue().readFullTable();
   }
-
-  const table = await maybeTable.getValue().readFullTable();
 
   const joinTables = await query.joins
     .reduce(
@@ -228,8 +239,8 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     });
 
   const filtered = !query.condition
-    ? table
-    : table
+    ? sourceData
+    : sourceData
         .map((entry: Record<string, unknown>) =>
           handleCondition(query.condition, entry, query.dataset.value as string, joinTables),
         )
