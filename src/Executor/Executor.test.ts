@@ -92,8 +92,8 @@ describe('test executeQuery', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'Apples',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'Apples' },
+          rhs: { type: 'LITERAL', value: 10 },
         } as SingularCondition,
       },
       data,
@@ -107,8 +107,8 @@ describe('test executeQuery', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.GTE,
-          field: 'Grapes',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'Grapes' },
+          rhs: { type: 'LITERAL', value: 10 },
         } as SingularCondition,
       },
       data,
@@ -124,14 +124,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.GTE,
-            field: 'Grapes',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'Grapes' },
+            rhs: { type: 'LITERAL', value: 10 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Apples',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'Apples' },
+            rhs: { type: 'LITERAL', value: 10 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -148,14 +148,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Pairs',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Pairs' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Oranges',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Oranges' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -172,14 +172,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NOT,
             comparison: Comparison.EQ,
-            field: 'Pairs',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Pairs' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Oranges',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Oranges' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -222,8 +222,8 @@ describe('test executeQuery', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.city',
-        value: 'Clowntown',
+        lhs: { type: 'FIELD', fieldName: 'address.city' },
+        rhs: { type: 'LITERAL', value: 'Clowntown' },
       } as SingularCondition,
       joins: [],
     };
@@ -316,8 +316,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'name',
-          value: '%ea%',
+          lhs: { type: 'FIELD', fieldName: 'name' },
+          rhs: { type: 'LITERAL', value: '%ea%' },
         } as SingularCondition,
       },
       data,
@@ -333,8 +333,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'name',
-          value: 's%',
+          lhs: { type: 'FIELD', fieldName: 'name' },
+          rhs: { type: 'LITERAL', value: 's%' },
         } as SingularCondition,
       },
       data,
@@ -350,8 +350,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: '%our',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: '%our' },
         } as SingularCondition,
       },
       data,
@@ -367,8 +367,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: 's____%',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: 's____%' },
         } as SingularCondition,
       },
       data,
@@ -384,8 +384,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: '.*',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: '.*' },
         } as SingularCondition,
       },
       data,
@@ -440,8 +440,8 @@ describe('test executor handles subfields in select', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.line1',
-        value: '123 Street Lane',
+        lhs: { type: 'FIELD', fieldName: 'address.line1' },
+        rhs: { type: 'LITERAL', value: '123 Street Lane' },
       } as SingularCondition,
       joins: [],
     };
@@ -692,16 +692,19 @@ describe('executor can handle joins', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'posts.PosterID',
-            value: {
-              field: 'users.ID',
+            lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+            rhs: {
+              type: 'LITERAL',
+              value: {
+                field: 'users.ID',
+              },
             },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'users.Name',
-            value: 'George',
+            lhs: { type: 'FIELD', fieldName: 'users.Name' },
+            rhs: { type: 'LITERAL', value: 'George' },
           },
         } as ConditionPair,
         joins: [{ table: 'users' }],
@@ -749,16 +752,19 @@ describe('executor can handle joins', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'posts.PosterID',
-            value: {
-              field: 'users.ID',
+            lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+            rhs: {
+              type: 'LITERAL',
+              value: {
+                field: 'users.ID',
+              },
             },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.GTE,
-            field: 'posts.Views',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'posts.Views' },
+            rhs: { type: 'LITERAL', value: 10 },
           },
         } as ConditionPair,
         joins: [{ table: 'users' }],
@@ -822,8 +828,8 @@ describe("executor can handle 'IN' operator", () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,
-          field: 'ID',
-          value: [1, 3],
+          lhs: { type: 'FIELD', fieldName: 'ID' },
+          rhs: { type: 'LITERAL', value: [1, 3] },
         } as SingularCondition,
         joins: [],
       },
@@ -857,8 +863,8 @@ describe("executor can handle 'IN' operator", () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,
-          field: 'Title',
-          value: ['Hello, world', 'Goodbye all!'],
+          lhs: { type: 'FIELD', fieldName: 'Title' },
+          rhs: { type: 'LITERAL', value: ['Hello, world', 'Goodbye all!'] },
         } as SingularCondition,
         joins: [],
       },
@@ -929,8 +935,8 @@ describe('Executor can handle sub-queries', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.GT,
-        field: 'u.age',
-        value: 21,
+        lhs: { type: 'FIELD', fieldName: 'u.age' },
+        rhs: { type: 'LITERAL', value: 21 },
       } as SingularCondition,
       joins: [],
     };

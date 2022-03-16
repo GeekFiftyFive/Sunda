@@ -17,6 +17,10 @@ export enum Comparison {
   IN = 'IN',
 }
 
+export enum FunctionName {
+  FIND_IN_SET = 'FIND_IN_SET',
+}
+
 export enum DataSetType {
   TABLE,
   SUBQUERY,
@@ -44,10 +48,30 @@ export interface Condition {
   boolean: BooleanType;
 }
 
+export interface Value {
+  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT';
+}
+
+export interface FieldValue extends Value {
+  type: 'FIELD';
+  fieldName: string;
+}
+
+export interface LiteralValue extends Value {
+  type: 'LITERAL';
+  value: unknown;
+}
+
+export interface FunctionResultValue extends Value {
+  type: 'FUNCTION_RESULT';
+  functionName: FunctionName;
+  args: Value[];
+}
+
 export interface SingularCondition extends Condition {
   comparison: Comparison;
-  field: string;
-  value: unknown;
+  lhs: Value;
+  rhs: Value;
 }
 
 export interface ConditionPair extends Condition {
@@ -76,7 +100,7 @@ export interface Query {
 }
 
 export const isSingularCondition = (object: Condition): object is SingularCondition =>
-  'comparison' in object && 'field' in object && 'value' in object;
+  'comparison' in object && 'lhs' in object && 'rhs' in object;
 
 export const isConditionPair = (object: Condition): object is ConditionPair =>
   'lhs' in object && 'rhs' in object;
@@ -284,8 +308,8 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     condition: {
       boolean,
       comparison: tokens[1 + offset].toUpperCase() as Comparison,
-      field: tokens[0 + offset],
-      value: valueIsSet ? setValue : parseValue(tokens[2 + offset]),
+      lhs: { type: 'FIELD', fieldName: tokens[0 + offset] },
+      rhs: { type: 'LITERAL', value: valueIsSet ? setValue : parseValue(tokens[2 + offset]) },
     } as SingularCondition,
     tokens: tokens.slice(2 + offset + consumed),
   };

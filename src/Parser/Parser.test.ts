@@ -48,8 +48,8 @@ describe('test parser', () => {
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
-        field: 'field',
-        value: 'value',
+        lhs: { type: 'FIELD', fieldName: 'field' },
+        rhs: { type: 'LITERAL', value: 'value' },
         comparison: Comparison.EQ,
       },
       joins: [],
@@ -68,8 +68,8 @@ describe('test parser', () => {
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
-        field: 'field',
-        value: 'value',
+        lhs: { type: 'FIELD', fieldName: 'field' },
+        rhs: { type: 'LITERAL', value: 'value' },
         comparison: Comparison.EQ,
       },
       joins: [],
@@ -88,8 +88,8 @@ describe('test parser', () => {
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NONE,
-        field: 'field',
-        value: 10,
+        lhs: { type: 'FIELD', fieldName: 'field' },
+        rhs: { type: 'LITERAL', value: 10 },
         comparison: Comparison.EQ,
       },
       joins: [],
@@ -124,14 +124,14 @@ describe('test parser', () => {
         boolean: BooleanType.AND,
         lhs: {
           boolean: BooleanType.NONE,
-          field: 'field1',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'field1' },
+          rhs: { type: 'LITERAL', value: 10 },
           comparison: Comparison.EQ,
         },
         rhs: {
           boolean: BooleanType.NONE,
-          field: 'field2',
-          value: 'value',
+          lhs: { type: 'FIELD', fieldName: 'field2' },
+          rhs: { type: 'LITERAL', value: 'value' },
           comparison: Comparison.LIKE,
         },
       },
@@ -167,14 +167,14 @@ describe('test parser', () => {
         boolean: BooleanType.OR,
         lhs: {
           boolean: BooleanType.NONE,
-          field: 'field1',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'field1' },
+          rhs: { type: 'LITERAL', value: 10 },
           comparison: Comparison.EQ,
         },
         rhs: {
           boolean: BooleanType.NONE,
-          field: 'field2',
-          value: 'value',
+          lhs: { type: 'FIELD', fieldName: 'field2' },
+          rhs: { type: 'LITERAL', value: 'value' },
           comparison: Comparison.LIKE,
         },
       },
@@ -214,22 +214,22 @@ describe('test parser', () => {
         boolean: BooleanType.OR,
         lhs: {
           boolean: BooleanType.NONE,
-          field: 'field1',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'field1' },
+          rhs: { type: 'LITERAL', value: 10 },
           comparison: Comparison.EQ,
         },
         rhs: {
           boolean: BooleanType.AND,
           lhs: {
             boolean: BooleanType.NONE,
-            field: 'field2',
-            value: 'value',
+            lhs: { type: 'FIELD', fieldName: 'field2' },
+            rhs: { type: 'LITERAL', value: 'value' },
             comparison: Comparison.LIKE,
           },
           rhs: {
             boolean: BooleanType.NONE,
-            field: 'field3',
-            value: 8,
+            lhs: { type: 'FIELD', fieldName: 'field3' },
+            rhs: { type: 'LITERAL', value: 8 },
             comparison: Comparison.GTE,
           },
         },
@@ -250,8 +250,8 @@ describe('test parser', () => {
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
       condition: {
         boolean: BooleanType.NOT,
-        field: 'field1',
-        value: 10,
+        lhs: { type: 'FIELD', fieldName: 'field1' },
+        rhs: { type: 'LITERAL', value: 10 },
         comparison: Comparison.EQ,
       },
       joins: [],
@@ -287,14 +287,14 @@ describe('test parser', () => {
         boolean: BooleanType.AND,
         lhs: {
           boolean: BooleanType.NOT,
-          field: 'field1',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'field1' },
+          rhs: { type: 'LITERAL', value: 10 },
           comparison: Comparison.EQ,
         },
         rhs: {
           boolean: BooleanType.NONE,
-          field: 'field2',
-          value: 'value',
+          lhs: { type: 'FIELD', fieldName: 'field2' },
+          rhs: { type: 'LITERAL', value: 'value' },
           comparison: Comparison.LIKE,
         },
       },
@@ -422,16 +422,19 @@ describe('test parser', () => {
         lhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'posts.PosterID',
-          value: {
-            field: 'users.ID',
+          lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+          rhs: {
+            type: 'LITERAL',
+            value: {
+              field: 'users.ID',
+            },
           },
         },
         rhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'users.Name',
-          value: 'George',
+          lhs: { type: 'FIELD', fieldName: 'users.Name' },
+          rhs: { type: 'LITERAL', value: 'George' },
         },
       },
       joins: [{ table: 'users' }],
@@ -448,7 +451,7 @@ describe('test parser', () => {
       'JOIN',
       'users',
       'WHERE',
-      'posts.PosterId',
+      'posts.PosterID',
       '=',
       'users.ID',
       'AND',
@@ -470,16 +473,19 @@ describe('test parser', () => {
         lhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'posts.PosterId',
-          value: {
-            field: 'users.ID',
+          lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+          rhs: {
+            type: 'LITERAL',
+            value: {
+              field: 'users.ID',
+            },
           },
         },
         rhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.GTE,
-          field: 'posts.Views',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'posts.Views' },
+          rhs: { type: 'LITERAL', value: 10 },
         },
       },
       joins: [{ table: 'users' }],
@@ -516,16 +522,19 @@ describe('test parser', () => {
         lhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'posts.PosterID',
-          value: {
-            field: 'users.ID',
+          lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+          rhs: {
+            type: 'LITERAL',
+            value: {
+              field: 'users.ID',
+            },
           },
         },
         rhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'users.Name',
-          value: 'George',
+          lhs: { type: 'FIELD', fieldName: 'users.Name' },
+          rhs: { type: 'LITERAL', value: 'George' },
         },
       },
       joins: [{ table: 'users' }],
@@ -555,8 +564,8 @@ describe('test parser', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.line1',
-        value: '123 Street Lane',
+        lhs: { type: 'FIELD', fieldName: 'address.line1' },
+        rhs: { type: 'LITERAL', value: '123 Street Lane' },
       },
       joins: [],
     });
@@ -586,8 +595,8 @@ describe('test parser', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.line1',
-        value: '123 Street Lane',
+        lhs: { type: 'FIELD', fieldName: 'address.line1' },
+        rhs: { type: 'LITERAL', value: '123 Street Lane' },
       },
       joins: [],
     });
@@ -608,8 +617,8 @@ describe("test parsing 'IN' operator", () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.IN,
-        field: 'ID',
-        value: [1, 3],
+        lhs: { type: 'FIELD', fieldName: 'ID' },
+        rhs: { type: 'LITERAL', value: [1, 3] },
       },
       joins: [],
     });
@@ -641,8 +650,8 @@ describe("test parsing 'IN' operator", () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.IN,
-        field: 'Title',
-        value: ['Hello, world', 'Goodbye all!'],
+        lhs: { type: 'FIELD', fieldName: 'Title' },
+        rhs: { type: 'LITERAL', value: ['Hello, world', 'Goodbye all!'] },
       },
       joins: [],
     });
@@ -686,21 +695,21 @@ describe('test parsing brackets', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Title',
-            value: 'Goodbye all!',
+            lhs: { type: 'FIELD', fieldName: 'Title' },
+            rhs: { type: 'LITERAL', value: 'Goodbye all!' },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Title',
-            value: 'Hello, world',
+            lhs: { type: 'FIELD', fieldName: 'Title' },
+            rhs: { type: 'LITERAL', value: 'Hello, world' },
           },
         },
         rhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.GT,
-          field: 'Views',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'Views' },
+          rhs: { type: 'LITERAL', value: 10 },
         },
       },
       joins: [],
@@ -752,8 +761,8 @@ describe('test parsing brackets', () => {
         lhs: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'Title',
-          value: 'Goodbye all!',
+          lhs: { type: 'FIELD', fieldName: 'Title' },
+          rhs: { type: 'LITERAL', value: 'Goodbye all!' },
         },
         rhs: {
           boolean: BooleanType.OR,
@@ -762,21 +771,21 @@ describe('test parsing brackets', () => {
             lhs: {
               boolean: BooleanType.NONE,
               comparison: Comparison.IN,
-              field: 'Value',
-              value: [1, 2],
+              lhs: { type: 'FIELD', fieldName: 'Value' },
+              rhs: { type: 'LITERAL', value: [1, 2] },
             },
             rhs: {
               boolean: BooleanType.NONE,
               comparison: Comparison.GT,
-              field: 'Views',
-              value: 10,
+              lhs: { type: 'FIELD', fieldName: 'Views' },
+              rhs: { type: 'LITERAL', value: 10 },
             },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'ID',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'ID' },
+            rhs: { type: 'LITERAL', value: 10 },
           },
         },
       },
@@ -831,8 +840,8 @@ describe('test parser handles subqueries', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.GT,
-        field: 'u.age',
-        value: 21,
+        lhs: { type: 'FIELD', fieldName: 'u.age' },
+        rhs: { type: 'LITERAL', value: 21 },
       },
       joins: [],
     });
@@ -883,14 +892,32 @@ describe('test parser handles subqueries', () => {
           condition: {
             boolean: BooleanType.NONE,
             comparison: Comparison.IN,
-            field: 'name',
-            value: ['Fred', 'Sammy'],
+            lhs: { type: 'FIELD', fieldName: 'name' },
+            rhs: { type: 'LITERAL', value: ['Fred', 'Sammy'] },
           },
           joins: [],
         },
       },
       joins: [],
     });
+  });
+});
+
+describe('test parser handlers functions', () => {
+  test('parse basic query containing function', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'FIND_IN_SET',
+      '(',
+      'names',
+      ',',
+      "'Fred'",
+      ')',
+    ];
   });
 });
 

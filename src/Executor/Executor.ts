@@ -5,8 +5,10 @@ import {
   Comparison,
   Condition,
   ConditionPair,
+  FieldValue,
   isConditionPair,
   isSingularCondition,
+  LiteralValue,
   ProjectionType,
   Query,
   SingularCondition,
@@ -78,24 +80,28 @@ const handleSingularCondition = (
   tableName: string,
   joinTables: Record<string, unknown[]>,
 ): Record<string, unknown> | undefined => {
-  const value = followJsonPath<unknown>(condition.field, entry, tableName);
+  const value = followJsonPath<unknown>((condition.lhs as FieldValue).fieldName, entry, tableName);
 
   if (value === undefined) {
     return undefined;
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const isJoin = typeof condition.value === 'object' && !Array.isArray(condition.value);
+  const isJoin =
+    (condition.rhs as LiteralValue).value &&
+    ((condition.rhs as LiteralValue).value as { field: string }).field;
   let joinedTableName: string | undefined;
   let joinedEntry: Record<string, unknown> = {};
 
-  if (typeof condition.value === 'object' && !Array.isArray(condition.value)) {
+  if (isJoin) {
     // TODO: Need to improve typing surrounding comparison values to avoid this kind of mess
     // eslint-disable-next-line prefer-destructuring
-    joinedTableName = (condition.value as { field: string }).field.split('.')[0];
+    joinedTableName = ((condition.rhs as LiteralValue).value as { field: string }).field.split(
+      '.',
+    )[0];
     joinedEntry = joinTables[joinedTableName].find((joinedEntry) => {
       const joinValue = followJsonPath<unknown>(
-        (condition.value as { field: string }).field,
+        ((condition.rhs as LiteralValue).value as { field: string }).field,
         joinedEntry as Record<string, unknown>,
         joinedTableName,
       );
@@ -104,7 +110,7 @@ const handleSingularCondition = (
     }) as Record<string, unknown>;
   }
 
-  const evaluated = comparison(value, condition.value);
+  const evaluated = comparison(value, (condition.rhs as LiteralValue).value);
   const fullEntry: Record<string, unknown> = joinedTableName
     ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
     : { ...entry };
