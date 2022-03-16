@@ -87,21 +87,17 @@ const handleSingularCondition = (
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const isJoin =
-    (condition.rhs as LiteralValue).value &&
-    ((condition.rhs as LiteralValue).value as { field: string }).field;
+  const isJoin = condition.rhs.type === 'FIELD';
   let joinedTableName: string | undefined;
   let joinedEntry: Record<string, unknown> = {};
 
   if (isJoin) {
     // TODO: Need to improve typing surrounding comparison values to avoid this kind of mess
     // eslint-disable-next-line prefer-destructuring
-    joinedTableName = ((condition.rhs as LiteralValue).value as { field: string }).field.split(
-      '.',
-    )[0];
+    joinedTableName = (condition.rhs as FieldValue).fieldName.split('.')[0];
     joinedEntry = joinTables[joinedTableName].find((joinedEntry) => {
       const joinValue = followJsonPath<unknown>(
-        ((condition.rhs as LiteralValue).value as { field: string }).field,
+        (condition.rhs as FieldValue).fieldName,
         joinedEntry as Record<string, unknown>,
         joinedTableName,
       );

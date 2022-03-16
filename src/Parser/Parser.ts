@@ -126,6 +126,7 @@ const parseValue = (value: string): unknown => {
     return match[1];
   }
 
+  // FIXME: This feels kind of hacky :S
   return {
     field: value,
   };
@@ -304,12 +305,34 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     consumed = parsedSet.consumed;
   }
 
+  let rhs: Value;
+
+  if (valueIsSet) {
+    rhs = {
+      type: 'LITERAL',
+      value: setValue,
+    } as LiteralValue;
+  } else {
+    const value = parseValue(tokens[2 + offset]);
+    if (typeof value === 'object' && (value as { field: string }).field) {
+      rhs = {
+        type: 'FIELD',
+        fieldName: (value as { field: string }).field,
+      } as FieldValue;
+    } else {
+      rhs = {
+        type: 'LITERAL',
+        value,
+      } as LiteralValue;
+    }
+  }
+
   return {
     condition: {
       boolean,
       comparison: tokens[1 + offset].toUpperCase() as Comparison,
       lhs: { type: 'FIELD', fieldName: tokens[0 + offset] },
-      rhs: { type: 'LITERAL', value: valueIsSet ? setValue : parseValue(tokens[2 + offset]) },
+      rhs,
     } as SingularCondition,
     tokens: tokens.slice(2 + offset + consumed),
   };

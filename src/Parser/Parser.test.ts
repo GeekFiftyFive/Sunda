@@ -424,10 +424,8 @@ describe('test parser', () => {
           comparison: Comparison.EQ,
           lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
           rhs: {
-            type: 'LITERAL',
-            value: {
-              field: 'users.ID',
-            },
+            type: 'FIELD',
+            fieldName: 'users.ID',
           },
         },
         rhs: {
@@ -475,10 +473,8 @@ describe('test parser', () => {
           comparison: Comparison.EQ,
           lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
           rhs: {
-            type: 'LITERAL',
-            value: {
-              field: 'users.ID',
-            },
+            type: 'FIELD',
+            fieldName: 'users.ID',
           },
         },
         rhs: {
@@ -523,12 +519,7 @@ describe('test parser', () => {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
           lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
-          rhs: {
-            type: 'LITERAL',
-            value: {
-              field: 'users.ID',
-            },
-          },
+          rhs: { type: 'FIELD', fieldName: 'users.ID' },
         },
         rhs: {
           boolean: BooleanType.NONE,

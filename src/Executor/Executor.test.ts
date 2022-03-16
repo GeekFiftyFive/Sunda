@@ -693,12 +693,7 @@ describe('executor can handle joins', () => {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
             lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
-            rhs: {
-              type: 'LITERAL',
-              value: {
-                field: 'users.ID',
-              },
-            },
+            rhs: { type: 'FIELD', fieldName: 'users.ID' },
           },
           rhs: {
             boolean: BooleanType.NONE,
@@ -753,12 +748,7 @@ describe('executor can handle joins', () => {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
             lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
-            rhs: {
-              type: 'LITERAL',
-              value: {
-                field: 'users.ID',
-              },
-            },
+            rhs: { type: 'FIELD', fieldName: 'users.ID' },
           },
           rhs: {
             boolean: BooleanType.NONE,
