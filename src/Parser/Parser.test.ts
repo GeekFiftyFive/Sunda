@@ -908,7 +908,45 @@ describe('test parser handlers functions', () => {
       ',',
       "'Fred'",
       ')',
+      '>',
+      '0',
     ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      },
+      joins: [],
+    });
   });
 });
 

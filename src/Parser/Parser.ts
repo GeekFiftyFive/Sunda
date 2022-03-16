@@ -242,6 +242,72 @@ const findBracketPairs = (tokens: string[]): { start: number; end: number }[] =>
   return bracketPairs;
 };
 
+const isFunctionResult = (tokens: string[]): boolean => {
+  if (tokens.length < 2 || tokens[1] !== '(') {
+    return false;
+  }
+
+  // FIXME: This check needs to be more exhaustive
+  if (!/^\w+$/.test(tokens[0])) {
+    return false;
+  }
+
+  const bracketedPairs = findBracketPairs(tokens);
+  const outerBrackets = bracketedPairs.find((pairs) => pairs.start === 1);
+
+  if (!outerBrackets) {
+    return false;
+  }
+
+  return true;
+};
+
+/* TODO: More consistent return types from these parsers! Some return the rest of the token
+  stream whilst others (such as this) return a count of the tokens consumed whilst parsing */
+const parseFunctionResult = (
+  tokens: string[],
+): { functionResultValue: FunctionResultValue; consumed: number } => {
+  const toReturn: { functionResultValue: FunctionResultValue; consumed: number } = {
+    functionResultValue: {
+      type: 'FUNCTION_RESULT',
+      functionName: tokens[0] as FunctionName,
+      args: [],
+    },
+    consumed: 1,
+  };
+
+  // TODO: De-dupe. This is very similar to what happens when we parse a set
+  for (let i = 2; i < tokens.length; i += 1) {
+    if (tokens[i] === ')') {
+      toReturn.consumed += 1;
+      break;
+    }
+
+    if (i % 2 === 1 && tokens[i] !== ',') {
+      throw new Error('Not a valid set');
+    }
+
+    if (i % 2 === 0) {
+      const value = parseValue(tokens[i]);
+      if ((value as { field: string }).field) {
+        toReturn.functionResultValue.args.push({
+          type: 'FIELD',
+          fieldName: (value as { field: string }).field,
+        } as FieldValue);
+      } else {
+        toReturn.functionResultValue.args.push({
+          type: 'LITERAL',
+          value,
+        } as LiteralValue);
+      }
+    }
+
+    toReturn.consumed += 1;
+  }
+
+  return toReturn;
+};
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
@@ -295,6 +361,8 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     offset = 1;
   }
 
+  let lhs: Value = { type: 'FIELD', fieldName: tokens[0 + offset] } as FieldValue;
+
   const valueIsSet = isSet(tokens.slice(2 + offset));
   let setValue: unknown[];
   let consumed = 1;
@@ -305,6 +373,15 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     consumed = parsedSet.consumed;
   }
 
+  const valueIsFunctionResult = isFunctionResult(tokens);
+  let functionResultValue: FunctionResultValue;
+
+  if (valueIsFunctionResult) {
+    const parsedFunctionResult = parseFunctionResult(tokens);
+    functionResultValue = parsedFunctionResult.functionResultValue;
+    consumed = parsedFunctionResult.consumed - offset - 1;
+  }
+
   let rhs: Value;
 
   if (valueIsSet) {
@@ -312,6 +389,14 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
       type: 'LITERAL',
       value: setValue,
     } as LiteralValue;
+  } else if (valueIsFunctionResult) {
+    lhs = functionResultValue;
+    offset += consumed + 1;
+    /* FIXME: Very hacky. Should breakout the logic to parse the righthand side instead of
+    tricking it like this */
+    const parsedRhs = parseCondition(['fakeToken', ...tokens.slice(1 + offset)]);
+    consumed = tokens.length - (parsedRhs.tokens.length - 2);
+    rhs = (parsedRhs.condition as SingularCondition).rhs;
   } else {
     const value = parseValue(tokens[2 + offset]);
     if (typeof value === 'object' && (value as { field: string }).field) {
@@ -331,7 +416,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     condition: {
       boolean,
       comparison: tokens[1 + offset].toUpperCase() as Comparison,
-      lhs: { type: 'FIELD', fieldName: tokens[0 + offset] },
+      lhs,
       rhs,
     } as SingularCondition,
     tokens: tokens.slice(2 + offset + consumed),
