@@ -255,4 +255,21 @@ describe('test tokeniser', () => {
       '10',
     ]);
   });
+
+  test('con tokenise functions', () => {
+    const actual = tokenise("SELECT * FROM posts WHERE FIND_IN_SET(names, 'Fred')");
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'FIND_IN_SET',
+      '(',
+      'names',
+      ',',
+      "'Fred'",
+      ')',
+    ]);
+  });
 });
