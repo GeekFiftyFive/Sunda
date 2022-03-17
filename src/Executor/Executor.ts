@@ -6,12 +6,15 @@ import {
   Condition,
   ConditionPair,
   FieldValue,
+  FunctionName,
+  FunctionResultValue,
   isConditionPair,
   isSingularCondition,
   LiteralValue,
   ProjectionType,
   Query,
   SingularCondition,
+  Value,
 } from '../Parser';
 
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
@@ -61,6 +64,36 @@ export const followJsonPath = <T>(
   return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
+const functions: Record<
+  FunctionName,
+  (args: Value[], entry: Record<string, unknown>, tableName: string) => LiteralValue
+> = {
+  FIND_IN_SET: (args, entry, tableName) => {
+    if (args.length !== 2) {
+      throw new Error("Incorrect number of arguments passed to 'FIND_IN_SET'");
+    }
+
+    if (args[1].type !== 'FIELD') {
+      throw new Error("Expected second argument of 'FIND_IN_SET' to be a field");
+    }
+
+    const fieldValue = followJsonPath((args[1] as FieldValue).fieldName, entry, tableName);
+
+    if (!Array.isArray(fieldValue)) {
+      throw new Error("Expected second argument to 'FIND_IN_SET' to refer to an array");
+    }
+
+    const searchValue = (args[0] as LiteralValue).value;
+
+    const index = (fieldValue as unknown[]).findIndex((setValue) => setValue === searchValue);
+
+    return {
+      type: 'LITERAL',
+      value: index + 1,
+    };
+  },
+};
+
 const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
   if (tokens.length === 1) {
     // eslint-disable-next-line no-param-reassign
@@ -80,7 +113,23 @@ const handleSingularCondition = (
   tableName: string,
   joinTables: Record<string, unknown[]>,
 ): Record<string, unknown> | undefined => {
-  const value = followJsonPath<unknown>((condition.lhs as FieldValue).fieldName, entry, tableName);
+  let value: unknown;
+
+  switch (condition.lhs.type) {
+    case 'FIELD':
+      value = followJsonPath<unknown>((condition.lhs as FieldValue).fieldName, entry, tableName);
+      break;
+    case 'LITERAL':
+      value = (condition.lhs as LiteralValue).value;
+      break;
+    case 'FUNCTION_RESULT':
+      value = functions[
+        (condition.lhs as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
+      ]((condition.lhs as FunctionResultValue).args, entry, tableName).value;
+      break;
+    default:
+      throw new Error(`Unexpected Value type ${condition.lhs.type}`);
+  }
 
   if (value === undefined) {
     return undefined;

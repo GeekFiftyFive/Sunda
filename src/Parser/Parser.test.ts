@@ -904,9 +904,9 @@ describe('test parser handlers functions', () => {
       'WHERE',
       'FIND_IN_SET',
       '(',
-      'names',
-      ',',
       "'Fred'",
+      ',',
+      'names',
       ')',
       '>',
       '0',
@@ -931,12 +931,12 @@ describe('test parser handlers functions', () => {
           functionName: 'FIND_IN_SET',
           args: [
             {
-              type: 'FIELD',
-              fieldName: 'names',
-            },
-            {
               type: 'LITERAL',
               value: 'Fred',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
             },
           ],
         },

@@ -947,3 +947,70 @@ describe('Executor can handle sub-queries', () => {
     ]);
   });
 });
+
+describe('executor can handle function calls', () => {
+  const data = {
+    posts: [
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
+      },
+      {
+        entry: 2,
+        names: ['Amy', 'Abby'],
+      },
+      {
+        entry: 3,
+        names: ['Frank', 'Fred'],
+      },
+    ],
+  };
+  test("can execute 'FIND_IN_SET'", async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
+      },
+      {
+        entry: 3,
+        names: ['Frank', 'Fred'],
+      },
+    ]);
+  });
+});
