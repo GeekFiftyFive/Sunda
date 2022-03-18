@@ -107,29 +107,35 @@ const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAss
   }
 };
 
+const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
+  let returnValue: unknown;
+
+  switch (value.type) {
+    case 'FIELD':
+      returnValue = followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
+      break;
+    case 'LITERAL':
+      returnValue = (value as LiteralValue).value;
+      break;
+    case 'FUNCTION_RESULT':
+      returnValue = functions[
+        (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
+      ]((value as FunctionResultValue).args, entry, tableName).value;
+      break;
+    default:
+      throw new Error(`Unexpected Value type ${value.type}`);
+  }
+
+  return returnValue;
+};
+
 const handleSingularCondition = (
   condition: SingularCondition,
   entry: Record<string, unknown>,
   tableName: string,
   joinTables: Record<string, unknown[]>,
 ): Record<string, unknown> | undefined => {
-  let value: unknown;
-
-  switch (condition.lhs.type) {
-    case 'FIELD':
-      value = followJsonPath<unknown>((condition.lhs as FieldValue).fieldName, entry, tableName);
-      break;
-    case 'LITERAL':
-      value = (condition.lhs as LiteralValue).value;
-      break;
-    case 'FUNCTION_RESULT':
-      value = functions[
-        (condition.lhs as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
-      ]((condition.lhs as FunctionResultValue).args, entry, tableName).value;
-      break;
-    default:
-      throw new Error(`Unexpected Value type ${condition.lhs.type}`);
-  }
+  const value = resolveValue(condition.lhs, entry, tableName);
 
   if (value === undefined) {
     return undefined;
@@ -155,7 +161,7 @@ const handleSingularCondition = (
     }) as Record<string, unknown>;
   }
 
-  const evaluated = comparison(value, (condition.rhs as LiteralValue).value);
+  const evaluated = comparison(value, resolveValue(condition.rhs, entry, tableName));
   const fullEntry: Record<string, unknown> = joinedTableName
     ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
     : { ...entry };
