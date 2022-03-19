@@ -74,12 +74,16 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
     case 'LITERAL':
       returnValue = (value as LiteralValue).value;
       break;
-    case 'FUNCTION_RESULT':
+    case 'FUNCTION_RESULT': {
+      const resolvedArgs = (value as FunctionResultValue).args.map((arg) =>
+        resolveValue(arg, entry, tableName),
+      );
       // eslint-disable-next-line no-use-before-define
       returnValue = functions[
         (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
-      ]((value as FunctionResultValue).args, entry, tableName).value;
+      ](...resolvedArgs).value;
       break;
+    }
     default:
       throw new Error(`Unexpected Value type ${value.type}`);
   }
@@ -87,17 +91,14 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
   return returnValue;
 };
 
-const functions: Record<
-  FunctionName,
-  (args: Value[], entry: Record<string, unknown>, tableName: string) => LiteralValue
-> = {
-  ARRAY_POSITION: (args, entry, tableName) => {
+const functions: Record<FunctionName, (...args: unknown[]) => LiteralValue> = {
+  ARRAY_POSITION: (...args) => {
     if (args.length !== 2) {
       throw new Error("Incorrect number of arguments passed to 'ARRAY_POSITION'");
     }
 
-    const arrayToSearch = resolveValue(args[0], entry, tableName);
-    const searchValue = resolveValue(args[1], entry, tableName);
+    const arrayToSearch = args[0];
+    const searchValue = args[1];
 
     if (!Array.isArray(arrayToSearch)) {
       throw new Error("Expected second argument to 'ARRAY_POSITION' to refer to an array");

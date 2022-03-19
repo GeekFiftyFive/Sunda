@@ -1075,6 +1075,70 @@ describe('test parser handlers functions', () => {
       joins: [],
     });
   });
+
+  test('can parse more than two arguments passed to function', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'ARRAY_POSITION',
+      '(',
+      '(',
+      "'Fred'",
+      ',',
+      "'Sammy'",
+      ')',
+      ',',
+      "'Fred'",
+      ',',
+      '1',
+      ')',
+      '>',
+      '0',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'ARRAY_POSITION',
+          args: [
+            {
+              type: 'LITERAL',
+              value: ['Fred', 'Sammy'],
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+            {
+              type: 'LITERAL',
+              value: 1,
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
