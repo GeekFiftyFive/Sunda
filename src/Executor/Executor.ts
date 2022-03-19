@@ -64,6 +64,29 @@ export const followJsonPath = <T>(
   return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
+const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
+  let returnValue: unknown;
+
+  switch (value.type) {
+    case 'FIELD':
+      returnValue = followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
+      break;
+    case 'LITERAL':
+      returnValue = (value as LiteralValue).value;
+      break;
+    case 'FUNCTION_RESULT':
+      // eslint-disable-next-line no-use-before-define
+      returnValue = functions[
+        (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
+      ]((value as FunctionResultValue).args, entry, tableName).value;
+      break;
+    default:
+      throw new Error(`Unexpected Value type ${value.type}`);
+  }
+
+  return returnValue;
+};
+
 const functions: Record<
   FunctionName,
   (args: Value[], entry: Record<string, unknown>, tableName: string) => LiteralValue
@@ -73,19 +96,14 @@ const functions: Record<
       throw new Error("Incorrect number of arguments passed to 'FIND_IN_SET'");
     }
 
-    if (args[1].type !== 'FIELD') {
-      throw new Error("Expected second argument of 'FIND_IN_SET' to be a field");
-    }
+    const searchValue = resolveValue(args[0], entry, tableName);
+    const arrayToSearch = resolveValue(args[1], entry, tableName);
 
-    const fieldValue = followJsonPath((args[1] as FieldValue).fieldName, entry, tableName);
-
-    if (!Array.isArray(fieldValue)) {
+    if (!Array.isArray(arrayToSearch)) {
       throw new Error("Expected second argument to 'FIND_IN_SET' to refer to an array");
     }
 
-    const searchValue = (args[0] as LiteralValue).value;
-
-    const index = (fieldValue as unknown[]).findIndex((setValue) => setValue === searchValue);
+    const index = (arrayToSearch as unknown[]).findIndex((setValue) => setValue === searchValue);
 
     return {
       type: 'LITERAL',
@@ -105,28 +123,6 @@ const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAss
     }
     assignSubValue(target[tokens[0]] as Record<string, unknown>, tokens.slice(1), toAssign);
   }
-};
-
-const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
-  let returnValue: unknown;
-
-  switch (value.type) {
-    case 'FIELD':
-      returnValue = followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
-      break;
-    case 'LITERAL':
-      returnValue = (value as LiteralValue).value;
-      break;
-    case 'FUNCTION_RESULT':
-      returnValue = functions[
-        (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
-      ]((value as FunctionResultValue).args, entry, tableName).value;
-      break;
-    default:
-      throw new Error(`Unexpected Value type ${value.type}`);
-  }
-
-  return returnValue;
 };
 
 const handleSingularCondition = (
