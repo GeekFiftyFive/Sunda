@@ -105,30 +105,53 @@ export const isSingularCondition = (object: Condition): object is SingularCondit
 export const isConditionPair = (object: Condition): object is ConditionPair =>
   'lhs' in object && 'rhs' in object;
 
-const parseValue = (value: string): unknown => {
-  const numeric = Number.parseFloat(value);
+const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
+  const numeric = Number.parseFloat(tokens[0]);
 
   if (!Number.isNaN(numeric)) {
-    return numeric;
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: numeric } as LiteralValue,
+    };
   }
 
   let regex = /"(.*)"/gm;
-  let match = regex.exec(value);
+  let match = regex.exec(tokens[0]);
 
   if (match) {
-    return match[1];
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
   }
 
   regex = /'(.*)'/gm;
-  match = regex.exec(value);
+  match = regex.exec(tokens[0]);
 
   if (match) {
-    return match[1];
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
+  }
+
+  // eslint-disable-next-line no-use-before-define
+  if (isSet(tokens)) {
+    // eslint-disable-next-line no-use-before-define
+    const setValue = parseSet(tokens);
+    return {
+      tokens: tokens.slice(setValue.consumed),
+      value: { type: 'LITERAL', value: setValue.setValue } as LiteralValue,
+    };
   }
 
   // FIXME: This feels kind of hacky :S
   return {
-    field: value,
+    tokens: tokens.slice(1),
+    value: {
+      type: 'FIELD',
+      fieldName: tokens[0],
+    } as FieldValue,
   };
 };
 
@@ -171,8 +194,11 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
     }
 
     if (i % 2 === 1) {
-      const value = parseValue(tokens[i]);
-      toReturn.setValue.push(value);
+      const value = parseValue(tokens.slice(i));
+      if (value.value.type !== 'LITERAL') {
+        throw new Error('Handling of non-literal values in sets not yet implemented');
+      }
+      toReturn.setValue.push((value.value as LiteralValue).value);
     }
 
     toReturn.consumed += 1;
@@ -277,32 +303,26 @@ const parseFunctionResult = (
   };
 
   // TODO: De-dupe. This is very similar to what happens when we parse a set
-  for (let i = 2; i < tokens.length; i += 1) {
+  for (let i = 2; i < tokens.length; ) {
     if (tokens[i] === ')') {
       toReturn.consumed += 1;
       break;
     }
 
     if (i % 2 === 1 && tokens[i] !== ',') {
-      throw new Error('Not a valid set');
+      throw new Error('Not a valid arguments list');
     }
 
     if (i % 2 === 0) {
-      const value = parseValue(tokens[i]);
-      if ((value as { field: string }).field) {
-        toReturn.functionResultValue.args.push({
-          type: 'FIELD',
-          fieldName: (value as { field: string }).field,
-        } as FieldValue);
-      } else {
-        toReturn.functionResultValue.args.push({
-          type: 'LITERAL',
-          value,
-        } as LiteralValue);
-      }
+      const value = parseValue(tokens.slice(i));
+      const increment = tokens.length - i - value.tokens.length;
+      i += increment;
+      toReturn.consumed += increment;
+      toReturn.functionResultValue.args.push(value.value);
+    } else {
+      i += 1;
+      toReturn.consumed += 1;
     }
-
-    toReturn.consumed += 1;
   }
 
   return toReturn;
@@ -412,18 +432,8 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     consumed = tokens.length - (parsedRhs.tokens.length - 2);
     rhs = (parsedRhs.condition as SingularCondition).rhs;
   } else {
-    const value = parseValue(tokens[2 + offset]);
-    if (typeof value === 'object' && (value as { field: string }).field) {
-      rhs = {
-        type: 'FIELD',
-        fieldName: (value as { field: string }).field,
-      } as FieldValue;
-    } else {
-      rhs = {
-        type: 'LITERAL',
-        value,
-      } as LiteralValue;
-    }
+    const value = parseValue(tokens.slice(2 + offset));
+    rhs = value.value;
   }
 
   return {

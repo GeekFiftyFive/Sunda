@@ -1017,6 +1017,64 @@ describe('test parser handlers functions', () => {
       joins: [],
     });
   });
+
+  test('can parse sets being passed to a function', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'FIND_IN_SET',
+      '(',
+      "'Fred'",
+      ',',
+      '(',
+      "'Fred'",
+      ',',
+      "'Sammy'",
+      ')',
+      ')',
+      '>',
+      '0',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+            {
+              type: 'LITERAL',
+              value: ['Fred', 'Sammy'],
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
