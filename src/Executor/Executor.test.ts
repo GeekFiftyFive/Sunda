@@ -961,7 +961,11 @@ describe('executor can handle function calls', () => {
       },
       {
         entry: 3,
-        names: ['Frank', 'Fred'],
+        names: ['James', 'Fred'],
+      },
+      {
+        entry: 4,
+        names: ['Fred', 'Abby', 'Julia'],
       },
     ],
   };
@@ -1009,7 +1013,66 @@ describe('executor can handle function calls', () => {
       },
       {
         entry: 3,
-        names: ['Frank', 'Fred'],
+        names: ['James', 'Fred'],
+      },
+      {
+        entry: 4,
+        names: ['Fred', 'Abby', 'Julia'],
+      },
+    ]);
+  });
+
+  test('can execute functions that appear on the right hand side of condition', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'James',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+          ],
+        },
+        rhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+          ],
+        },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
       },
     ]);
   });
