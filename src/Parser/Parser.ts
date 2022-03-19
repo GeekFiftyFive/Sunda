@@ -373,12 +373,24 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     consumed = parsedSet.consumed;
   }
 
-  const valueIsFunctionResult = isFunctionResult(tokens);
-  let functionResultValue: FunctionResultValue;
+  /* FIXME: These could probably be cleaner and cheaper if we simply try to parse
+  the function result values and return undefined if the values are not function
+  results */
+  const leftHandValueIsFunctionResult = isFunctionResult(tokens);
+  let leftHandfunctionResultValue: FunctionResultValue;
 
-  if (valueIsFunctionResult) {
+  if (leftHandValueIsFunctionResult) {
     const parsedFunctionResult = parseFunctionResult(tokens);
-    functionResultValue = parsedFunctionResult.functionResultValue;
+    leftHandfunctionResultValue = parsedFunctionResult.functionResultValue;
+    consumed = parsedFunctionResult.consumed - offset - 1;
+  }
+
+  const rightHandValueIsFunctionResult = isFunctionResult(tokens.slice(consumed + 1));
+  let rightHandfunctionResultValue: FunctionResultValue;
+
+  if (rightHandValueIsFunctionResult) {
+    const parsedFunctionResult = parseFunctionResult(tokens.slice(consumed + 1));
+    rightHandfunctionResultValue = parsedFunctionResult.functionResultValue;
     consumed = parsedFunctionResult.consumed - offset - 1;
   }
 
@@ -389,8 +401,10 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
       type: 'LITERAL',
       value: setValue,
     } as LiteralValue;
-  } else if (valueIsFunctionResult) {
-    lhs = functionResultValue;
+  } else if (rightHandValueIsFunctionResult) {
+    rhs = rightHandfunctionResultValue;
+  } else if (leftHandValueIsFunctionResult) {
+    lhs = leftHandfunctionResultValue;
     offset += consumed + 1;
     /* FIXME: Very hacky. Should breakout the logic to parse the righthand side instead of
     tricking it like this */

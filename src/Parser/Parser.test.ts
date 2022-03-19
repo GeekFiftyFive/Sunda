@@ -948,6 +948,75 @@ describe('test parser handlers functions', () => {
       joins: [],
     });
   });
+
+  test('parse basic query containing function on rhs of condition', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'FIND_IN_SET',
+      '(',
+      "'Fred'",
+      ',',
+      'names',
+      ')',
+      '>',
+      'FIND_IN_SET',
+      '(',
+      "'Barry'",
+      ',',
+      'names',
+      ')',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+          ],
+        },
+        rhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'FIND_IN_SET',
+          args: [
+            {
+              type: 'LITERAL',
+              value: 'Barry',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+          ],
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
