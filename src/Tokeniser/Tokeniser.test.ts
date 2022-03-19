@@ -257,14 +257,14 @@ describe('test tokeniser', () => {
   });
 
   test('con tokenise functions', () => {
-    const actual = tokenise("SELECT * FROM posts WHERE FIND_IN_SET(names, 'Fred') > 0");
+    const actual = tokenise("SELECT * FROM posts WHERE ARRAY_POSITION(names, 'Fred') > 0");
     expect(actual).toEqual([
       'SELECT',
       '*',
       'FROM',
       'posts',
       'WHERE',
-      'FIND_IN_SET',
+      'ARRAY_POSITION',
       '(',
       'names',
       ',',

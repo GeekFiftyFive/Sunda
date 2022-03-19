@@ -18,7 +18,7 @@ export enum Comparison {
 }
 
 export enum FunctionName {
-  FIND_IN_SET = 'FIND_IN_SET',
+  ARRAY_POSITION = 'ARRAY_POSITION',
 }
 
 export enum DataSetType {
@@ -145,7 +145,6 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     };
   }
 
-  // FIXME: This feels kind of hacky :S
   return {
     tokens: tokens.slice(1),
     value: {
@@ -416,12 +415,7 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
 
   let rhs: Value;
 
-  if (valueIsSet) {
-    rhs = {
-      type: 'LITERAL',
-      value: setValue,
-    } as LiteralValue;
-  } else if (rightHandValueIsFunctionResult) {
+  if (rightHandValueIsFunctionResult) {
     rhs = rightHandfunctionResultValue;
   } else if (leftHandValueIsFunctionResult) {
     lhs = leftHandfunctionResultValue;
@@ -431,6 +425,11 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     const parsedRhs = parseCondition(['fakeToken', ...tokens.slice(1 + offset)]);
     consumed = tokens.length - (parsedRhs.tokens.length - 2);
     rhs = (parsedRhs.condition as SingularCondition).rhs;
+  } else if (valueIsSet) {
+    rhs = {
+      type: 'LITERAL',
+      value: setValue,
+    } as LiteralValue;
   } else {
     const value = parseValue(tokens.slice(2 + offset));
     rhs = value.value;

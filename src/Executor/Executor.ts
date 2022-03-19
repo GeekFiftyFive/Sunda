@@ -91,16 +91,16 @@ const functions: Record<
   FunctionName,
   (args: Value[], entry: Record<string, unknown>, tableName: string) => LiteralValue
 > = {
-  FIND_IN_SET: (args, entry, tableName) => {
+  ARRAY_POSITION: (args, entry, tableName) => {
     if (args.length !== 2) {
-      throw new Error("Incorrect number of arguments passed to 'FIND_IN_SET'");
+      throw new Error("Incorrect number of arguments passed to 'ARRAY_POSITION'");
     }
 
-    const searchValue = resolveValue(args[0], entry, tableName);
-    const arrayToSearch = resolveValue(args[1], entry, tableName);
+    const arrayToSearch = resolveValue(args[0], entry, tableName);
+    const searchValue = resolveValue(args[1], entry, tableName);
 
     if (!Array.isArray(arrayToSearch)) {
-      throw new Error("Expected second argument to 'FIND_IN_SET' to refer to an array");
+      throw new Error("Expected second argument to 'ARRAY_POSITION' to refer to an array");
     }
 
     const index = (arrayToSearch as unknown[]).findIndex((setValue) => setValue === searchValue);

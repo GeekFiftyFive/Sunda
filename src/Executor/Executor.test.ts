@@ -969,7 +969,7 @@ describe('executor can handle function calls', () => {
       },
     ],
   };
-  test("can execute 'FIND_IN_SET'", async () => {
+  test("can execute 'ARRAY_POSITION'", async () => {
     const query: Query = {
       projection: {
         type: ProjectionType.ALL,
@@ -984,15 +984,15 @@ describe('executor can handle function calls', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'Fred',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
             },
           ],
         },
@@ -1037,29 +1037,29 @@ describe('executor can handle function calls', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'James',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'James',
             },
           ],
         },
         rhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'Fred',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
             },
           ],
         },

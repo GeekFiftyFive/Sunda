@@ -902,11 +902,11 @@ describe('test parser handlers functions', () => {
       'FROM',
       'posts',
       'WHERE',
-      'FIND_IN_SET',
+      'ARRAY_POSITION',
       '(',
-      "'Fred'",
-      ',',
       'names',
+      ',',
+      "'Fred'",
       ')',
       '>',
       '0',
@@ -928,15 +928,15 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'Fred',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
             },
           ],
         },
@@ -956,18 +956,18 @@ describe('test parser handlers functions', () => {
       'FROM',
       'posts',
       'WHERE',
-      'FIND_IN_SET',
+      'ARRAY_POSITION',
       '(',
-      "'Fred'",
-      ',',
       'names',
+      ',',
+      "'Fred'",
       ')',
       '>',
-      'FIND_IN_SET',
+      'ARRAY_POSITION',
       '(',
-      "'Barry'",
-      ',',
       'names',
+      ',',
+      "'Barry'",
       ')',
     ];
 
@@ -987,29 +987,29 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'Fred',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
             },
           ],
         },
         rhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
-            {
-              type: 'LITERAL',
-              value: 'Barry',
-            },
             {
               type: 'FIELD',
               fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Barry',
             },
           ],
         },
@@ -1025,15 +1025,15 @@ describe('test parser handlers functions', () => {
       'FROM',
       'posts',
       'WHERE',
-      'FIND_IN_SET',
+      'ARRAY_POSITION',
       '(',
-      "'Fred'",
-      ',',
       '(',
       "'Fred'",
       ',',
       "'Sammy'",
       ')',
+      ',',
+      "'Fred'",
       ')',
       '>',
       '0',
@@ -1055,15 +1055,15 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'FUNCTION_RESULT',
-          functionName: 'FIND_IN_SET',
+          functionName: 'ARRAY_POSITION',
           args: [
             {
               type: 'LITERAL',
-              value: 'Fred',
+              value: ['Fred', 'Sammy'],
             },
             {
               type: 'LITERAL',
-              value: ['Fred', 'Sammy'],
+              value: 'Fred',
             },
           ],
         },
