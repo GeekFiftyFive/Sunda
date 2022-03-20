@@ -9,6 +9,9 @@ import {
   ConditionPair,
   AggregateType,
   DataSetType,
+  FunctionName,
+  LiteralValue,
+  FieldValue,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -1075,5 +1078,48 @@ describe('executor can handle function calls', () => {
         names: ['Fred', 'James'],
       },
     ]);
+  });
+
+  test("can execute function calls that occur in the 'SELECT' statement", async () => {
+    const aliasesData = {
+      posts: [
+        {
+          aliases: ['Fred', 'Joe', 'Sam'],
+        },
+        {
+          aliases: ['Jimmy', 'Fred', 'Liz'],
+        },
+        {
+          aliases: ['Raiden', 'Armstrong', 'Sundowner'],
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: {
+          type: 'FUNCTION_RESULT',
+          functionName: FunctionName.ARRAY_POSITION,
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'aliases',
+            } as FieldValue,
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            } as LiteralValue,
+          ],
+        },
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<Record<string, unknown>>(query, aliasesData);
+
+    expect(actual).toEqual([{ 0: 1 }, { 0: 2 }, { 0: null }]);
   });
 });

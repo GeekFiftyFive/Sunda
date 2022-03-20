@@ -5,6 +5,7 @@ import {
   Comparison,
   Condition,
   ConditionPair,
+  DataSetType,
   FieldValue,
   FunctionName,
   FunctionResultValue,
@@ -297,6 +298,25 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       break;
     case ProjectionType.DISTINCT:
       output = distinct(query.projection.fields, filtered as Record<string, unknown>[]);
+      break;
+    case ProjectionType.FUNCTION:
+      output = filtered.map((datum) => {
+        const resolvedArguements = query.projection.function.args.map((arg) => {
+          if (query.dataset.type === DataSetType.SUBQUERY) {
+            throw new Error('Cannot currently execute a function against a sub-queried dataset');
+          }
+          return resolveValue(
+            arg,
+            datum as Record<string, unknown>,
+            query.dataset.value as unknown as string,
+          );
+        });
+        return {
+          0: functions[query.projection.function.functionName.toUpperCase() as FunctionName](
+            ...resolvedArguements,
+          ),
+        };
+      });
       break;
     default:
       throw new Error('Unsupported projection type');
