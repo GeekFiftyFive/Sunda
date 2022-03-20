@@ -5,12 +5,19 @@ import {
   Comparison,
   Condition,
   ConditionPair,
+  DataSetType,
+  FieldValue,
+  FunctionName,
+  FunctionResultValue,
   isConditionPair,
   isSingularCondition,
+  LiteralValue,
   ProjectionType,
   Query,
   SingularCondition,
+  Value,
 } from '../Parser';
+import { functions } from './SQLFunctions';
 
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
   '=': (value: unknown, expected: unknown) => value === expected,
@@ -59,6 +66,32 @@ export const followJsonPath = <T>(
   return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
+const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
+  let returnValue: unknown;
+
+  switch (value.type) {
+    case 'FIELD':
+      returnValue = followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
+      break;
+    case 'LITERAL':
+      returnValue = (value as LiteralValue).value;
+      break;
+    case 'FUNCTION_RESULT': {
+      const resolvedArgs = (value as FunctionResultValue).args.map((arg) =>
+        resolveValue(arg, entry, tableName),
+      );
+      returnValue = functions[
+        (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
+      ](...resolvedArgs);
+      break;
+    }
+    default:
+      throw new Error(`Unexpected Value type ${value.type}`);
+  }
+
+  return returnValue;
+};
+
 const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
   if (tokens.length === 1) {
     // eslint-disable-next-line no-param-reassign
@@ -78,24 +111,24 @@ const handleSingularCondition = (
   tableName: string,
   joinTables: Record<string, unknown[]>,
 ): Record<string, unknown> | undefined => {
-  const value = followJsonPath<unknown>(condition.field, entry, tableName);
+  const value = resolveValue(condition.lhs, entry, tableName);
 
   if (value === undefined) {
     return undefined;
   }
 
   const comparison = comparisons[condition.comparison.toUpperCase() as Comparison];
-  const isJoin = typeof condition.value === 'object' && !Array.isArray(condition.value);
+  const isJoin = condition.rhs.type === 'FIELD';
   let joinedTableName: string | undefined;
   let joinedEntry: Record<string, unknown> = {};
 
-  if (typeof condition.value === 'object' && !Array.isArray(condition.value)) {
+  if (isJoin) {
     // TODO: Need to improve typing surrounding comparison values to avoid this kind of mess
     // eslint-disable-next-line prefer-destructuring
-    joinedTableName = (condition.value as { field: string }).field.split('.')[0];
+    joinedTableName = (condition.rhs as FieldValue).fieldName.split('.')[0];
     joinedEntry = joinTables[joinedTableName].find((joinedEntry) => {
       const joinValue = followJsonPath<unknown>(
-        (condition.value as { field: string }).field,
+        (condition.rhs as FieldValue).fieldName,
         joinedEntry as Record<string, unknown>,
         joinedTableName,
       );
@@ -104,7 +137,7 @@ const handleSingularCondition = (
     }) as Record<string, unknown>;
   }
 
-  const evaluated = comparison(value, condition.value);
+  const evaluated = comparison(value, resolveValue(condition.rhs, entry, tableName));
   const fullEntry: Record<string, unknown> = joinedTableName
     ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
     : { ...entry };
@@ -265,6 +298,25 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       break;
     case ProjectionType.DISTINCT:
       output = distinct(query.projection.fields, filtered as Record<string, unknown>[]);
+      break;
+    case ProjectionType.FUNCTION:
+      output = filtered.map((datum) => {
+        const resolvedArguements = query.projection.function.args.map((arg) => {
+          if (query.dataset.type === DataSetType.SUBQUERY) {
+            throw new Error('Cannot currently execute a function against a sub-queried dataset');
+          }
+          return resolveValue(
+            arg,
+            datum as Record<string, unknown>,
+            query.dataset.value as unknown as string,
+          );
+        });
+        return {
+          0: functions[query.projection.function.functionName.toUpperCase() as FunctionName](
+            ...resolvedArguements,
+          ),
+        };
+      });
       break;
     default:
       throw new Error('Unsupported projection type');

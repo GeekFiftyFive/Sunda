@@ -255,4 +255,23 @@ describe('test tokeniser', () => {
       '10',
     ]);
   });
+
+  test('con tokenise functions', () => {
+    const actual = tokenise("SELECT * FROM posts WHERE ARRAY_POSITION(names, 'Fred') > 0");
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'ARRAY_POSITION',
+      '(',
+      'names',
+      ',',
+      "'Fred'",
+      ')',
+      '>',
+      '0',
+    ]);
+  });
 });

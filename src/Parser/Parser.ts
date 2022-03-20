@@ -17,6 +17,10 @@ export enum Comparison {
   IN = 'IN',
 }
 
+export enum FunctionName {
+  ARRAY_POSITION = 'ARRAY_POSITION',
+}
+
 export enum DataSetType {
   TABLE,
   SUBQUERY,
@@ -26,6 +30,7 @@ export enum ProjectionType {
   ALL,
   SELECTED,
   DISTINCT,
+  FUNCTION,
 }
 
 export enum AggregateType {
@@ -44,10 +49,30 @@ export interface Condition {
   boolean: BooleanType;
 }
 
+export interface Value {
+  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT';
+}
+
+export interface FieldValue extends Value {
+  type: 'FIELD';
+  fieldName: string;
+}
+
+export interface LiteralValue extends Value {
+  type: 'LITERAL';
+  value: unknown;
+}
+
+export interface FunctionResultValue extends Value {
+  type: 'FUNCTION_RESULT';
+  functionName: FunctionName;
+  args: Value[];
+}
+
 export interface SingularCondition extends Condition {
   comparison: Comparison;
-  field: string;
-  value: unknown;
+  lhs: Value;
+  rhs: Value;
 }
 
 export interface ConditionPair extends Condition {
@@ -58,6 +83,7 @@ export interface ConditionPair extends Condition {
 export interface Projection {
   type: ProjectionType;
   fields?: string[];
+  function?: FunctionResultValue;
 }
 
 export interface DataSet {
@@ -76,34 +102,57 @@ export interface Query {
 }
 
 export const isSingularCondition = (object: Condition): object is SingularCondition =>
-  'comparison' in object && 'field' in object && 'value' in object;
+  'comparison' in object && 'lhs' in object && 'rhs' in object;
 
 export const isConditionPair = (object: Condition): object is ConditionPair =>
   'lhs' in object && 'rhs' in object;
 
-const parseValue = (value: string): unknown => {
-  const numeric = Number.parseFloat(value);
+const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
+  const numeric = Number.parseFloat(tokens[0]);
 
   if (!Number.isNaN(numeric)) {
-    return numeric;
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: numeric } as LiteralValue,
+    };
   }
 
   let regex = /"(.*)"/gm;
-  let match = regex.exec(value);
+  let match = regex.exec(tokens[0]);
 
   if (match) {
-    return match[1];
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
   }
 
   regex = /'(.*)'/gm;
-  match = regex.exec(value);
+  match = regex.exec(tokens[0]);
 
   if (match) {
-    return match[1];
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
+  }
+
+  // eslint-disable-next-line no-use-before-define
+  if (isSet(tokens)) {
+    // eslint-disable-next-line no-use-before-define
+    const setValue = parseSet(tokens);
+    return {
+      tokens: tokens.slice(setValue.consumed),
+      value: { type: 'LITERAL', value: setValue.setValue } as LiteralValue,
+    };
   }
 
   return {
-    field: value,
+    tokens: tokens.slice(1),
+    value: {
+      type: 'FIELD',
+      fieldName: tokens[0],
+    } as FieldValue,
   };
 };
 
@@ -146,8 +195,11 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
     }
 
     if (i % 2 === 1) {
-      const value = parseValue(tokens[i]);
-      toReturn.setValue.push(value);
+      const value = parseValue(tokens.slice(i));
+      if (value.value.type !== 'LITERAL') {
+        throw new Error('Handling of non-literal values in sets not yet implemented');
+      }
+      toReturn.setValue.push((value.value as LiteralValue).value);
     }
 
     toReturn.consumed += 1;
@@ -217,6 +269,66 @@ const findBracketPairs = (tokens: string[]): { start: number; end: number }[] =>
   return bracketPairs;
 };
 
+const isFunctionResult = (tokens: string[]): boolean => {
+  if (tokens.length < 2 || tokens[1] !== '(') {
+    return false;
+  }
+
+  // FIXME: This check needs to be more exhaustive
+  if (!/^\w+$/.test(tokens[0])) {
+    return false;
+  }
+
+  const bracketedPairs = findBracketPairs(tokens);
+  const outerBrackets = bracketedPairs.find((pairs) => pairs.start === 1);
+
+  if (!outerBrackets) {
+    return false;
+  }
+
+  return true;
+};
+
+/* TODO: More consistent return types from these parsers! Some return the rest of the token
+  stream whilst others (such as this) return a count of the tokens consumed whilst parsing */
+const parseFunctionResult = (
+  tokens: string[],
+): { functionResultValue: FunctionResultValue; consumed: number } => {
+  const toReturn: { functionResultValue: FunctionResultValue; consumed: number } = {
+    functionResultValue: {
+      type: 'FUNCTION_RESULT',
+      functionName: tokens[0] as FunctionName,
+      args: [],
+    },
+    consumed: 1,
+  };
+
+  // TODO: De-dupe. This is very similar to what happens when we parse a set
+  for (let i = 2; i < tokens.length; ) {
+    if (tokens[i] === ')') {
+      toReturn.consumed += 1;
+      break;
+    }
+
+    if (i % 2 === 1 && tokens[i] !== ',') {
+      throw new Error('Not a valid arguments list');
+    }
+
+    if (i % 2 === 0) {
+      const value = parseValue(tokens.slice(i));
+      const increment = tokens.length - i - value.tokens.length;
+      i += increment;
+      toReturn.consumed += increment;
+      toReturn.functionResultValue.args.push(value.value);
+    } else {
+      i += 1;
+      toReturn.consumed += 1;
+    }
+  }
+
+  return toReturn;
+};
+
 const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
   // TODO: This is extremely naive
   if (tokens.length < 3) {
@@ -270,6 +382,8 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     offset = 1;
   }
 
+  let lhs: Value = { type: 'FIELD', fieldName: tokens[0 + offset] } as FieldValue;
+
   const valueIsSet = isSet(tokens.slice(2 + offset));
   let setValue: unknown[];
   let consumed = 1;
@@ -280,12 +394,55 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
     consumed = parsedSet.consumed;
   }
 
+  /* FIXME: These could probably be cleaner and cheaper if we simply try to parse
+  the function result values and return undefined if the values are not function
+  results */
+  const leftHandValueIsFunctionResult = isFunctionResult(tokens);
+  let leftHandfunctionResultValue: FunctionResultValue;
+
+  if (leftHandValueIsFunctionResult) {
+    const parsedFunctionResult = parseFunctionResult(tokens);
+    leftHandfunctionResultValue = parsedFunctionResult.functionResultValue;
+    consumed = parsedFunctionResult.consumed - offset - 1;
+  }
+
+  const rightHandValueIsFunctionResult = isFunctionResult(tokens.slice(consumed + 1));
+  let rightHandfunctionResultValue: FunctionResultValue;
+
+  if (rightHandValueIsFunctionResult) {
+    const parsedFunctionResult = parseFunctionResult(tokens.slice(consumed + 1));
+    rightHandfunctionResultValue = parsedFunctionResult.functionResultValue;
+    consumed = parsedFunctionResult.consumed - offset - 1;
+  }
+
+  let rhs: Value;
+
+  if (rightHandValueIsFunctionResult) {
+    rhs = rightHandfunctionResultValue;
+  } else if (leftHandValueIsFunctionResult) {
+    lhs = leftHandfunctionResultValue;
+    offset += consumed + 1;
+    /* FIXME: Very hacky. Should breakout the logic to parse the righthand side instead of
+    tricking it like this */
+    const parsedRhs = parseCondition(['fakeToken', ...tokens.slice(1 + offset)]);
+    consumed = tokens.length - (parsedRhs.tokens.length - 2);
+    rhs = (parsedRhs.condition as SingularCondition).rhs;
+  } else if (valueIsSet) {
+    rhs = {
+      type: 'LITERAL',
+      value: setValue,
+    } as LiteralValue;
+  } else {
+    const value = parseValue(tokens.slice(2 + offset));
+    rhs = value.value;
+  }
+
   return {
     condition: {
       boolean,
       comparison: tokens[1 + offset].toUpperCase() as Comparison,
-      field: tokens[0 + offset],
-      value: valueIsSet ? setValue : parseValue(tokens[2 + offset]),
+      lhs,
+      rhs,
     } as SingularCondition,
     tokens: tokens.slice(2 + offset + consumed),
   };
@@ -332,6 +489,18 @@ const parseSelection = (
       projection,
       aggregation,
       tokens: newTokens.slice(1),
+    };
+  }
+  if (tokens[1] === '(') {
+    // Attempt to parse a function call
+    const { functionResultValue, consumed } = parseFunctionResult(tokens);
+    return {
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: functionResultValue,
+      },
+      aggregation: AggregateType.NONE,
+      tokens: tokens.slice(consumed + 1),
     };
   }
 

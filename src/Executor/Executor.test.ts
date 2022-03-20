@@ -9,6 +9,9 @@ import {
   ConditionPair,
   AggregateType,
   DataSetType,
+  FunctionName,
+  LiteralValue,
+  FieldValue,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -92,8 +95,8 @@ describe('test executeQuery', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.EQ,
-          field: 'Apples',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'Apples' },
+          rhs: { type: 'LITERAL', value: 10 },
         } as SingularCondition,
       },
       data,
@@ -107,8 +110,8 @@ describe('test executeQuery', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.GTE,
-          field: 'Grapes',
-          value: 10,
+          lhs: { type: 'FIELD', fieldName: 'Grapes' },
+          rhs: { type: 'LITERAL', value: 10 },
         } as SingularCondition,
       },
       data,
@@ -124,14 +127,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.GTE,
-            field: 'Grapes',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'Grapes' },
+            rhs: { type: 'LITERAL', value: 10 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Apples',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'Apples' },
+            rhs: { type: 'LITERAL', value: 10 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -148,14 +151,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Pairs',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Pairs' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Oranges',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Oranges' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -172,14 +175,14 @@ describe('test executeQuery', () => {
           lhs: {
             boolean: BooleanType.NOT,
             comparison: Comparison.EQ,
-            field: 'Pairs',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Pairs' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'Oranges',
-            value: 5,
+            lhs: { type: 'FIELD', fieldName: 'Oranges' },
+            rhs: { type: 'LITERAL', value: 5 },
           } as SingularCondition,
         } as ConditionPair,
       },
@@ -222,8 +225,8 @@ describe('test executeQuery', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.city',
-        value: 'Clowntown',
+        lhs: { type: 'FIELD', fieldName: 'address.city' },
+        rhs: { type: 'LITERAL', value: 'Clowntown' },
       } as SingularCondition,
       joins: [],
     };
@@ -316,8 +319,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'name',
-          value: '%ea%',
+          lhs: { type: 'FIELD', fieldName: 'name' },
+          rhs: { type: 'LITERAL', value: '%ea%' },
         } as SingularCondition,
       },
       data,
@@ -333,8 +336,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'name',
-          value: 's%',
+          lhs: { type: 'FIELD', fieldName: 'name' },
+          rhs: { type: 'LITERAL', value: 's%' },
         } as SingularCondition,
       },
       data,
@@ -350,8 +353,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: '%our',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: '%our' },
         } as SingularCondition,
       },
       data,
@@ -367,8 +370,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: 's____%',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: 's____%' },
         } as SingularCondition,
       },
       data,
@@ -384,8 +387,8 @@ describe('test executor handles like operator', () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.LIKE,
-          field: 'flavour',
-          value: '.*',
+          lhs: { type: 'FIELD', fieldName: 'flavour' },
+          rhs: { type: 'LITERAL', value: '.*' },
         } as SingularCondition,
       },
       data,
@@ -440,8 +443,8 @@ describe('test executor handles subfields in select', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.EQ,
-        field: 'address.line1',
-        value: '123 Street Lane',
+        lhs: { type: 'FIELD', fieldName: 'address.line1' },
+        rhs: { type: 'LITERAL', value: '123 Street Lane' },
       } as SingularCondition,
       joins: [],
     };
@@ -692,16 +695,14 @@ describe('executor can handle joins', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'posts.PosterID',
-            value: {
-              field: 'users.ID',
-            },
+            lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+            rhs: { type: 'FIELD', fieldName: 'users.ID' },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'users.Name',
-            value: 'George',
+            lhs: { type: 'FIELD', fieldName: 'users.Name' },
+            rhs: { type: 'LITERAL', value: 'George' },
           },
         } as ConditionPair,
         joins: [{ table: 'users' }],
@@ -749,16 +750,14 @@ describe('executor can handle joins', () => {
           lhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.EQ,
-            field: 'posts.PosterID',
-            value: {
-              field: 'users.ID',
-            },
+            lhs: { type: 'FIELD', fieldName: 'posts.PosterID' },
+            rhs: { type: 'FIELD', fieldName: 'users.ID' },
           },
           rhs: {
             boolean: BooleanType.NONE,
             comparison: Comparison.GTE,
-            field: 'posts.Views',
-            value: 10,
+            lhs: { type: 'FIELD', fieldName: 'posts.Views' },
+            rhs: { type: 'LITERAL', value: 10 },
           },
         } as ConditionPair,
         joins: [{ table: 'users' }],
@@ -822,8 +821,8 @@ describe("executor can handle 'IN' operator", () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,
-          field: 'ID',
-          value: [1, 3],
+          lhs: { type: 'FIELD', fieldName: 'ID' },
+          rhs: { type: 'LITERAL', value: [1, 3] },
         } as SingularCondition,
         joins: [],
       },
@@ -857,8 +856,8 @@ describe("executor can handle 'IN' operator", () => {
         condition: {
           boolean: BooleanType.NONE,
           comparison: Comparison.IN,
-          field: 'Title',
-          value: ['Hello, world', 'Goodbye all!'],
+          lhs: { type: 'FIELD', fieldName: 'Title' },
+          rhs: { type: 'LITERAL', value: ['Hello, world', 'Goodbye all!'] },
         } as SingularCondition,
         joins: [],
       },
@@ -929,8 +928,8 @@ describe('Executor can handle sub-queries', () => {
       condition: {
         boolean: BooleanType.NONE,
         comparison: Comparison.GT,
-        field: 'u.age',
-        value: 21,
+        lhs: { type: 'FIELD', fieldName: 'u.age' },
+        rhs: { type: 'LITERAL', value: 21 },
       } as SingularCondition,
       joins: [],
     };
@@ -949,5 +948,178 @@ describe('Executor can handle sub-queries', () => {
         },
       },
     ]);
+  });
+});
+
+describe('executor can handle function calls', () => {
+  const data = {
+    posts: [
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
+      },
+      {
+        entry: 2,
+        names: ['Amy', 'Abby'],
+      },
+      {
+        entry: 3,
+        names: ['James', 'Fred'],
+      },
+      {
+        entry: 4,
+        names: ['Fred', 'Abby', 'Julia'],
+      },
+    ],
+  };
+  test("can execute 'ARRAY_POSITION'", async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'ARRAY_POSITION',
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
+      },
+      {
+        entry: 3,
+        names: ['James', 'Fred'],
+      },
+      {
+        entry: 4,
+        names: ['Fred', 'Abby', 'Julia'],
+      },
+    ]);
+  });
+
+  test('can execute functions that appear on the right hand side of condition', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'ARRAY_POSITION',
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'James',
+            },
+          ],
+        },
+        rhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'ARRAY_POSITION',
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'names',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+          ],
+        },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const result = await wrapAndExec<Record<string, unknown>>(query, data);
+
+    expect(result).toEqual([
+      {
+        entry: 1,
+        names: ['Fred', 'James'],
+      },
+    ]);
+  });
+
+  test("can execute function calls that occur in the 'SELECT' statement", async () => {
+    const aliasesData = {
+      posts: [
+        {
+          aliases: ['Fred', 'Joe', 'Sam'],
+        },
+        {
+          aliases: ['Jimmy', 'Fred', 'Liz'],
+        },
+        {
+          aliases: ['Raiden', 'Armstrong', 'Sundowner'],
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: {
+          type: 'FUNCTION_RESULT',
+          functionName: FunctionName.ARRAY_POSITION,
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'aliases',
+            } as FieldValue,
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            } as LiteralValue,
+          ],
+        },
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<Record<string, unknown>>(query, aliasesData);
+
+    expect(actual).toEqual([{ 0: 1 }, { 0: 2 }, { 0: null }]);
   });
 });

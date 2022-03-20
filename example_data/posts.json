@@ -3,32 +3,36 @@
     {
       "ID": 1,
       "PosterID": 1,
-      "Views": 10
+      "Views": 10,
+      "CommentorIDs": [1, 2]
     },
     {
       "ID": 2,
       "PosterID": 1,
-      "Views": 12
+      "Views": 12,
+      "CommentorIDs": [3, 4]
     },
     {
       "ID": 3,
       "PosterID": 2,
-      "Views": 9
+      "Views": 9,
+      "CommentorIDs": [1, 3]
     },
     {
       "ID": 4,
       "PosterID": 2,
-      "Views": 9
+      "Views": 9,
+      "CommentorIDs": [2, 4]
     }
   ],
   "users": [
     {
       "ID": 1,
-      "Name": "George"
+      "Name": "Frank"
     },
     {
       "ID": 2,
-      "Name": "Fred"
+      "Name": "Bob"
     }
   ]
 }
