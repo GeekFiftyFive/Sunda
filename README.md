@@ -414,6 +414,73 @@ The result of this query would look like this:
 ]
 ~~~
 
+## Function Calls
+
+It is possible to call functions to perform some processing on the data being queried. At the time of writing, the only supported function is `array_position`. `array_position` provides the index at which a search value is located in an array, or `null` if it is not present in the array. Indexes start at 1.
+
+An example of `array_position` is provided below:
+
+~~~
+SELECT array_position(('Doug', 'Abby', 'Joe'), name) FROM users
+~~~
+
+Given the following input data:
+
+~~~
+{
+  "users": [
+    {
+      "name": "Doug"
+    },
+    {
+      "name": "Joe"
+    },
+    {
+      "name": "Abby"
+    },
+    {
+      "name": "Hannah"
+    }
+  ]
+}
+~~~
+
+Running this query will give the following output:
+
+~~~
+[
+  { "0": 1 },
+  { "0": 3 },
+  { "0": 2 },
+  { "0": null }
+]
+~~~
+
+You can also pass in a 3rd optional parameter, specifying the index to start searching from. Take the following query:
+
+~~~
+SELECT array_position(('Doug', 'Abby', 'Joe', 'Doug'), name) FROM users
+~~~
+
+Running this against the above dataset will yield the same results we saw previously, but making one minor change to the query:
+
+~~~
+SELECT array_position(('Doug', 'Abby', 'Joe', 'Doug'), name, 2) FROM users
+~~~
+
+Will yield thse results:
+
+~~~
+[
+  { "0": 4 },
+  { "0": 3 },
+  { "0": 2 },
+  { "0": null }
+]
+~~~
+
+Note that the first returned result now points to index `4` rather than one `1`. This is because our updated query passes in a 3rd optional parameter indicating that we should begin our search at index `2`.
+
 ## JSONL Support
 
 As well as individual JSON objects, Sunda also supports JSONL files. These are collections of JSON objects delimited by new lines. When using a JSONL file, one table will exist with the name `root`.
