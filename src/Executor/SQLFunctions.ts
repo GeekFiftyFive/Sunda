@@ -27,6 +27,10 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
         .slice(startIndex)
         .findIndex((setValue) => setValue === searchValue) + startIndex;
 
+    if (index < 0) {
+      return null;
+    }
+
     return index + 1;
   },
 };

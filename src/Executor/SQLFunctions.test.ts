@@ -10,7 +10,7 @@ describe("test 'ARRAY_POSITION' function", () => {
 
   test('test correct index is returned when input is not found', () => {
     const actual = functions.ARRAY_POSITION(data, 'Daniel');
-    expect(actual).toEqual(0);
+    expect(actual).toEqual(null);
   });
 
   test('test correct index is returned when start index is specified', () => {
