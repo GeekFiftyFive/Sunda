@@ -30,6 +30,7 @@ export enum ProjectionType {
   ALL,
   SELECTED,
   DISTINCT,
+  FUNCTION,
 }
 
 export enum AggregateType {
@@ -82,6 +83,7 @@ export interface ConditionPair extends Condition {
 export interface Projection {
   type: ProjectionType;
   fields?: string[];
+  function?: FunctionResultValue;
 }
 
 export interface DataSet {
@@ -487,6 +489,18 @@ const parseSelection = (
       projection,
       aggregation,
       tokens: newTokens.slice(1),
+    };
+  }
+  if (tokens[1] === '(') {
+    // Attempt to parse a function call
+    const { functionResultValue, consumed } = parseFunctionResult(tokens);
+    return {
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: functionResultValue,
+      },
+      aggregation: AggregateType.NONE,
+      tokens: tokens.slice(consumed + 1),
     };
   }
 

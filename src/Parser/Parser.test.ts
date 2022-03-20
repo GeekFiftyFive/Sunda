@@ -1,3 +1,4 @@
+import { FunctionName } from '.';
 import {
   AggregateType,
   BooleanType,
@@ -1136,6 +1137,45 @@ describe('test parser handlers functions', () => {
           value: 0,
         },
       },
+      joins: [],
+    });
+  });
+
+  test("can parse a function given in the 'SELECT' statement", () => {
+    const tokens = [
+      'SELECT',
+      'ARRAY_POSITION',
+      '(',
+      'aliases',
+      ',',
+      "'Fred'",
+      ')',
+      'FROM',
+      'posts',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: {
+          type: 'FUNCTION_RESULT',
+          functionName: FunctionName.ARRAY_POSITION,
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'aliases',
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+          ],
+        },
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
       joins: [],
     });
   });
