@@ -16,6 +16,7 @@ import {
   SingularCondition,
   Value,
 } from '../Parser';
+import { functions } from './SQLFunctions';
 
 const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boolean> = {
   '=': (value: unknown, expected: unknown) => value === expected,
@@ -34,40 +35,6 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
     return new RegExp(regex).test(value);
   },
   IN: (value: unknown, expected: unknown[]) => expected.includes(value),
-};
-
-const functions: Record<FunctionName, (...args: unknown[]) => LiteralValue> = {
-  ARRAY_POSITION: (...args) => {
-    if (args.length < 2) {
-      throw new Error("Incorrect number of arguments passed to 'ARRAY_POSITION'");
-    }
-
-    const arrayToSearch = args[0];
-    const searchValue = args[1];
-    let startIndex = 0;
-
-    if (args.length > 2) {
-      if (typeof args[2] === 'number') {
-        startIndex = args[2] - 1;
-      } else {
-        throw new Error("Expected 3rd parameter passed to 'ARRAY_POSITION' to be numeric");
-      }
-    }
-
-    if (!Array.isArray(arrayToSearch)) {
-      throw new Error("Expected second argument to 'ARRAY_POSITION' to refer to an array");
-    }
-
-    const index =
-      (arrayToSearch as unknown[])
-        .slice(startIndex)
-        .findIndex((setValue) => setValue === searchValue) + startIndex;
-
-    return {
-      type: 'LITERAL',
-      value: index + 1,
-    };
-  },
 };
 
 // TODO: This should be dealt with in the parser
@@ -114,7 +81,7 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
       );
       returnValue = functions[
         (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
-      ](...resolvedArgs).value;
+      ](...resolvedArgs);
       break;
     }
     default:
