@@ -5,21 +5,24 @@
       "price": {
         "exVAT": "£0.30",
         "incVAT": "£0.36"
-      }
+      },
+      "hasPeel": false
     },
     {
       "name": "orange",
       "price": {
         "exVAT": "£0.40",
         "incVAT": "£0.48"
-      }
+      },
+      "hasPeel": true
     },
     {
       "name": "grape",
       "price": {
         "exVAT": "£0.05",
         "incVAT": "£0.06"
-      }
+      },
+      "hasPeel": false
     }
   ]
 }
