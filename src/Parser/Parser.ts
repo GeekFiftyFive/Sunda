@@ -137,6 +137,20 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     };
   }
 
+  if (tokens[0] === 'true') {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: true } as LiteralValue,
+    };
+  }
+
+  if (tokens[0] === 'false') {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: false } as LiteralValue,
+    };
+  }
+
   // eslint-disable-next-line no-use-before-define
   if (isSet(tokens)) {
     // eslint-disable-next-line no-use-before-define

@@ -1179,6 +1179,52 @@ describe('test parser handlers functions', () => {
       joins: [],
     });
   });
+
+  test('can parse boolean values', () => {
+    let tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '=', 'true'];
+
+    let actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: { type: 'FIELD', fieldName: 'value' },
+        rhs: { type: 'LITERAL', value: true },
+      },
+      joins: [],
+    });
+
+    tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '=', 'false'];
+
+    actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: { type: 'FIELD', fieldName: 'value' },
+        rhs: { type: 'LITERAL', value: false },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
