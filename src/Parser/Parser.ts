@@ -40,6 +40,13 @@ export enum AggregateType {
   AVG,
 }
 
+export enum NumericOperation {
+  MULTIPLY = '*',
+  DIVIDE = '/',
+  ADD = '+',
+  SUBTRACT = '-',
+}
+
 export interface Join {
   table: string;
   alias?: string;
@@ -50,7 +57,7 @@ export interface Condition {
 }
 
 export interface Value {
-  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT';
+  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT' | 'EXPRESSION';
 }
 
 export interface FieldValue extends Value {
@@ -67,6 +74,13 @@ export interface FunctionResultValue extends Value {
   type: 'FUNCTION_RESULT';
   functionName: FunctionName;
   args: Value[];
+}
+
+export interface ExpressionValue extends Value {
+  type: 'EXPRESSION';
+  lhs: Value;
+  rhs: Value;
+  operation: NumericOperation;
 }
 
 export interface SingularCondition extends Condition {
@@ -107,67 +121,58 @@ export const isSingularCondition = (object: Condition): object is SingularCondit
 export const isConditionPair = (object: Condition): object is ConditionPair =>
   'lhs' in object && 'rhs' in object;
 
-const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
-  const numeric = Number.parseFloat(tokens[0]);
-
-  if (!Number.isNaN(numeric)) {
-    return {
-      tokens: tokens.slice(1),
-      value: { type: 'LITERAL', value: numeric } as LiteralValue,
-    };
-  }
-
-  let regex = /"(.*)"/gm;
-  let match = regex.exec(tokens[0]);
-
-  if (match) {
-    return {
-      tokens: tokens.slice(1),
-      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
-    };
-  }
-
-  regex = /'(.*)'/gm;
-  match = regex.exec(tokens[0]);
-
-  if (match) {
-    return {
-      tokens: tokens.slice(1),
-      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
-    };
-  }
-
-  if (tokens[0] === 'true') {
-    return {
-      tokens: tokens.slice(1),
-      value: { type: 'LITERAL', value: true } as LiteralValue,
-    };
-  }
-
-  if (tokens[0] === 'false') {
-    return {
-      tokens: tokens.slice(1),
-      value: { type: 'LITERAL', value: false } as LiteralValue,
-    };
-  }
-
-  // eslint-disable-next-line no-use-before-define
-  if (isSet(tokens)) {
-    // eslint-disable-next-line no-use-before-define
-    const setValue = parseSet(tokens);
-    return {
-      tokens: tokens.slice(setValue.consumed),
-      value: { type: 'LITERAL', value: setValue.setValue } as LiteralValue,
-    };
-  }
-
-  return {
-    tokens: tokens.slice(1),
+const parseNumericExpression = (tokens: string[]): { value: ExpressionValue; tokens: string[] } =>
+  // This function makes the assumption that tokens already begins with a valid numeric expression
+  // TODO: Flesh this out
+  ({
     value: {
-      type: 'FIELD',
-      fieldName: tokens[0],
-    } as FieldValue,
-  };
+      type: 'EXPRESSION',
+      operation: tokens[1] as NumericOperation,
+      // eslint-disable-next-line no-use-before-define
+      lhs: parseValue([tokens[0]]).value,
+      // eslint-disable-next-line no-use-before-define
+      rhs: parseValue([tokens[2]]).value,
+    },
+    tokens: tokens.slice(3),
+  });
+
+const isNumericExpression = (tokens: string[]): boolean => {
+  // Consume characters until we encounter a comparison
+  let valid = true;
+  let previousValue: 'LITERAL' | 'FIELD' | 'OPERATION' | undefined;
+  let current: string;
+  let i = 0;
+
+  if (tokens.length < 3) {
+    return false;
+  }
+
+  // TODO: Bracketed expressions and function results
+  do {
+    current = tokens[i];
+    i += 1;
+    // TODO: parseFloat allows some invalid numeric values to parse.
+    // This validation should be made more rigorous
+    if (!Number.isNaN(parseFloat(current))) {
+      if (previousValue !== 'OPERATION' && previousValue !== undefined) {
+        valid = false;
+        break;
+      }
+      previousValue = 'LITERAL';
+    } else if (Object.values(NumericOperation).includes(current as NumericOperation)) {
+      if (previousValue !== 'LITERAL' && previousValue !== 'FIELD') {
+        valid = false;
+        break;
+      }
+      previousValue = 'OPERATION';
+    } else if (/^[a-zA-Z][a-zA-Z|_|0-9]*$/gm.exec(current)) {
+      previousValue = 'FIELD';
+    } else {
+      return false;
+    }
+  } while (!Object.values(Comparison).includes(current as Comparison) && i < tokens.length);
+
+  return valid;
 };
 
 const isSet = (tokens: string[]): boolean => {
@@ -209,6 +214,7 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
     }
 
     if (i % 2 === 1) {
+      // eslint-disable-next-line no-use-before-define
       const value = parseValue(tokens.slice(i));
       if (value.value.type !== 'LITERAL') {
         throw new Error('Handling of non-literal values in sets not yet implemented');
@@ -235,7 +241,7 @@ const isInBracketedExpression = (
   }, false);
 
 const firstUnbracketedIndex = (
-  searchValue: string,
+  searchValues: string[],
   tokens: string[],
   bracketPairs: { start: number; end: number }[],
 ) =>
@@ -243,7 +249,10 @@ const firstUnbracketedIndex = (
     if (orIndex >= 0) {
       return orIndex;
     }
-    if (token.toLowerCase() === searchValue && !isInBracketedExpression(index, bracketPairs)) {
+    if (
+      searchValues.includes(token.toLowerCase()) &&
+      !isInBracketedExpression(index, bracketPairs)
+    ) {
       return index;
     }
 
@@ -329,6 +338,7 @@ const parseFunctionResult = (
     }
 
     if (i % 2 === 0) {
+      // eslint-disable-next-line no-use-before-define
       const value = parseValue(tokens.slice(i));
       const increment = tokens.length - i - value.tokens.length;
       i += increment;
@@ -343,123 +353,148 @@ const parseFunctionResult = (
   return toReturn;
 };
 
-const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
-  // TODO: This is extremely naive
-  if (tokens.length < 3) {
-    throw new Error('Invalid condition in WHERE clause');
-  }
-
-  // Match brackets if there are any (and they are not part of an array)
-  const bracketPairs = findBracketPairs(tokens);
-
-  const orIndex = firstUnbracketedIndex('or', tokens, bracketPairs);
-  // TODO: Deduplicate
-  if (orIndex >= 0) {
-    const lhs = parseCondition(tokens.slice(0, orIndex)).condition;
-    const rhs = parseCondition(tokens.slice(orIndex + 1)).condition;
+const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
+  if (isSet(tokens)) {
+    const parsedSet = parseSet(tokens);
     return {
-      condition: {
-        boolean: BooleanType.OR,
-        lhs,
-        rhs,
-      } as ConditionPair,
-      tokens: [], // FIXME: Actually properly figure out what's been consumed
+      value: { type: 'LITERAL', value: parsedSet.setValue } as LiteralValue,
+      tokens: tokens.slice(parsedSet.consumed + 1),
     };
   }
 
-  const andIndex = firstUnbracketedIndex('and', tokens, bracketPairs);
-
-  if (andIndex >= 0) {
-    const lhs = parseCondition(tokens.slice(0, andIndex)).condition;
-    const rhs = parseCondition(tokens.slice(andIndex + 1)).condition;
+  if (isFunctionResult(tokens)) {
+    const parsedFunction = parseFunctionResult(tokens);
     return {
-      condition: {
-        boolean: BooleanType.AND,
-        lhs,
-        rhs,
-      } as ConditionPair,
-      tokens: [], // FIXME: Actually properly figure out what's been consumed
+      value: parsedFunction.functionResultValue,
+      tokens: tokens.slice(parsedFunction.consumed + 1),
     };
   }
 
-  const enclosingBracketPair = bracketPairs.find((pair) => pair.start === 0);
-
-  if (enclosingBracketPair) {
-    return parseCondition(tokens.slice(enclosingBracketPair.start + 1, enclosingBracketPair.end));
+  // Check if it is a numeric expression
+  // eslint-disable-next-line no-use-before-define
+  if (isNumericExpression(tokens)) {
+    // eslint-disable-next-line no-use-before-define
+    return parseNumericExpression(tokens);
   }
 
-  let boolean = BooleanType.NONE;
-  let offset = 0;
+  const numeric = Number.parseFloat(tokens[0]);
 
-  if (tokens[0].toLowerCase() === 'not') {
-    boolean = BooleanType.NOT;
-    offset = 1;
+  if (!Number.isNaN(numeric)) {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: numeric } as LiteralValue,
+    };
   }
 
-  let lhs: Value = { type: 'FIELD', fieldName: tokens[0 + offset] } as FieldValue;
+  let regex = /"(.*)"/gm;
+  let match = regex.exec(tokens[0]);
 
-  const valueIsSet = isSet(tokens.slice(2 + offset));
-  let setValue: unknown[];
-  let consumed = 1;
-
-  if (valueIsSet) {
-    const parsedSet = parseSet(tokens.slice(2 + offset));
-    setValue = parsedSet.setValue;
-    consumed = parsedSet.consumed;
+  if (match) {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
   }
 
-  /* FIXME: These could probably be cleaner and cheaper if we simply try to parse
-  the function result values and return undefined if the values are not function
-  results */
-  const leftHandValueIsFunctionResult = isFunctionResult(tokens);
-  let leftHandfunctionResultValue: FunctionResultValue;
+  regex = /'(.*)'/gm;
+  match = regex.exec(tokens[0]);
 
-  if (leftHandValueIsFunctionResult) {
-    const parsedFunctionResult = parseFunctionResult(tokens);
-    leftHandfunctionResultValue = parsedFunctionResult.functionResultValue;
-    consumed = parsedFunctionResult.consumed - offset - 1;
+  if (match) {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: match[1] } as LiteralValue,
+    };
   }
 
-  const rightHandValueIsFunctionResult = isFunctionResult(tokens.slice(consumed + 1));
-  let rightHandfunctionResultValue: FunctionResultValue;
-
-  if (rightHandValueIsFunctionResult) {
-    const parsedFunctionResult = parseFunctionResult(tokens.slice(consumed + 1));
-    rightHandfunctionResultValue = parsedFunctionResult.functionResultValue;
-    consumed = parsedFunctionResult.consumed - offset - 1;
+  if (tokens[0] === 'true') {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: true } as LiteralValue,
+    };
   }
 
-  let rhs: Value;
+  if (tokens[0] === 'false') {
+    return {
+      tokens: tokens.slice(1),
+      value: { type: 'LITERAL', value: false } as LiteralValue,
+    };
+  }
 
-  if (rightHandValueIsFunctionResult) {
-    rhs = rightHandfunctionResultValue;
-  } else if (leftHandValueIsFunctionResult) {
-    lhs = leftHandfunctionResultValue;
-    offset += consumed + 1;
-    /* FIXME: Very hacky. Should breakout the logic to parse the righthand side instead of
-    tricking it like this */
-    const parsedRhs = parseCondition(['fakeToken', ...tokens.slice(1 + offset)]);
-    consumed = tokens.length - (parsedRhs.tokens.length - 2);
-    rhs = (parsedRhs.condition as SingularCondition).rhs;
-  } else if (valueIsSet) {
-    rhs = {
-      type: 'LITERAL',
-      value: setValue,
-    } as LiteralValue;
-  } else {
-    const value = parseValue(tokens.slice(2 + offset));
-    rhs = value.value;
+  // eslint-disable-next-line no-use-before-define
+  if (isSet(tokens)) {
+    // eslint-disable-next-line no-use-before-define
+    const setValue = parseSet(tokens);
+    return {
+      tokens: tokens.slice(setValue.consumed),
+      value: { type: 'LITERAL', value: setValue.setValue } as LiteralValue,
+    };
   }
 
   return {
-    condition: {
-      boolean,
-      comparison: tokens[1 + offset].toUpperCase() as Comparison,
-      lhs,
-      rhs,
-    } as SingularCondition,
-    tokens: tokens.slice(2 + offset + consumed),
+    tokens: tokens.slice(1),
+    value: {
+      type: 'FIELD',
+      fieldName: tokens[0],
+    } as FieldValue,
   };
+};
+
+const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
+  const bracketedPairs = findBracketPairs(tokens);
+
+  const unbracketedBoolean = firstUnbracketedIndex(['and', 'or'], tokens, bracketedPairs);
+
+  if (unbracketedBoolean >= 0) {
+    const boolean: BooleanType = tokens[unbracketedBoolean].toUpperCase() as BooleanType;
+
+    const remainingTokens = tokens.splice(unbracketedBoolean).slice(1);
+    const parsedLhs = parseCondition(tokens);
+    const parsedRhs = parseCondition(remainingTokens);
+
+    return {
+      condition: {
+        boolean,
+        lhs: parsedLhs.condition,
+        rhs: parsedRhs.condition,
+      } as ConditionPair,
+      tokens: parsedRhs.tokens,
+    };
+  }
+
+  const unbracketedNot = firstUnbracketedIndex(['not'], tokens, bracketedPairs);
+
+  if (unbracketedNot >= 0) {
+    const parsed = parseCondition(tokens.slice(1));
+    parsed.condition.boolean = BooleanType.NOT;
+    return parsed;
+  }
+
+  const unbracketedComparison = firstUnbracketedIndex(
+    Object.values(Comparison).map((comparison) => comparison.toLowerCase()),
+    tokens,
+    bracketedPairs,
+  );
+
+  if (unbracketedComparison >= 0) {
+    const comparison: Comparison = tokens[unbracketedComparison].toUpperCase() as Comparison;
+
+    const remainingTokens = tokens.splice(unbracketedComparison).slice(1);
+    const parsedLhsValue = parseValue(tokens);
+    const parsedRhsValue = parseValue(remainingTokens);
+
+    return {
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison,
+        lhs: parsedLhsValue.value,
+        rhs: parsedRhsValue.value,
+      } as SingularCondition,
+      tokens: parsedRhsValue.tokens,
+    };
+  }
+
+  // If we find ourselves here, the entire expression is in brackets
+  return parseCondition(tokens.splice(1, tokens.length - 2));
 };
 
 const parseSelection = (

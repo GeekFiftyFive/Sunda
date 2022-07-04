@@ -4,6 +4,7 @@ import {
   BooleanType,
   Comparison,
   DataSetType,
+  NumericOperation,
   parse,
   ProjectionType,
 } from './Parser';
@@ -1221,6 +1222,35 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.EQ,
         lhs: { type: 'FIELD', fieldName: 'value' },
         rhs: { type: 'LITERAL', value: false },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse basic arithmetic expressions', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '*', '2', '>', '5'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: { type: 'FIELD', fieldName: 'value' },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.MULTIPLY,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
       },
       joins: [],
     });
