@@ -12,6 +12,7 @@ import {
   FunctionName,
   LiteralValue,
   FieldValue,
+  NumericOperation,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -1121,5 +1122,58 @@ describe('executor can handle function calls', () => {
     const actual = await wrapAndExec<Record<string, unknown>>(query, aliasesData);
 
     expect(actual).toEqual([{ 0: 1 }, { 0: 2 }, { 0: null }]);
+  });
+
+  test('can execute queries with basic arithmetic expressions', async () => {
+    const data = {
+      table: [
+        {
+          value: 2,
+        },
+        {
+          value: 2.5,
+        },
+        {
+          value: 3,
+        },
+        {
+          value: 4,
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: { type: 'FIELD', fieldName: 'value' },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.MULTIPLY,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<{ value: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        value: 3,
+      },
+      {
+        value: 4,
+      },
+    ]);
   });
 });

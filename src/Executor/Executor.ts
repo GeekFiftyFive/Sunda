@@ -6,12 +6,14 @@ import {
   Condition,
   ConditionPair,
   DataSetType,
+  ExpressionValue,
   FieldValue,
   FunctionName,
   FunctionResultValue,
   isConditionPair,
   isSingularCondition,
   LiteralValue,
+  NumericOperation,
   ProjectionType,
   Query,
   SingularCondition,
@@ -36,6 +38,13 @@ const comparisons: Record<Comparison, (value: unknown, expected: unknown) => boo
     return new RegExp(regex).test(value);
   },
   IN: (value: unknown, expected: unknown[]) => expected.includes(value),
+};
+
+const numericOperations: Record<NumericOperation, (a: number, b: number) => number> = {
+  '*': (a: number, b: number) => a * b,
+  '/': (a: number, b: number) => a / b,
+  '+': (a: number, b: number) => a + b,
+  '-': (a: number, b: number) => a - b,
 };
 
 // TODO: This should be dealt with in the parser
@@ -67,29 +76,29 @@ export const followJsonPath = <T>(
 };
 
 const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
-  let returnValue: unknown;
-
   switch (value.type) {
     case 'FIELD':
-      returnValue = followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
-      break;
+      return followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
     case 'LITERAL':
-      returnValue = (value as LiteralValue).value;
-      break;
+      return (value as LiteralValue).value;
     case 'FUNCTION_RESULT': {
       const resolvedArgs = (value as FunctionResultValue).args.map((arg) =>
         resolveValue(arg, entry, tableName),
       );
-      returnValue = functions[
+      return functions[
         (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
       ](...resolvedArgs);
-      break;
+    }
+    case 'EXPRESSION': {
+      const expressionValue = value as ExpressionValue;
+      // TODO: Typechecking
+      const resolvedLhs = resolveValue(expressionValue.lhs, entry, tableName) as number;
+      const resolvedRhs = resolveValue(expressionValue.rhs, entry, tableName) as number;
+      return numericOperations[expressionValue.operation](resolvedLhs, resolvedRhs);
     }
     default:
       throw new Error(`Unexpected Value type ${value.type}`);
   }
-
-  return returnValue;
 };
 
 const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
