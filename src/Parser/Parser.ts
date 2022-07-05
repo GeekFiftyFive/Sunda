@@ -190,11 +190,10 @@ const parseNumericExpression = (
 ): { value: Value; tokens: string[] } | undefined => {
   const bracketedPairs = findBracketPairs(tokens);
 
-  const unbracketedAddOrSubtract = firstUnbracketedIndex(['+', '-'], tokens, bracketedPairs);
+  const unbracketedAdd = firstUnbracketedIndex(['+'], tokens, bracketedPairs);
 
-  if (unbracketedAddOrSubtract >= 0) {
-    const operation = tokens[unbracketedAddOrSubtract] as NumericOperation;
-    const remainingTokens = tokens.splice(unbracketedAddOrSubtract).slice(1);
+  if (unbracketedAdd >= 0) {
+    const remainingTokens = tokens.splice(unbracketedAdd).slice(1);
     // eslint-disable-next-line no-use-before-define
     const parsedLhs = parseValue(tokens);
     // eslint-disable-next-line no-use-before-define
@@ -203,7 +202,27 @@ const parseNumericExpression = (
     return {
       value: {
         type: 'EXPRESSION',
-        operation,
+        operation: NumericOperation.ADD,
+        lhs: parsedLhs.value,
+        rhs: parsedRhs.value,
+      } as ExpressionValue,
+      tokens: parsedRhs.tokens,
+    };
+  }
+
+  const unbracketedSubtract = firstUnbracketedIndex(['-'], tokens, bracketedPairs);
+
+  if (unbracketedSubtract >= 0) {
+    const remainingTokens = tokens.splice(unbracketedSubtract).slice(1);
+    // eslint-disable-next-line no-use-before-define
+    const parsedLhs = parseValue(tokens);
+    // eslint-disable-next-line no-use-before-define
+    const parsedRhs = parseValue(remainingTokens);
+
+    return {
+      value: {
+        type: 'EXPRESSION',
+        operation: NumericOperation.SUBTRACT,
         lhs: parsedLhs.value,
         rhs: parsedRhs.value,
       } as ExpressionValue,
