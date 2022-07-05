@@ -1255,6 +1255,81 @@ describe('test parser handlers functions', () => {
       joins: [],
     });
   });
+
+  test('can parse complex arithmetic expressions', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      '3',
+      '*',
+      'field1',
+      '/',
+      '(',
+      '1',
+      '+',
+      'FUNC',
+      '(',
+      'field2',
+      ')',
+      ')',
+      '+',
+      '3',
+      '>',
+      '5',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'EXPRESSION',
+            lhs: { type: 'LITERAL', value: 3 },
+            rhs: {
+              type: 'EXPRESSION',
+              lhs: { type: 'FIELD', fieldName: 'field1' },
+              rhs: {
+                type: 'EXPRESSION',
+                lhs: { type: 'LITERAL', value: 1 },
+                rhs: {
+                  type: 'FUNCTION_RESULT',
+                  functionName: 'FUNC',
+                  args: [
+                    {
+                      type: 'FIELD',
+                      fieldName: 'field2',
+                    },
+                  ],
+                },
+                operation: NumericOperation.ADD,
+              },
+              operation: NumericOperation.DIVIDE,
+            },
+            operation: NumericOperation.MULTIPLY,
+          },
+          rhs: { type: 'LITERAL', value: 3 },
+          operation: NumericOperation.ADD,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser error handling', () => {
