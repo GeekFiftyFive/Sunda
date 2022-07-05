@@ -4,6 +4,7 @@ import {
   BooleanType,
   Comparison,
   DataSetType,
+  NumericOperation,
   parse,
   ProjectionType,
 } from './Parser';
@@ -1221,6 +1222,231 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.EQ,
         lhs: { type: 'FIELD', fieldName: 'value' },
         rhs: { type: 'LITERAL', value: false },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse basic arithmetic expressions using multiply', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '*', '2', '>', '5'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: { type: 'FIELD', fieldName: 'value' },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.MULTIPLY,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse basic arithmetic expressions using addition', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '+', '2', '=', '5'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: { type: 'FIELD', fieldName: 'value' },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.ADD,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse basic arithmetic expressions using addition and subtraction', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', '2', '-', 'value', '+', '2', '=', '5'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'EXPRESSION',
+            lhs: {
+              type: 'LITERAL',
+              value: 2,
+            },
+            rhs: {
+              type: 'FIELD',
+              fieldName: 'value',
+            },
+            operation: NumericOperation.SUBTRACT,
+          },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.ADD,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse basic arithmetic expressions using function calls', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      'ARRAY_POSITION',
+      '(',
+      'CommentorIDs',
+      ',',
+      '2',
+      ')',
+      '/',
+      '2',
+      '=',
+      '1',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'FUNCTION_RESULT',
+            functionName: 'ARRAY_POSITION',
+            args: [
+              { type: 'FIELD', fieldName: 'CommentorIDs' },
+              { type: 'LITERAL', value: 2 },
+            ],
+          },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.DIVIDE,
+        },
+        rhs: { type: 'LITERAL', value: 1 },
+      },
+      joins: [],
+    });
+  });
+
+  test('can parse complex arithmetic expressions', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      '3',
+      '*',
+      'field1',
+      '/',
+      '(',
+      '1',
+      '+',
+      'FUNC',
+      '(',
+      'field2',
+      ')',
+      ')',
+      '+',
+      '3',
+      '>',
+      '5',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'EXPRESSION',
+            lhs: { type: 'LITERAL', value: 3 },
+            rhs: {
+              type: 'EXPRESSION',
+              lhs: { type: 'FIELD', fieldName: 'field1' },
+              rhs: {
+                type: 'EXPRESSION',
+                lhs: { type: 'LITERAL', value: 1 },
+                rhs: {
+                  type: 'FUNCTION_RESULT',
+                  functionName: 'FUNC',
+                  args: [
+                    {
+                      type: 'FIELD',
+                      fieldName: 'field2',
+                    },
+                  ],
+                },
+                operation: NumericOperation.ADD,
+              },
+              operation: NumericOperation.DIVIDE,
+            },
+            operation: NumericOperation.MULTIPLY,
+          },
+          rhs: { type: 'LITERAL', value: 3 },
+          operation: NumericOperation.ADD,
+        },
+        rhs: { type: 'LITERAL', value: 5 },
       },
       joins: [],
     });

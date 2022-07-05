@@ -274,4 +274,31 @@ describe('test tokeniser', () => {
       '0',
     ]);
   });
+
+  test('can tokenise arithmetic expressions', () => {
+    const actual = tokenise('SELECT * FROM table WHERE 3 * field1 / (1 + FUNC(field2)) + 3 > 5');
+    expect(actual).toEqual([
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      '3',
+      '*',
+      'field1',
+      '/',
+      '(',
+      '1',
+      '+',
+      'FUNC',
+      '(',
+      'field2',
+      ')',
+      ')',
+      '+',
+      '3',
+      '>',
+      '5',
+    ]);
+  });
 });

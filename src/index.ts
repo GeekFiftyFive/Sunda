@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 import * as readline from 'readline';
 import * as fs from 'fs';
+import * as util from 'util';
 import { execute } from './Executor';
 import { parse } from './Parser';
 import { tokenise } from './Tokeniser';
@@ -43,7 +44,7 @@ const startRepl = (inputPath: string) => {
         // This is a MetaInterface command
         await executeMetaCommand(input.substring(1), createObjectDataSource(dataset), console.log);
       } else {
-        console.log(await executeQueryFromObject(input, dataset));
+        console.log(util.inspect(await executeQueryFromObject(input, dataset), false, 10, true));
       }
     } catch (e) {
       console.error(e.message);
