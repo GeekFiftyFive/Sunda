@@ -1123,7 +1123,9 @@ describe('executor can handle function calls', () => {
 
     expect(actual).toEqual([{ 0: 1 }, { 0: 2 }, { 0: null }]);
   });
+});
 
+describe('Executor can handle arithmetic', () => {
   test('can execute queries with basic arithmetic expressions', async () => {
     const data = {
       table: [
@@ -1173,6 +1175,89 @@ describe('executor can handle function calls', () => {
       },
       {
         value: 4,
+      },
+    ]);
+  });
+
+  test('can execute queries with complex arithmetic expressions', async () => {
+    const data = {
+      table: [
+        {
+          field1: 2,
+          field2: ['SPORTS', 'FOOD'],
+        },
+        {
+          field1: 2.5,
+          field2: ['TV', 'SPORTS'],
+        },
+        {
+          field1: 3,
+          field2: ['FOOD', 'GAMES'],
+        },
+        {
+          field1: 4,
+          field2: ['READING', 'KNITTING'],
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'EXPRESSION',
+            lhs: { type: 'LITERAL', value: 3 },
+            rhs: {
+              type: 'EXPRESSION',
+              lhs: { type: 'FIELD', fieldName: 'field1' },
+              rhs: {
+                type: 'EXPRESSION',
+                lhs: { type: 'LITERAL', value: 1 },
+                rhs: {
+                  type: 'FUNCTION_RESULT',
+                  functionName: 'ARRAY_POSITION',
+                  args: [
+                    {
+                      type: 'FIELD',
+                      fieldName: 'field2',
+                    },
+                    {
+                      type: 'LITERAL',
+                      value: 'FOOD',
+                    },
+                  ],
+                },
+                operation: NumericOperation.ADD,
+              },
+              operation: NumericOperation.DIVIDE,
+            },
+            operation: NumericOperation.MULTIPLY,
+          },
+          rhs: { type: 'LITERAL', value: 3 },
+          operation: NumericOperation.ADD,
+        },
+        rhs: { type: 'LITERAL', value: 7.5 },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<{ field1: number; field2: string[] }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        field1: 3,
+        field2: ['FOOD', 'GAMES'],
       },
     ]);
   });
