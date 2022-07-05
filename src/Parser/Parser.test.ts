@@ -1325,6 +1325,58 @@ describe('test parser handlers functions', () => {
     });
   });
 
+  test('can parse basic arithmetic expressions using function calls', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'table',
+      'WHERE',
+      'ARRAY_POSITION',
+      '(',
+      'CommentorIDs',
+      ',',
+      '2',
+      ')',
+      '/',
+      '2',
+      '=',
+      '1',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          lhs: {
+            type: 'FUNCTION_RESULT',
+            functionName: 'ARRAY_POSITION',
+            args: [
+              { type: 'FIELD', fieldName: 'CommentorIDs' },
+              { type: 'LITERAL', value: 2 },
+            ],
+          },
+          rhs: { type: 'LITERAL', value: 2 },
+          operation: NumericOperation.DIVIDE,
+        },
+        rhs: { type: 'LITERAL', value: 1 },
+      },
+      joins: [],
+    });
+  });
+
   test('can parse complex arithmetic expressions', () => {
     const tokens = [
       'SELECT',

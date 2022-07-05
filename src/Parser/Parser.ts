@@ -401,18 +401,18 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     };
   }
 
+  const numericExpression = parseNumericExpression(tokens);
+
+  if (numericExpression) {
+    return numericExpression;
+  }
+
   if (isFunctionResult(tokens)) {
     const parsedFunction = parseFunctionResult(tokens);
     return {
       value: parsedFunction.functionResultValue,
       tokens: tokens.slice(parsedFunction.consumed + 1),
     };
-  }
-
-  const numericExpression = parseNumericExpression(tokens);
-
-  if (numericExpression) {
-    return numericExpression;
   }
 
   const numeric = Number.parseFloat(tokens[0]);
