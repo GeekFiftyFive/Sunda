@@ -1181,6 +1181,59 @@ describe('Executor can handle arithmetic', () => {
     ]);
   });
 
+  test('can execute queries with negative numbers', async () => {
+    const data = {
+      table: [
+        {
+          value: 2,
+        },
+        {
+          value: 2.5,
+        },
+        {
+          value: 3,
+        },
+        {
+          value: 4,
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'table',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.EQ,
+        lhs: {
+          type: 'EXPRESSION',
+          chain: [
+            NumericOperation.SUBTRACT,
+            { type: 'LITERAL', value: 2 },
+            NumericOperation.ADD,
+            { type: 'FIELD', fieldName: 'value' },
+          ],
+        },
+        rhs: { type: 'LITERAL', value: 0 },
+      } as SingularCondition,
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<{ value: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        value: 2,
+      },
+    ]);
+  });
+
   test('can execute queries with complex arithmetic expressions', async () => {
     const data = {
       table: [

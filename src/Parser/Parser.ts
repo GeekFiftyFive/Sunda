@@ -213,7 +213,9 @@ const parseNumericExpression = (
 
     let prevIndex = 0;
     unbracketedAddOrSubtract.forEach((index) => {
-      groupedTokens.push(tokens.slice(prevIndex, index));
+      if (index !== 0) {
+        groupedTokens.push(tokens.slice(prevIndex, index));
+      }
       prevIndex = index + 1;
       groupedTokens.push([tokens[index]]);
     });
