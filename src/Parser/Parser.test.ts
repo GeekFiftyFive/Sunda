@@ -1246,9 +1246,11 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'EXPRESSION',
-          lhs: { type: 'FIELD', fieldName: 'value' },
-          rhs: { type: 'LITERAL', value: 2 },
-          operation: NumericOperation.MULTIPLY,
+          chain: [
+            { type: 'FIELD', fieldName: 'value' },
+            NumericOperation.MULTIPLY,
+            { type: 'LITERAL', value: 2 },
+          ],
         },
         rhs: { type: 'LITERAL', value: 5 },
       },
@@ -1275,9 +1277,11 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.EQ,
         lhs: {
           type: 'EXPRESSION',
-          lhs: { type: 'FIELD', fieldName: 'value' },
-          rhs: { type: 'LITERAL', value: 2 },
-          operation: NumericOperation.ADD,
+          chain: [
+            { type: 'FIELD', fieldName: 'value' },
+            NumericOperation.ADD,
+            { type: 'LITERAL', value: 2 },
+          ],
         },
         rhs: { type: 'LITERAL', value: 5 },
       },
@@ -1304,20 +1308,13 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.EQ,
         lhs: {
           type: 'EXPRESSION',
-          lhs: {
-            type: 'EXPRESSION',
-            lhs: {
-              type: 'LITERAL',
-              value: 2,
-            },
-            rhs: {
-              type: 'FIELD',
-              fieldName: 'value',
-            },
-            operation: NumericOperation.SUBTRACT,
-          },
-          rhs: { type: 'LITERAL', value: 2 },
-          operation: NumericOperation.ADD,
+          chain: [
+            { type: 'LITERAL', value: 2 },
+            NumericOperation.SUBTRACT,
+            { type: 'FIELD', fieldName: 'value' },
+            NumericOperation.ADD,
+            { type: 'LITERAL', value: 2 },
+          ],
         },
         rhs: { type: 'LITERAL', value: 5 },
       },
@@ -1360,16 +1357,18 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.EQ,
         lhs: {
           type: 'EXPRESSION',
-          lhs: {
-            type: 'FUNCTION_RESULT',
-            functionName: 'ARRAY_POSITION',
-            args: [
-              { type: 'FIELD', fieldName: 'CommentorIDs' },
-              { type: 'LITERAL', value: 2 },
-            ],
-          },
-          rhs: { type: 'LITERAL', value: 2 },
-          operation: NumericOperation.DIVIDE,
+          chain: [
+            {
+              type: 'FUNCTION_RESULT',
+              functionName: 'ARRAY_POSITION',
+              args: [
+                { type: 'FIELD', fieldName: 'CommentorIDs' },
+                { type: 'LITERAL', value: 2 },
+              ],
+            },
+            NumericOperation.DIVIDE,
+            { type: 'LITERAL', value: 2 },
+          ],
         },
         rhs: { type: 'LITERAL', value: 1 },
       },
@@ -1418,33 +1417,41 @@ describe('test parser handlers functions', () => {
         comparison: Comparison.GT,
         lhs: {
           type: 'EXPRESSION',
-          lhs: {
-            type: 'EXPRESSION',
-            lhs: { type: 'LITERAL', value: 3 },
-            rhs: {
+          chain: [
+            {
               type: 'EXPRESSION',
-              lhs: { type: 'FIELD', fieldName: 'field1' },
-              rhs: {
-                type: 'EXPRESSION',
-                lhs: { type: 'LITERAL', value: 1 },
-                rhs: {
-                  type: 'FUNCTION_RESULT',
-                  functionName: 'FUNC',
-                  args: [
+              chain: [
+                { type: 'LITERAL', value: 3 },
+                NumericOperation.MULTIPLY,
+                {
+                  type: 'EXPRESSION',
+                  chain: [
+                    { type: 'FIELD', fieldName: 'field1' },
+                    NumericOperation.DIVIDE,
                     {
-                      type: 'FIELD',
-                      fieldName: 'field2',
+                      type: 'EXPRESSION',
+                      chain: [
+                        { type: 'LITERAL', value: 1 },
+                        NumericOperation.ADD,
+                        {
+                          type: 'FUNCTION_RESULT',
+                          functionName: 'FUNC',
+                          args: [
+                            {
+                              type: 'FIELD',
+                              fieldName: 'field2',
+                            },
+                          ],
+                        },
+                      ],
                     },
                   ],
                 },
-                operation: NumericOperation.ADD,
-              },
-              operation: NumericOperation.DIVIDE,
+              ],
             },
-            operation: NumericOperation.MULTIPLY,
-          },
-          rhs: { type: 'LITERAL', value: 3 },
-          operation: NumericOperation.ADD,
+            NumericOperation.ADD,
+            { type: 'LITERAL', value: 3 },
+          ],
         },
         rhs: { type: 'LITERAL', value: 5 },
       },

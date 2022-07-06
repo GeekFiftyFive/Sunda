@@ -78,9 +78,7 @@ export interface FunctionResultValue extends Value {
 
 export interface ExpressionValue extends Value {
   type: 'EXPRESSION';
-  lhs: Value;
-  rhs: Value;
-  operation: NumericOperation;
+  chain: (Value | NumericOperation)[];
 }
 
 export interface SingularCondition extends Condition {
@@ -146,6 +144,24 @@ const firstUnbracketedIndex = (
     return orIndex;
   }, -1);
 
+const allUnbracketedIndexes = (
+  searchValues: string[],
+  tokens: string[],
+  bracketedPairs: { start: number; end: number }[],
+): number[] =>
+  tokens
+    .map((token, index) => {
+      if (
+        searchValues.includes(token.toLowerCase()) &&
+        !isInBracketedExpression(index, bracketedPairs)
+      ) {
+        return index;
+      }
+
+      return undefined;
+    })
+    .filter((value) => value !== undefined);
+
 const findBracketPairs = (tokens: string[]): { start: number; end: number }[] => {
   let bracketIndex = tokens.findIndex((token) => token === '(');
   const bracketPairs: { start: number; end: number }[] = [];
@@ -190,43 +206,42 @@ const parseNumericExpression = (
 ): { value: Value; tokens: string[] } | undefined => {
   const bracketedPairs = findBracketPairs(tokens);
 
-  const unbracketedAdd = firstUnbracketedIndex(['+'], tokens, bracketedPairs);
+  const unbracketedAddOrSubtract = allUnbracketedIndexes(['+', '-'], tokens, bracketedPairs);
 
-  if (unbracketedAdd >= 0) {
-    const remainingTokens = tokens.splice(unbracketedAdd).slice(1);
-    // eslint-disable-next-line no-use-before-define
-    const parsedLhs = parseValue(tokens);
-    // eslint-disable-next-line no-use-before-define
-    const parsedRhs = parseValue(remainingTokens);
+  if (unbracketedAddOrSubtract.length > 0) {
+    const groupedTokens: string[][] = [];
+
+    let prevIndex = 0;
+    unbracketedAddOrSubtract.forEach((index) => {
+      groupedTokens.push(tokens.slice(prevIndex, index));
+      prevIndex = index + 1;
+      groupedTokens.push([tokens[index]]);
+    });
+
+    groupedTokens.push(tokens.slice(prevIndex));
+
+    let remainingTokens: string[] = [];
+
+    const chain = groupedTokens.map((group) => {
+      if (
+        group.length === 1 &&
+        (group[0] === NumericOperation.ADD || group[0] === NumericOperation.SUBTRACT)
+      ) {
+        return group[0] as NumericOperation;
+      }
+
+      // eslint-disable-next-line no-use-before-define
+      const parsed = parseValue(group);
+      remainingTokens = parsed.tokens;
+      return parsed.value;
+    });
 
     return {
       value: {
         type: 'EXPRESSION',
-        operation: NumericOperation.ADD,
-        lhs: parsedLhs.value,
-        rhs: parsedRhs.value,
+        chain,
       } as ExpressionValue,
-      tokens: parsedRhs.tokens,
-    };
-  }
-
-  const unbracketedSubtract = firstUnbracketedIndex(['-'], tokens, bracketedPairs);
-
-  if (unbracketedSubtract >= 0) {
-    const remainingTokens = tokens.splice(unbracketedSubtract).slice(1);
-    // eslint-disable-next-line no-use-before-define
-    const parsedLhs = parseValue(tokens);
-    // eslint-disable-next-line no-use-before-define
-    const parsedRhs = parseValue(remainingTokens);
-
-    return {
-      value: {
-        type: 'EXPRESSION',
-        operation: NumericOperation.SUBTRACT,
-        lhs: parsedLhs.value,
-        rhs: parsedRhs.value,
-      } as ExpressionValue,
-      tokens: parsedRhs.tokens,
+      tokens: remainingTokens,
     };
   }
 
@@ -242,9 +257,7 @@ const parseNumericExpression = (
     return {
       value: {
         type: 'EXPRESSION',
-        operation: NumericOperation.MULTIPLY,
-        lhs: parsedLhs.value,
-        rhs: parsedRhs.value,
+        chain: [parsedLhs.value, NumericOperation.MULTIPLY, parsedRhs.value],
       } as ExpressionValue,
       tokens: parsedRhs.tokens,
     };
@@ -262,9 +275,7 @@ const parseNumericExpression = (
     return {
       value: {
         type: 'EXPRESSION',
-        operation: NumericOperation.DIVIDE,
-        lhs: parsedLhs.value,
-        rhs: parsedRhs.value,
+        chain: [parsedLhs.value, NumericOperation.DIVIDE, parsedRhs.value],
       } as ExpressionValue,
       tokens: parsedRhs.tokens,
     };

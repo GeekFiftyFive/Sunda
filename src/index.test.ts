@@ -207,3 +207,47 @@ describe('Complex queries', () => {
     ]);
   });
 });
+
+describe('Arithmetic', () => {
+  const data = {
+    test: [
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ],
+  };
+
+  test('can handle simple arithmetic', async () => {
+    const query = 'SELECT * FROM test WHERE value = 4 / 2';
+    const actual = await executeQueryFromObject<{ value: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ]);
+  });
+
+  test('can handle more complex arithmetic', async () => {
+    const query = "SELECT * FROM test WHERE value = 3 * 2 / (ARRAY_POSITION(set, 'hello') + 1) - 1";
+    const actual = await executeQueryFromObject<{ value: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ]);
+  });
+
+  test('can handle chains of addition and sutraction', async () => {
+    const query = 'SELECT * FROM test WHERE value = 4 - 1 / 1 - 8 + 2 * 5 - 8 / 2 + 1';
+    const actual = await executeQueryFromObject<{ value: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ]);
+  });
+});
