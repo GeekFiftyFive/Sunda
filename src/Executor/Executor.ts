@@ -90,11 +90,25 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
       ](...resolvedArgs);
     }
     case 'EXPRESSION': {
-      const expressionValue = value as ExpressionValue;
-      // TODO: Typechecking
-      const resolvedLhs = resolveValue(expressionValue.lhs, entry, tableName) as number;
-      const resolvedRhs = resolveValue(expressionValue.rhs, entry, tableName) as number;
-      return numericOperations[expressionValue.operation](resolvedLhs, resolvedRhs);
+      return (value as ExpressionValue).chain.reduce(
+        (acc, valueOrOp) => {
+          if (Object.values(NumericOperation).includes(valueOrOp as NumericOperation)) {
+            acc.operation = valueOrOp as NumericOperation;
+          } else if (acc.operation) {
+            acc.accumulator = numericOperations[acc.operation](
+              acc.accumulator,
+              // TODO: Type checking
+              resolveValue(valueOrOp as Value, entry, tableName) as number,
+            );
+            acc.operation = null;
+          } else {
+            // TODO: Type checking
+            acc.accumulator = resolveValue(valueOrOp as Value, entry, tableName) as number;
+          }
+          return acc;
+        },
+        { accumulator: 0, operation: null as NumericOperation },
+      ).accumulator;
     }
     default:
       throw new Error(`Unexpected Value type ${value.type}`);
