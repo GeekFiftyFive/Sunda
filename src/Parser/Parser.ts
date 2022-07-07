@@ -207,6 +207,31 @@ export const isConditionPair = (object: Condition): object is ConditionPair =>
 const parseNumericExpression = (
   tokens: string[],
 ): { value: Value; tokens: string[] } | undefined => {
+  if (tokens.length === 2 && tokens[0] === NumericOperation.SUBTRACT && tokens[1] === '1') {
+    return {
+      value: {
+        type: 'LITERAL',
+        value: -1,
+      } as LiteralValue,
+      tokens: [],
+    };
+  }
+
+  // eslint-disable-next-line no-param-reassign
+  tokens = tokens
+    .map((token, index) => {
+      if (
+        token === NumericOperation.SUBTRACT &&
+        (index === 0 ||
+          Object.values(NumericOperation).includes(tokens[index - 1] as NumericOperation))
+      ) {
+        return ['(', NumericOperation.SUBTRACT, '1', ')', NumericOperation.MULTIPLY];
+      }
+
+      return token;
+    })
+    .flat();
+
   const bracketedPairs = findBracketPairs(tokens, true);
 
   const unbracketedAddOrSubtract = allUnbracketedIndexes(['+', '-'], tokens, bracketedPairs);

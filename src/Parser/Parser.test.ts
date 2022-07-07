@@ -1396,8 +1396,14 @@ describe('test parser handlers functions', () => {
         lhs: {
           type: 'EXPRESSION',
           chain: [
-            NumericOperation.SUBTRACT,
-            { type: 'LITERAL', value: 2 },
+            {
+              type: 'EXPRESSION',
+              chain: [
+                { type: 'LITERAL', value: -1 },
+                NumericOperation.MULTIPLY,
+                { type: 'LITERAL', value: 2 },
+              ],
+            },
             NumericOperation.ADD,
             { type: 'FIELD', fieldName: 'value' },
           ],
