@@ -162,7 +162,10 @@ const allUnbracketedIndexes = (
     })
     .filter((value) => value !== undefined);
 
-const findBracketPairs = (tokens: string[]): { start: number; end: number }[] => {
+const findBracketPairs = (
+  tokens: string[],
+  keepConsuming?: boolean,
+): { start: number; end: number }[] => {
   let bracketIndex = tokens.findIndex((token) => token === '(');
   const bracketPairs: { start: number; end: number }[] = [];
 
@@ -188,7 +191,7 @@ const findBracketPairs = (tokens: string[]): { start: number; end: number }[] =>
           });
         }
         bracketIndex += 1;
-      } while (brackets.length > 0);
+      } while ((brackets.length > 0 && !keepConsuming) || bracketIndex < tokens.length);
     }
   }
 
@@ -204,7 +207,7 @@ export const isConditionPair = (object: Condition): object is ConditionPair =>
 const parseNumericExpression = (
   tokens: string[],
 ): { value: Value; tokens: string[] } | undefined => {
-  const bracketedPairs = findBracketPairs(tokens);
+  const bracketedPairs = findBracketPairs(tokens, true);
 
   const unbracketedAddOrSubtract = allUnbracketedIndexes(['+', '-'], tokens, bracketedPairs);
 

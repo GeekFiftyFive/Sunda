@@ -250,4 +250,26 @@ describe('Arithmetic', () => {
       },
     ]);
   });
+
+  test('can handle negative numbers', async () => {
+    const query = 'SELECT * FROM test WHERE value = -2 * -1';
+    const actual = await executeQueryFromObject<{ value: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ]);
+  });
+
+  test('can handle separate brackets', async () => {
+    const query = 'SELECT * FROM test WHERE value = (2 + 2) - (1 + 1)';
+    const actual = await executeQueryFromObject<{ value: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        value: 2,
+        set: ['hello', 'world'],
+      },
+    ]);
+  });
 });
