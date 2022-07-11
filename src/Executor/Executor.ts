@@ -116,7 +116,11 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
   }
 };
 
-const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
+const assignSubValue = (
+  target: Record<string, unknown>,
+  tokens: string[] | number[],
+  toAssign: unknown,
+) => {
   if (tokens.length === 1) {
     // eslint-disable-next-line no-param-reassign
     target[tokens[0]] = toAssign;
@@ -251,13 +255,15 @@ const distinct = <T>(
 
     if (unique) {
       const newValue: Record<string, unknown> = {};
-      selectedValues.forEach((selectedValue) => {
+      selectedValues.forEach((selectedValue, index) => {
         if (isFieldValue(selectedValue)) {
           assignSubValue(
             newValue,
             selectedValue.fieldName.split('.'),
             resolveValue(selectedValue, entry, tableName),
           );
+        } else {
+          assignSubValue(newValue, [index], resolveValue(selectedValue, entry, tableName));
         }
       });
       values.push(newValue);

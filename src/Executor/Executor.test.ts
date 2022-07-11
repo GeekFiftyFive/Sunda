@@ -13,6 +13,7 @@ import {
   LiteralValue,
   FieldValue,
   NumericOperation,
+  FunctionResultValue,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -1399,25 +1400,25 @@ describe('Executor can handle arithmetic', () => {
 });
 
 describe('Executor can handle regex', () => {
-  test('Executor can extract match groups', async () => {
-    const data = {
-      testData: [
-        {
-          stringValue: 'Hello, world!',
-        },
-        {
-          stringValue: 'Hello, friends!',
-        },
-        {
-          stringValue: 'This is not like the others',
-        },
-      ],
-    };
+  const data = {
+    testData: [
+      {
+        stringValue: 'Hello, world!',
+      },
+      {
+        stringValue: 'Hello, friends!',
+      },
+      {
+        stringValue: 'This is not like the others',
+      },
+    ],
+  };
 
+  test('Executor can extract match groups', async () => {
     const query: Query = {
-      projection: { type: 0 },
-      dataset: { type: 0, value: 'testData' },
-      aggregation: 0,
+      projection: { type: ProjectionType.ALL },
+      dataset: { type: DataSetType.TABLE, value: 'testData' },
+      aggregation: AggregateType.NONE,
       joins: [],
       condition: {
         boolean: 'NONE',
@@ -1435,11 +1436,53 @@ describe('Executor can handle regex', () => {
       } as SingularCondition,
     };
 
-    const actual = await wrapAndExec<{ field1: number; field2: string[] }>(query, data);
+    const actual = await wrapAndExec<{ stringValue: string }>(query, data);
 
     expect(actual).toEqual([
       {
         stringValue: 'Hello, world!',
+      },
+    ]);
+  });
+
+  test('Executor can handle match groups in a distinct', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.DISTINCT,
+        values: [
+          {
+            type: 'FUNCTION_RESULT',
+            functionName: 'REGEX_GROUP',
+            args: [
+              {
+                type: 'LITERAL',
+                value: '^Hello, (\\w*)(!)$',
+              },
+              {
+                type: 'FIELD',
+                fieldName: 'stringValue',
+              },
+              {
+                type: 'LITERAL',
+                value: 1,
+              } as LiteralValue,
+            ],
+          } as FunctionResultValue,
+        ],
+      },
+      dataset: { type: DataSetType.TABLE, value: 'testData' },
+      aggregation: AggregateType.NONE,
+      joins: [],
+    };
+
+    const actual = await wrapAndExec<{ stringValue: string }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        0: 'world',
+      },
+      {
+        0: 'friends',
       },
     ]);
   });

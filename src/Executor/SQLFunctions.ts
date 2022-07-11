@@ -38,6 +38,10 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
       throw new Error("Incorrect number of arguments passed to 'REGEX_GROUP'");
     }
 
+    if (args.filter((arg) => arg === undefined).length > 0) {
+      return undefined;
+    }
+
     if (typeof args[0] !== 'string' || typeof args[1] !== 'string' || typeof args[2] !== 'number') {
       throw new Error("Incorrect arguemnt type for 'REGEX_GROUP'");
     }
