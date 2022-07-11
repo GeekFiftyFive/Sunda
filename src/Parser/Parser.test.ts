@@ -352,6 +352,59 @@ describe('test parser', () => {
     );
   });
 
+  test("parse can handle a function inside of a 'distinct'", () => {
+    const tokens = [
+      'SELECT',
+      'DISTINCT',
+      'REGEX_GROUP',
+      '(',
+      '"^Hello, (\\w*)(!)$"',
+      ',',
+      'name',
+      ',',
+      '1',
+      ')',
+      ',',
+      'age',
+      'FROM',
+      'tableName',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual(
+      expect.objectContaining({
+        projection: {
+          type: ProjectionType.DISTINCT,
+          values: [
+            {
+              type: 'FUNCTION_RESULT',
+              functionName: 'REGEX_GROUP',
+              args: [
+                {
+                  type: 'LITERAL',
+                  value: '^Hello, (\\w*)(!)$',
+                },
+                {
+                  type: 'FIELD',
+                  fieldName: 'name',
+                },
+                {
+                  type: 'LITERAL',
+                  value: 1,
+                },
+              ],
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ],
+        },
+        joins: [],
+      }),
+    );
+  });
+
   test("parse simple 'count' aggregation", () => {
     const tokens = ['SELECT', 'COUNT', '(', '*', ')', 'FROM', 'tableName'];
     const query = parse(tokens);

@@ -630,18 +630,20 @@ const parseSelection = (
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
   const values: Value[] = [];
-  let consumedTokens = offset;
+  let remainingTokens = Array.from(tokens.slice(offset));
+  let listIndex = 0;
 
-  while (
-    tokens[consumedTokens].toLowerCase() !== 'from' &&
-    tokens[consumedTokens].toLowerCase() !== ')'
-  ) {
-    if (consumedTokens % 2 === offset) {
-      values.push(parseValue([tokens[consumedTokens]]).value);
-    } else if (tokens[consumedTokens] !== ',') {
+  while (remainingTokens[0].toLowerCase() !== 'from' && remainingTokens[0].toLowerCase() !== ')') {
+    if (listIndex % 2 === 0) {
+      const parsedValue = parseValue(remainingTokens);
+      values.push(parsedValue.value);
+      remainingTokens = parsedValue.tokens;
+    } else if (remainingTokens[0] === ',') {
+      remainingTokens = remainingTokens.slice(1);
+    } else {
       throw new Error('Remapping column names is not currently supported!');
     }
-    consumedTokens += 1;
+    listIndex += 1;
   }
 
   return {
@@ -650,7 +652,7 @@ const parseSelection = (
       values,
     },
     aggregation: AggregateType.NONE,
-    tokens: tokens.slice(consumedTokens),
+    tokens: remainingTokens,
   };
 };
 
