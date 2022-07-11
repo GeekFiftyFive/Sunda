@@ -1484,6 +1484,9 @@ describe('Executor can handle regex', () => {
       {
         0: 'friends',
       },
+      {
+        0: undefined,
+      },
     ]);
   });
 });

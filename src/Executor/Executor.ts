@@ -240,11 +240,15 @@ const distinct = <T>(
 
     values.forEach((value) => {
       let matches = 0;
-      selectedValues.forEach((selectedValue) => {
-        if (
-          resolveValue(selectedValue, entry, tableName) ===
-          resolveValue(selectedValue, value, tableName)
-        ) {
+      selectedValues.forEach((selectedValue, index) => {
+        if (isFieldValue(selectedValue)) {
+          if (
+            resolveValue(selectedValue, entry, tableName) ===
+            resolveValue(selectedValue, value, tableName)
+          ) {
+            matches += 1;
+          }
+        } else if (resolveValue(selectedValue, entry, tableName) === value[index]) {
           matches += 1;
         }
       });
