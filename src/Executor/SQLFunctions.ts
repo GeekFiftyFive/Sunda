@@ -50,6 +50,10 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
     const toMatch = args[1];
     const groupIndexToReturn = args[2];
 
+    if (groupIndexToReturn < 1) {
+      throw new Error('Index must begin at 1');
+    }
+
     const compiledRegex = new RegExp(regex);
 
     const value = compiledRegex.exec(toMatch);
