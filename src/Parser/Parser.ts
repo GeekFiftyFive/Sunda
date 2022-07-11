@@ -95,7 +95,7 @@ export interface ConditionPair extends Condition {
 
 export interface Projection {
   type: ProjectionType;
-  fields?: string[];
+  values?: Value[];
   function?: FunctionResultValue;
 }
 
@@ -113,6 +113,8 @@ export interface Query {
   joins: Join[];
   condition?: Condition;
 }
+
+export const isFieldValue = (value: Value): value is FieldValue => value.type === 'FIELD';
 
 const isInBracketedExpression = (
   index: number,
@@ -597,7 +599,7 @@ const parseSelection = (
         throw new Error(`Cannot use '${tokens[0].toUpperCase()}' aggregation with wildcard`);
       }
 
-      if (projection.fields.length > 1) {
+      if (projection.values.length > 1) {
         throw new Error(
           `Cannot use '${tokens[0].toUpperCase()}' aggregation with multiple field names`,
         );
@@ -627,7 +629,7 @@ const parseSelection = (
     tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
-  const fields: string[] = [];
+  const values: Value[] = [];
   let consumedTokens = offset;
 
   while (
@@ -635,7 +637,7 @@ const parseSelection = (
     tokens[consumedTokens].toLowerCase() !== ')'
   ) {
     if (consumedTokens % 2 === offset) {
-      fields.push(tokens[consumedTokens]);
+      values.push(parseValue([tokens[consumedTokens]]).value);
     } else if (tokens[consumedTokens] !== ',') {
       throw new Error('Remapping column names is not currently supported!');
     }
@@ -645,7 +647,7 @@ const parseSelection = (
   return {
     projection: {
       type,
-      fields,
+      values,
     },
     aggregation: AggregateType.NONE,
     tokens: tokens.slice(consumedTokens),

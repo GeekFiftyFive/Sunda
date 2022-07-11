@@ -261,7 +261,16 @@ describe('test executeQuery', () => {
     const query: Query = {
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['firstName', 'surname'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'firstName',
+          },
+          {
+            type: 'FIELD',
+            fieldName: 'surname',
+          },
+        ] as FieldValue[],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'test_data' },
@@ -437,7 +446,12 @@ describe('test executor handles subfields in select', () => {
     const query: Query = {
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['address.line1'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'address.line1',
+          },
+        ] as FieldValue[],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'users' },
@@ -462,7 +476,12 @@ describe('test executor handles subfields in select', () => {
     const query: Query = {
       projection: {
         type: ProjectionType.DISTINCT,
-        fields: ['address.line1'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'address.line1',
+          },
+        ] as FieldValue[],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'users' },
@@ -505,7 +524,12 @@ describe('test executor handles distinct', () => {
       {
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['first_name'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'first_name',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.NONE,
         dataset: { type: DataSetType.TABLE, value: 'test_data' },
@@ -522,7 +546,16 @@ describe('test executor handles distinct', () => {
       {
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['first_name', 'age'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'first_name',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.NONE,
         dataset: { type: DataSetType.TABLE, value: 'test_data' },
@@ -543,7 +576,16 @@ describe('test executor handles distinct', () => {
       {
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['first_name', 'age'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'first_name',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.COUNT,
         dataset: { type: DataSetType.TABLE, value: 'test_data' },
@@ -583,7 +625,12 @@ describe('AVG and SUM aggregates', () => {
       {
         projection: {
           type: ProjectionType.SELECTED,
-          fields: ['price'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'price',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.AVG,
         dataset: { type: DataSetType.TABLE, value: 'treats' },
@@ -600,7 +647,12 @@ describe('AVG and SUM aggregates', () => {
       {
         projection: {
           type: ProjectionType.SELECTED,
-          fields: ['price'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'price',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.SUM,
         dataset: { type: DataSetType.TABLE, value: 'treats' },
@@ -618,7 +670,12 @@ describe('AVG and SUM aggregates', () => {
         {
           projection: {
             type: ProjectionType.SELECTED,
-            fields: ['name'],
+            values: [
+              {
+                type: 'FIELD',
+                fieldName: 'name',
+              },
+            ] as FieldValue[],
           },
           aggregation: AggregateType.SUM,
           dataset: { type: DataSetType.TABLE, value: 'treats' },
@@ -635,7 +692,12 @@ describe('AVG and SUM aggregates', () => {
         {
           projection: {
             type: ProjectionType.SELECTED,
-            fields: ['name'],
+            values: [
+              {
+                type: 'FIELD',
+                fieldName: 'name',
+              },
+            ] as FieldValue[],
           },
           aggregation: AggregateType.AVG,
           dataset: { type: DataSetType.TABLE, value: 'treats' },
@@ -742,7 +804,12 @@ describe('executor can handle joins', () => {
       {
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['users.Name'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'users.Name',
+            },
+          ] as FieldValue[],
         },
         aggregation: AggregateType.NONE,
         dataset: { type: DataSetType.TABLE, value: 'posts' },
@@ -908,7 +975,12 @@ describe('Executor can handle sub-queries', () => {
     const query: Query = {
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['u.age'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'u.age',
+          },
+        ] as FieldValue[],
       },
       aggregation: AggregateType.NONE,
       dataset: {
