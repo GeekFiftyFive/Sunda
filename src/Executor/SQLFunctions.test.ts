@@ -18,3 +18,5 @@ describe("test 'ARRAY_POSITION' function", () => {
     expect(actual).toEqual(4);
   });
 });
+
+// TODO: Test coverage for REGEX_GROUP

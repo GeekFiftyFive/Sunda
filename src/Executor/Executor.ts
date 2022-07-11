@@ -11,6 +11,7 @@ import {
   FunctionName,
   FunctionResultValue,
   isConditionPair,
+  isFieldValue,
   isSingularCondition,
   LiteralValue,
   NumericOperation,
@@ -115,7 +116,11 @@ const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: s
   }
 };
 
-const assignSubValue = (target: Record<string, unknown>, tokens: string[], toAssign: unknown) => {
+const assignSubValue = (
+  target: Record<string, unknown>,
+  tokens: string[] | number[],
+  toAssign: unknown,
+) => {
   if (tokens.length === 1) {
     // eslint-disable-next-line no-param-reassign
     target[tokens[0]] = toAssign;
@@ -222,7 +227,11 @@ const handleCondition = (
   throw new Error('Could not identify condition! There must be a parser bug!');
 };
 
-const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => {
+const distinct = <T>(
+  selectedValues: Value[],
+  data: Record<string, unknown>[],
+  tableName: string,
+): T[] => {
   const values: Record<string, unknown>[] = [];
 
   // TODO: This is pretty naive and could do with optimisation and cleaning up
@@ -231,20 +240,35 @@ const distinct = <T>(fields: string[], data: Record<string, unknown>[]): T[] => 
 
     values.forEach((value) => {
       let matches = 0;
-      fields.forEach((field) => {
-        if (followJsonPath(field, entry) === followJsonPath(field, value)) {
+      selectedValues.forEach((selectedValue, index) => {
+        if (isFieldValue(selectedValue)) {
+          if (
+            resolveValue(selectedValue, entry, tableName) ===
+            resolveValue(selectedValue, value, tableName)
+          ) {
+            matches += 1;
+          }
+        } else if (resolveValue(selectedValue, entry, tableName) === value[index]) {
           matches += 1;
         }
       });
-      if (matches === fields.length) {
+      if (matches === selectedValues.length) {
         unique = false;
       }
     });
 
     if (unique) {
       const newValue: Record<string, unknown> = {};
-      fields.forEach((field) => {
-        assignSubValue(newValue, field.split('.'), followJsonPath(field, entry));
+      selectedValues.forEach((selectedValue, index) => {
+        if (isFieldValue(selectedValue)) {
+          assignSubValue(
+            newValue,
+            selectedValue.fieldName.split('.'),
+            resolveValue(selectedValue, entry, tableName),
+          );
+        } else {
+          assignSubValue(newValue, [index], resolveValue(selectedValue, entry, tableName));
+        }
       });
       values.push(newValue);
     }
@@ -311,20 +335,26 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     case ProjectionType.SELECTED:
       output = filtered.map((value: Record<string, unknown>) => {
         const obj: Record<string, unknown> = {};
-        query.projection.fields.forEach((field) => {
-          const pathTokens = field.split('.');
-          const fieldValue = followJsonPath(field, value);
-          assignSubValue(obj, pathTokens, fieldValue);
+        query.projection.values.forEach((selectedValue) => {
+          if (isFieldValue(selectedValue)) {
+            const pathTokens = selectedValue.fieldName.split('.');
+            const fieldValue = followJsonPath(selectedValue.fieldName, value);
+            assignSubValue(obj, pathTokens, fieldValue);
+          }
         });
         return obj as T;
       });
       break;
     case ProjectionType.DISTINCT:
-      output = distinct(query.projection.fields, filtered as Record<string, unknown>[]);
+      output = distinct(
+        query.projection.values,
+        filtered as Record<string, unknown>[],
+        query.dataset.value as string,
+      );
       break;
     case ProjectionType.FUNCTION:
       output = filtered.map((datum) => {
-        const resolvedArguements = query.projection.function.args.map((arg) => {
+        const resolvedArguments = query.projection.function.args.map((arg) => {
           if (query.dataset.type === DataSetType.SUBQUERY) {
             throw new Error('Cannot currently execute a function against a sub-queried dataset');
           }
@@ -336,7 +366,7 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
         });
         return {
           0: functions[query.projection.function.functionName.toUpperCase() as FunctionName](
-            ...resolvedArguements,
+            ...resolvedArguments,
           ),
         };
       });
@@ -351,7 +381,11 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     case AggregateType.AVG:
     case AggregateType.SUM: {
       const sum = output.reduce((acc: number, current: Record<string, number>) => {
-        const val = current[query.projection.fields[0]];
+        const val = resolveValue(
+          query.projection.values[0],
+          current,
+          query.dataset.value as string,
+        );
 
         if (typeof val !== 'number') {
           throw new Error(

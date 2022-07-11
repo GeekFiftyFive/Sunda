@@ -33,4 +33,35 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
 
     return index + 1;
   },
+  REGEX_GROUP: (...args) => {
+    if (args.length < 3) {
+      throw new Error("Incorrect number of arguments passed to 'REGEX_GROUP'");
+    }
+
+    if (args.filter((arg) => arg === undefined).length > 0) {
+      return undefined;
+    }
+
+    if (typeof args[0] !== 'string' || typeof args[1] !== 'string' || typeof args[2] !== 'number') {
+      throw new Error("Incorrect arguemnt type for 'REGEX_GROUP'");
+    }
+
+    const regex = args[0];
+    const toMatch = args[1];
+    const groupIndexToReturn = args[2];
+
+    if (groupIndexToReturn < 1) {
+      throw new Error('Index must begin at 1');
+    }
+
+    const compiledRegex = new RegExp(regex);
+
+    const value = compiledRegex.exec(toMatch);
+
+    if (!value) {
+      return undefined;
+    }
+
+    return value[groupIndexToReturn];
+  },
 };

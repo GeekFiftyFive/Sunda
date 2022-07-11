@@ -273,3 +273,66 @@ describe('Arithmetic', () => {
     ]);
   });
 });
+
+describe('REGEX_GROUP', () => {
+  const data = {
+    testData: [
+      {
+        message: 'Hello, world!',
+        age: 24,
+      },
+      {
+        message: 'Hello, friends!',
+        age: 26,
+      },
+      {
+        message: 'Hello, friends!',
+        age: 27,
+      },
+      {
+        message: 'Not in pattern',
+        age: 30,
+      },
+    ],
+  };
+
+  test("Can use 'REGEX_GROUP' inside of 'DISTINCT' with a singular field", async () => {
+    const query = 'SELECT DISTINCT REGEX_GROUP("^Hello, (\\w*)(!)$", message, 1) FROM testData';
+    const actual = await executeQueryFromObject<{ message: string }>(query, data);
+    expect(actual).toEqual([
+      {
+        0: 'world',
+      },
+      {
+        0: 'friends',
+      },
+      {
+        0: undefined,
+      },
+    ]);
+  });
+
+  test("Can use 'REGEX_GROUP' inside of 'DISTINCT' with multiple fields", async () => {
+    const query =
+      'SELECT DISTINCT REGEX_GROUP("^Hello, (\\w*)(!)$", message, 1), age FROM testData';
+    const actual = await executeQueryFromObject<{ message: string; age: number }>(query, data);
+    expect(actual).toEqual([
+      {
+        0: 'world',
+        age: 24,
+      },
+      {
+        0: 'friends',
+        age: 26,
+      },
+      {
+        0: 'friends',
+        age: 27,
+      },
+      {
+        0: undefined,
+        age: 30,
+      },
+    ]);
+  });
+});

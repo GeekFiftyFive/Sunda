@@ -10,23 +10,23 @@ Sunda allows you to query JSON objects using a subset of SQL. It includes a simp
 
 To start Sunda in REPL mode, simply run Sunda using `npx sunda`, or just `sunda` if it has been globally installed, and pass in a filename, like so:
 
-~~~
+```
 sunda <filename.json>
-~~~
+```
 
 Additionally, Sunda can take a query as a command line argument, using `-q` or `--query`. This will read the JSON file (if specified) or read from `stdin` (if no file is specified) and write the query results to the output file (if specified via `-o` or `--output`) or to `stdout` if no output file has been specified.
 
 For example, the following command will read data from `stdin`, execute the query `select count(*) from root` against the dataset and then write the result to `stdout`.
 
-~~~
+```
 sunda -q 'select count(*) from root'
-~~~
+```
 
 And this query will do the same, but instead of writing the output to `stdout` it will be written to a file named `output.json`:
 
-~~~
+```
 sunda -q 'select count(*) from root' -o output.json
-~~~
+```
 
 Additionally, using the flags `--help` or `-h` will print the command usage.
 
@@ -36,7 +36,7 @@ As previously mentioned, Sunda implements a subset of SQL. At this point, it all
 
 Fields on the root level object are treated as tables (if they are an array). For example, if the JSON you are querying looks like this:
 
-~~~
+```
 {
   "fruit": [
     {
@@ -50,11 +50,11 @@ Fields on the root level object are treated as tables (if they are an array). Fo
     }
   ]
 }
-~~~
+```
 
 Running `SELECT * FROM fruit` would return:
 
-~~~
+```
 [
   {
     "name": "apple"
@@ -66,45 +66,45 @@ Running `SELECT * FROM fruit` would return:
     "name": "grape"
   }
 ]
-~~~
+```
 
 Fields on the objects in the array can be accessed as if they were columns. Using our JSON object from the previous example, running `SELECT * FROM fruit WHERE name="apple"` would result in:
 
-~~~
+```
 [
   {
     "name": "apple"
   }
 ]
-~~~
+```
 
 ## Aggregate Functions
 
 Sunda supports the `AVG`, `SUM` and `COUNT` aggregations. When using an aggregate function, the result of the query will always follow this pattern:
 
-~~~
+```
 [
   {
     "<aggregate-function>": <aggregate-value>
   }
 ]
-~~~
+```
 
 Take this query, for example:
 
-~~~
+```
 SELECT COUNT(*) FROM root
-~~~
+```
 
 On a dataset with 42 items in the `root` table, I'd get the following result:
 
-~~~
+```
 [
   {
     "count": 42
   }
 ]
-~~~
+```
 
 ### `COUNT`
 
@@ -112,7 +112,7 @@ Count can be used on any query, and will simply run the underlying query as norm
 
 For example, I have a dataset full of individual cupcakes, with the following implicit schema:
 
-~~~
+```
 {
   "cupcakes": [
     {
@@ -121,19 +121,19 @@ For example, I have a dataset full of individual cupcakes, with the following im
     }
   ]
 }
-~~~
+```
 
 I want to find the number of unique frosting and flavour combinations. This can be done by running the following query:
 
-~~~
+```
 SELECT COUNT(DISTINCT frosting, flavour) FROM cupcakes
-~~~
+```
 
 ### `SUM`
 
 Sum can only be used on single fields entirely comprised of numeric values. It will return the sum of all the values in the given field. Take the schema from the previous example, but this time let's add an additional `"price"` field, which will contain prices as numeric values:
 
-~~~
+```
 {
   "cupcakes": [
     {
@@ -143,67 +143,67 @@ Sum can only be used on single fields entirely comprised of numeric values. It w
     }
   ]
 }
-~~~
+```
 
 If we wish to find the total cost of all cupcakes in the dataset, this could be achieved via the following query:
 
-~~~
+```
 SELECT SUM(price) FROM cupcakes
-~~~
+```
 
 If we had 3 entries with prices of 5, 3 and 1, we'd get this output:
 
-~~~
+```
 [
   {
     sum: 9
   }
 ]
-~~~
+```
 
 Attempting to execute a `SUM` against multiple fields, a wildcard or a field containing non numeric values will result in errors.
 
 Attempting to run this query:
 
-~~~
+```
 SELECT SUM(price, frosting) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'SUM' aggregation with multiple field names
-~~~
+```
 
 Attempting to run this query:
 
-~~~
+```
 SELECT SUM(*) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'SUM' aggregation with wildcard
-~~~
+```
 
 And attempting to run this query:
 
-~~~
+```
 SELECT SUM(frosting) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'SUM' on non numeric field
-~~~
+```
 
 ### `AVG`
 
 Like `SUM`, `AVG` can only be ran against single fields containing numeric values. `AVG` will return the mean of all values in a given field. Taking the schema from before:
 
-~~~
+```
 {
   "cupcakes": [
     {
@@ -213,61 +213,61 @@ Like `SUM`, `AVG` can only be ran against single fields containing numeric value
     }
   ]
 }
-~~~
+```
 
 Consider the following query:
 
-~~~
+```
 SELECT AVG(price) FROM cupcakes
-~~~
+```
 
 If we had 3 entries with prices of 5, 3 and 1, we'd get this output:
 
-~~~
+```
 [
   {
     avg: 3
   }
 ]
-~~~
+```
 
 Like `SUM`, attempting to execute an `AVG` against multiple fields, a wildcard or a field containing non numeric values will result in errors.
 
 Attempting to run this query:
 
-~~~
+```
 SELECT AVG(price, frosting) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'AVG' aggregation with multiple field names
-~~~
+```
 
 Attempting to run this query:
 
-~~~
+```
 SELECT AVG(*) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'AVG' aggregation with wildcard
-~~~
+```
 
 And attempting to run this query:
 
-~~~
+```
 SELECT AVG(frosting) FROM cupcakes
-~~~
+```
 
 Will result in this error:
 
-~~~
+```
 Cannot use 'AVG' on non numeric field
-~~~
+```
 
 ## Joins
 
@@ -275,7 +275,7 @@ At the time of writing, Sunda has fairly limited support for joins. Only inner j
 
 Say, we have the following schema:
 
-~~~
+```
 {
   "posts": [
     {
@@ -290,23 +290,23 @@ Say, we have the following schema:
     }
   ]
 }
-~~~
+```
 
 Where `PosterID` can be treated as a foreign key, targetting the `ID` field in the `users` table.
 
 If we wish to get all of the posts where the poster has `Name` equal to `"Luz"` we can run either of the following queries:
 
-~~~
+```
 // joining using condition in 'on' clause
 SELECT * FROM posts JOIN users ON posts.PosterID = users.ID WHERE users.Name = 'Luz';
 
 // joining using condition in 'where' clause
 SELECT * FROM posts JOIN users WHERE posts.PosterID = users.ID AND users.Name = 'Luz';
-~~~
+```
 
 Both of the above queries will bring back data in the following format:
 
-~~~
+```
 [
   {
     "posts": {
@@ -319,7 +319,7 @@ Both of the above queries will bring back data in the following format:
     }
   }
 ]
-~~~
+```
 
 I.e. an array will be returned containing objects. Each object will have a field corresponding to each table name. These objects will follow the same schema as their original table.
 
@@ -327,20 +327,20 @@ I.e. an array will be returned containing objects. Each object will have a field
 
 Support for joins in Sunda is in its infancy. In addition to the previously highlighted restrictions, there are currently a few more 'gotchas', as outlined below:
 
-* It is currently not possible to pull out individual fields in the `SELECT` clause when a join is in use, only a wildcard can be used
-* When using an `OR` in the `WHERE` condition, any values matched via the use of `OR` will not pull back joined values from other tables
+- It is currently not possible to pull out individual fields in the `SELECT` clause when a join is in use, only a wildcard can be used
+- When using an `OR` in the `WHERE` condition, any values matched via the use of `OR` will not pull back joined values from other tables
 
 ## Subqueries
 
 Sunda has some support for sub queries. At present they require the use of an alias. The result of a subquery passed to an outer query will have each object nested in a field named after the chosen alias. Take this query for example:
 
-~~~
+```
 SELECT * FROM (SELECT * FROM cats) as c
-~~~
+```
 
 Assume that our dataset looks something like this:
 
-~~~
+```
 {
   "cats": [
     {
@@ -370,11 +370,11 @@ Assume that our dataset looks something like this:
     }
   ]
 }
-~~~
+```
 
 The result of this query would look like this:
 
-~~~
+```
 [
   {
     "c": {
@@ -412,21 +412,25 @@ The result of this query would look like this:
     }
   }
 ]
-~~~
+```
 
 ## Function Calls
 
-It is possible to call functions to perform some processing on the data being queried. At the time of writing, the only supported function is `array_position`. `array_position` provides the index at which a search value is located in an array, or `null` if it is not present in the array. Indexes start at 1.
+It is possible to call functions to perform some processing on the data being queried.
+
+### `array_position`
+
+`array_position` provides the index at which a search value is located in an array, or `null` if it is not present in the array. Indexes start at 1.
 
 An example of `array_position` is provided below:
 
-~~~
+```
 SELECT array_position(('Doug', 'Abby', 'Joe'), name) FROM users
-~~~
+```
 
 Given the following input data:
 
-~~~
+```
 {
   "users": [
     {
@@ -443,43 +447,95 @@ Given the following input data:
     }
   ]
 }
-~~~
+```
 
 Running this query will give the following output:
 
-~~~
+```
 [
   { "0": 1 },
   { "0": 3 },
   { "0": 2 },
   { "0": null }
 ]
-~~~
+```
 
 You can also pass in a 3rd optional parameter, specifying the index to start searching from. Take the following query:
 
-~~~
+```
 SELECT array_position(('Doug', 'Abby', 'Joe', 'Doug'), name) FROM users
-~~~
+```
 
 Running this against the above dataset will yield the same results we saw previously, but making one minor change to the query:
 
-~~~
+```
 SELECT array_position(('Doug', 'Abby', 'Joe', 'Doug'), name, 2) FROM users
-~~~
+```
 
 Will yield thse results:
 
-~~~
+```
 [
   { "0": 4 },
   { "0": 3 },
   { "0": 2 },
   { "0": null }
 ]
-~~~
+```
 
 Note that the first returned result now points to index `4` rather than one `1`. This is because our updated query passes in a 3rd optional parameter indicating that we should begin our search at index `2`.
+
+### `regex_group`
+
+`regex_group` allows you to select a value from a match group in some regex. It takes 3 arguments:
+
+- Argument 1: The regex to use when matching
+- Argument 2: The value to match against
+- Argument 3: 1-base index of the match group to select value from
+
+As an example, say we have the following data:
+
+```
+{
+  "testData": [
+    {
+      "message": "Hello, world!",
+      "age": 24
+    },
+    {
+      "message": "Hello, friends!",
+      "age": 26
+    },
+    {
+      "message": "Hello, friends!",
+      "age": 27
+    },
+    {
+      "message": "Not in pattern",
+      "age": 30
+    }
+  ]
+}
+```
+
+If we were to run the following query against it:
+
+```
+SELECT REGEX_GROUP("^Hello, (\w*)(!)$", message, 1) FROM testData
+```
+
+We'd get the following result:
+
+```
+[
+  { "0": "world" },
+  { "0": "friends" },
+  { "0": "friends" },
+  { "0": undefined }
+]
+```
+
+Note that a plain JavaScript `undefined` is returned if nothing was matched.
 
 ## JSONL Support
 
@@ -487,36 +543,36 @@ As well as individual JSON objects, Sunda also supports JSONL files. These are c
 
 Say, for example, our file contained the following:
 
-~~~
+```
 { "type": "Sofa", "colour": "red", "material": "leather" }
 { "type": "Chair", "colour": "brown", "material": "oak" }
 { "type": "Curtains", "colour": "red", "material": "fabric" }
 { "type": "Table", "colour": "brown", "material": "oak" }
-~~~
+```
 
 Running `SELECT * FROM root` would yield the following results:
 
-~~~
+```
 [
   { type: 'Sofa', colour: 'red', material: 'leather' },
   { type: 'Chair', colour: 'brown', material: 'oak' },
   { type: 'Curtains', colour: 'red', material: 'fabric' },
   { type: 'Table', colour: 'brown', material: 'oak' }
 ]
-~~~
+```
 
 ## Root Level Arrays
 
 It is also possible to load root level arrays. Take the following example, adapted from the previous section:
 
-~~~
+```
 [
   { type: 'Sofa', colour: 'red', material: 'leather' },
   { type: 'Chair', colour: 'brown', material: 'oak' },
   { type: 'Curtains', colour: 'red', material: 'fabric' },
   { type: 'Table', colour: 'brown', material: 'oak' }
 ]
-~~~
+```
 
 The behaviour here is identical to the behaviour when dealing with JSONL files. The array will be loaded as a single table called `root`.
 
@@ -529,13 +585,13 @@ At the time of writing, this MetaInterface is able to list all tables in the dat
 The available MetaInterface commands are as follows:
 
 | Command       | Arguments    | Functionality                                        |
-|---------------|--------------|------------------------------------------------------|
+| ------------- | ------------ | ---------------------------------------------------- |
 | `list_tables` | None         | List all tables in the dataset                       |
 | `dump_schema` | `table_name` | Dump the schema for the table with name `table_name` |
 | `help`        | None         | Print MetaInterface command usage instructions       |
 
 As an example, say I wanted to dump the schema for a table named 'Users'. The command would be as follows:
 
-~~~
+```
 sunda> !dump_schema Users
-~~~
+```

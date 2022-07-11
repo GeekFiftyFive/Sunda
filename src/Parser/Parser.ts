@@ -19,6 +19,7 @@ export enum Comparison {
 
 export enum FunctionName {
   ARRAY_POSITION = 'ARRAY_POSITION',
+  REGEX_GROUP = 'REGEX_GROUP',
 }
 
 export enum DataSetType {
@@ -94,7 +95,7 @@ export interface ConditionPair extends Condition {
 
 export interface Projection {
   type: ProjectionType;
-  fields?: string[];
+  values?: Value[];
   function?: FunctionResultValue;
 }
 
@@ -112,6 +113,8 @@ export interface Query {
   joins: Join[];
   condition?: Condition;
 }
+
+export const isFieldValue = (value: Value): value is FieldValue => value.type === 'FIELD';
 
 const isInBracketedExpression = (
   index: number,
@@ -596,7 +599,7 @@ const parseSelection = (
         throw new Error(`Cannot use '${tokens[0].toUpperCase()}' aggregation with wildcard`);
       }
 
-      if (projection.fields.length > 1) {
+      if (projection.values.length > 1) {
         throw new Error(
           `Cannot use '${tokens[0].toUpperCase()}' aggregation with multiple field names`,
         );
@@ -626,28 +629,30 @@ const parseSelection = (
     tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
-  const fields: string[] = [];
-  let consumedTokens = offset;
+  const values: Value[] = [];
+  let remainingTokens = Array.from(tokens.slice(offset));
+  let listIndex = 0;
 
-  while (
-    tokens[consumedTokens].toLowerCase() !== 'from' &&
-    tokens[consumedTokens].toLowerCase() !== ')'
-  ) {
-    if (consumedTokens % 2 === offset) {
-      fields.push(tokens[consumedTokens]);
-    } else if (tokens[consumedTokens] !== ',') {
+  while (remainingTokens[0].toLowerCase() !== 'from' && remainingTokens[0].toLowerCase() !== ')') {
+    if (listIndex % 2 === 0) {
+      const parsedValue = parseValue(remainingTokens);
+      values.push(parsedValue.value);
+      remainingTokens = parsedValue.tokens;
+    } else if (remainingTokens[0] === ',') {
+      remainingTokens = remainingTokens.slice(1);
+    } else {
       throw new Error('Remapping column names is not currently supported!');
     }
-    consumedTokens += 1;
+    listIndex += 1;
   }
 
   return {
     projection: {
       type,
-      fields,
+      values,
     },
     aggregation: AggregateType.NONE,
-    tokens: tokens.slice(consumedTokens),
+    tokens: remainingTokens,
   };
 };
 

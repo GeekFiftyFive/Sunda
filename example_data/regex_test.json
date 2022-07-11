@@ -1,0 +1,20 @@
+{
+  "testData": [
+    {
+      "message": "Hello, world!",
+      "age": 24
+    },
+    {
+      "message": "Hello, friends!",
+      "age": 26
+    },
+    {
+      "message": "Hello, friends!",
+      "age": 27
+    },
+    {
+      "message": "Not in pattern",
+      "age": 30
+    }
+  ]
+}

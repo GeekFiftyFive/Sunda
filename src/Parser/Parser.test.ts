@@ -312,7 +312,16 @@ describe('test parser', () => {
       expect.objectContaining({
         projection: {
           type: ProjectionType.SELECTED,
-          fields: ['name', 'age'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'name',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ],
         },
         joins: [],
       }),
@@ -327,7 +336,69 @@ describe('test parser', () => {
       expect.objectContaining({
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['name', 'age'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'name',
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ],
+        },
+        joins: [],
+      }),
+    );
+  });
+
+  test("parse can handle a function inside of a 'distinct'", () => {
+    const tokens = [
+      'SELECT',
+      'DISTINCT',
+      'REGEX_GROUP',
+      '(',
+      '"^Hello, (\\w*)(!)$"',
+      ',',
+      'name',
+      ',',
+      '1',
+      ')',
+      ',',
+      'age',
+      'FROM',
+      'tableName',
+    ];
+    const query = parse(tokens);
+
+    expect(query).toEqual(
+      expect.objectContaining({
+        projection: {
+          type: ProjectionType.DISTINCT,
+          values: [
+            {
+              type: 'FUNCTION_RESULT',
+              functionName: 'REGEX_GROUP',
+              args: [
+                {
+                  type: 'LITERAL',
+                  value: '^Hello, (\\w*)(!)$',
+                },
+                {
+                  type: 'FIELD',
+                  fieldName: 'name',
+                },
+                {
+                  type: 'LITERAL',
+                  value: 1,
+                },
+              ],
+            },
+            {
+              type: 'FIELD',
+              fieldName: 'age',
+            },
+          ],
         },
         joins: [],
       }),
@@ -356,7 +427,12 @@ describe('test parser', () => {
       expect.objectContaining({
         projection: {
           type: ProjectionType.DISTINCT,
-          fields: ['colour'],
+          values: [
+            {
+              type: 'FIELD',
+              fieldName: 'colour',
+            },
+          ],
         },
         aggregation: AggregateType.COUNT,
         joins: [],
@@ -371,7 +447,12 @@ describe('test parser', () => {
     expect(query).toEqual({
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['fieldName'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'fieldName',
+          },
+        ],
       },
       aggregation: AggregateType.SUM,
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
@@ -386,7 +467,12 @@ describe('test parser', () => {
     expect(query).toEqual({
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['fieldName'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'fieldName',
+          },
+        ],
       },
       aggregation: AggregateType.AVG,
       dataset: { type: DataSetType.TABLE, value: 'tableName' },
@@ -464,7 +550,12 @@ describe('test parser', () => {
     expect(query).toEqual({
       projection: {
         type: ProjectionType.DISTINCT,
-        fields: ['users.Name'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'users.Name',
+          },
+        ],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'posts' },
@@ -550,7 +641,12 @@ describe('test parser', () => {
     expect(query).toEqual({
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['address.line1'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'address.line1',
+          },
+        ],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'users' },
@@ -581,7 +677,12 @@ describe('test parser', () => {
     expect(query).toEqual({
       projection: {
         type: ProjectionType.DISTINCT,
-        fields: ['address.line1'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'address.line1',
+          },
+        ],
       },
       aggregation: AggregateType.NONE,
       dataset: { type: DataSetType.TABLE, value: 'users' },
@@ -812,7 +913,12 @@ describe('test parser handles subqueries', () => {
     expect(actual).toEqual({
       projection: {
         type: ProjectionType.SELECTED,
-        fields: ['u.age'],
+        values: [
+          {
+            type: 'FIELD',
+            fieldName: 'u.age',
+          },
+        ],
       },
       aggregation: AggregateType.NONE,
       dataset: {
