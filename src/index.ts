@@ -18,6 +18,7 @@ export * from './CommonTypes';
 export const executeQuery = async <T>(query: string, datasource: DataSource): Promise<T[]> => {
   const tokens = tokenise(query);
   const parsedQuery = parse(tokens);
+  console.log(util.inspect(parsedQuery, false, 10, true));
   return execute<T>(parsedQuery, datasource);
 };
 
