@@ -381,8 +381,7 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
   return toReturn;
 };
 
-// FIXME: This is dumb
-const isSubquery = (tokens: string[]): boolean =>
+const mustBeSubquery = (tokens: string[]): boolean =>
   tokens.length > 2 && tokens[0] === '(' && tokens[1] === 'SELECT';
 
 const isFunctionResult = (tokens: string[]): boolean => {
@@ -455,7 +454,7 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     };
   }
 
-  if (isSubquery(tokens)) {
+  if (mustBeSubquery(tokens)) {
     // TODO: Generalise this a bit better
     const bracketedPairs = findBracketPairs(tokens);
     const outermostPair = bracketedPairs.find((pair) => pair.start === 0);

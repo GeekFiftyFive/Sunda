@@ -18,6 +18,7 @@ import {
   ProjectionType,
   Query,
   SingularCondition,
+  SubqueryValue,
   Value,
 } from '../Parser';
 import { functions } from './SQLFunctions';
@@ -76,40 +77,74 @@ export const followJsonPath = <T>(
   return followJsonPath<T>(tokens.slice(1).join('.'), next, tableName);
 };
 
-const resolveValue = (value: Value, entry: Record<string, unknown>, tableName: string): unknown => {
+const resolveValue = async (
+  value: Value,
+  entry: Record<string, unknown>,
+  tableName: string,
+  datasource: DataSource,
+): Promise<unknown> => {
   switch (value.type) {
     case 'FIELD':
       return followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
     case 'LITERAL':
       return (value as LiteralValue).value;
     case 'FUNCTION_RESULT': {
-      const resolvedArgs = (value as FunctionResultValue).args.map((arg) =>
-        resolveValue(arg, entry, tableName),
+      const resolvedArgs = await Promise.all(
+        (value as FunctionResultValue).args.map((arg) =>
+          resolveValue(arg, entry, tableName, datasource),
+        ),
       );
       return functions[
         (value as FunctionResultValue).functionName.toUpperCase() as unknown as FunctionName
       ](...resolvedArgs);
     }
     case 'EXPRESSION': {
-      return (value as ExpressionValue).chain.reduce(
-        (acc, valueOrOp) => {
+      return (
+        await (value as ExpressionValue).chain.reduce(async (acc, valueOrOp) => {
+          const resolvedAcc = await acc;
           if (Object.values(NumericOperation).includes(valueOrOp as NumericOperation)) {
-            acc.operation = valueOrOp as NumericOperation;
-          } else if (acc.operation) {
-            acc.accumulator = numericOperations[acc.operation](
-              acc.accumulator,
+            resolvedAcc.operation = valueOrOp as NumericOperation;
+          } else if (resolvedAcc.operation) {
+            resolvedAcc.accumulator = numericOperations[resolvedAcc.operation](
+              resolvedAcc.accumulator,
               // TODO: Type checking
-              resolveValue(valueOrOp as Value, entry, tableName) as number,
+              (await await resolveValue(
+                valueOrOp as Value,
+                entry,
+                tableName,
+                datasource,
+              )) as number,
             );
-            acc.operation = null;
+            resolvedAcc.operation = null;
           } else {
             // TODO: Type checking
-            acc.accumulator = resolveValue(valueOrOp as Value, entry, tableName) as number;
+            resolvedAcc.accumulator = (await await resolveValue(
+              valueOrOp as Value,
+              entry,
+              tableName,
+              datasource,
+            )) as number;
           }
           return acc;
-        },
-        { accumulator: 0, operation: null as NumericOperation },
+        }, new Promise<{ accumulator: number; operation: null | NumericOperation }>((resolve) => resolve({ accumulator: 0, operation: null as NumericOperation })))
       ).accumulator;
+    }
+    case 'SUBQUERY': {
+      // eslint-disable-next-line no-use-before-define
+      const queryResult = await execute<Record<string, unknown>>(
+        (value as SubqueryValue).query,
+        datasource,
+      );
+      const fieldNames: Set<string> = queryResult.reduce((acc: Set<string>, result) => {
+        Object.keys(result).forEach((key) => acc.add(key));
+        return acc;
+      }, new Set<string>()) as Set<string>;
+      const distinctFieldNames = Array.from(fieldNames);
+      if (distinctFieldNames.length === 1) {
+        return queryResult.map((value) => value[distinctFieldNames[0]]);
+      }
+
+      return queryResult;
     }
     default:
       throw new Error(`Unexpected Value type ${value.type}`);
@@ -133,13 +168,14 @@ const assignSubValue = (
   }
 };
 
-const handleSingularCondition = (
+const handleSingularCondition = async (
   condition: SingularCondition,
   entry: Record<string, unknown>,
   tableName: string,
   joinTables: Record<string, unknown[]>,
-): Record<string, unknown> | undefined => {
-  const value = resolveValue(condition.lhs, entry, tableName);
+  datasource: DataSource,
+): Promise<Record<string, unknown> | undefined> => {
+  const value = await resolveValue(condition.lhs, entry, tableName, datasource);
 
   if (value === undefined) {
     return undefined;
@@ -165,7 +201,8 @@ const handleSingularCondition = (
     }) as Record<string, unknown>;
   }
 
-  const evaluated = comparison(value, resolveValue(condition.rhs, entry, tableName));
+  const resolved = await resolveValue(condition.rhs, entry, tableName, datasource);
+  const evaluated = comparison(value, resolved);
   const fullEntry: Record<string, unknown> = joinedTableName
     ? { [tableName]: { ...entry }, [joinedTableName]: { ...joinedEntry } }
     : { ...entry };
@@ -181,98 +218,126 @@ const handleSingularCondition = (
   return undefined;
 };
 
-const handleConditionPair = (
+const handleConditionPair = async (
   condition: ConditionPair,
   entry: Record<string, unknown>,
   tableName: string,
   joinTables: Record<string, unknown[]>,
-): Record<string, unknown> | undefined => {
+  datasource: DataSource,
+): Promise<Record<string, unknown> | undefined> => {
   if (condition.boolean === BooleanType.AND) {
     // eslint-disable-next-line no-use-before-define
-    const fullEntry = handleCondition(condition.lhs, entry, tableName, joinTables);
+    const fullEntry = await handleCondition(
+      condition.lhs,
+      entry,
+      tableName,
+      joinTables,
+      datasource,
+    );
     if (!fullEntry) {
       return undefined;
     }
     // eslint-disable-next-line no-use-before-define
-    return handleCondition(condition.rhs, fullEntry, tableName, joinTables);
+    return handleCondition(condition.rhs, fullEntry, tableName, joinTables, datasource);
   }
 
   if (condition.boolean === BooleanType.OR) {
     // eslint-disable-next-line no-use-before-define
-    const fullEntry = handleCondition(condition.lhs, entry, tableName, joinTables);
+    const fullEntry = await handleCondition(
+      condition.lhs,
+      entry,
+      tableName,
+      joinTables,
+      datasource,
+    );
     if (fullEntry) {
       return fullEntry;
     }
     // eslint-disable-next-line no-use-before-define
-    return handleCondition(condition.rhs, entry, tableName, joinTables);
+    return handleCondition(condition.rhs, entry, tableName, joinTables, datasource);
   }
 
   throw new Error("Only 'AND' and 'OR' supported at present!");
 };
 
-const handleCondition = (
+const handleCondition = async (
   condition: Condition,
   entry: Record<string, unknown>,
   tableName: string,
   joinTables: Record<string, unknown[]>,
-): Record<string, unknown> | undefined => {
+  datasource: DataSource,
+): Promise<Record<string, unknown> | undefined> => {
   if (isSingularCondition(condition)) {
-    return handleSingularCondition(condition, entry, tableName, joinTables);
+    return handleSingularCondition(condition, entry, tableName, joinTables, datasource);
   }
 
   if (isConditionPair(condition)) {
-    return handleConditionPair(condition, entry, tableName, joinTables);
+    return handleConditionPair(condition, entry, tableName, joinTables, datasource);
   }
 
   throw new Error('Could not identify condition! There must be a parser bug!');
 };
 
-const distinct = <T>(
+const distinct = async <T>(
   selectedValues: Value[],
   data: Record<string, unknown>[],
   tableName: string,
-): T[] => {
+  datasource: DataSource,
+): Promise<T[]> => {
   const values: Record<string, unknown>[] = [];
 
   // TODO: This is pretty naive and could do with optimisation and cleaning up
-  data.forEach((entry) => {
+  for (let i = 0; i < data.length; i += 1) {
+    const entry = data[i];
     let unique = true;
 
-    values.forEach((value) => {
+    for (let j = 0; j < values.length; j += 1) {
+      const value = values[j];
       let matches = 0;
-      selectedValues.forEach((selectedValue, index) => {
+      for (let k = 0; k < selectedValues.length; k += 1) {
+        const selectedValue = selectedValues[k];
         if (isFieldValue(selectedValue)) {
           if (
-            resolveValue(selectedValue, entry, tableName) ===
-            resolveValue(selectedValue, value, tableName)
+            // eslint-disable-next-line no-await-in-loop
+            (await resolveValue(selectedValue, entry, tableName, datasource)) ===
+            // eslint-disable-next-line no-await-in-loop
+            (await resolveValue(selectedValue, value, tableName, datasource))
           ) {
             matches += 1;
           }
-        } else if (resolveValue(selectedValue, entry, tableName) === value[index]) {
+          // eslint-disable-next-line no-await-in-loop
+        } else if ((await resolveValue(selectedValue, entry, tableName, datasource)) === value[k]) {
           matches += 1;
         }
-      });
+      }
       if (matches === selectedValues.length) {
         unique = false;
       }
-    });
+    }
 
     if (unique) {
       const newValue: Record<string, unknown> = {};
-      selectedValues.forEach((selectedValue, index) => {
+      for (let k = 0; k < selectedValues.length; k += 1) {
+        const selectedValue = selectedValues[k];
         if (isFieldValue(selectedValue)) {
           assignSubValue(
             newValue,
             selectedValue.fieldName.split('.'),
-            resolveValue(selectedValue, entry, tableName),
+            // eslint-disable-next-line no-await-in-loop
+            await resolveValue(selectedValue, entry, tableName, datasource),
           );
         } else {
-          assignSubValue(newValue, [index], resolveValue(selectedValue, entry, tableName));
+          assignSubValue(
+            newValue,
+            [k],
+            // eslint-disable-next-line no-await-in-loop
+            await resolveValue(selectedValue, entry, tableName, datasource),
+          );
         }
-      });
+      }
       values.push(newValue);
     }
-  });
+  }
 
   return values as T[];
 };
@@ -320,11 +385,19 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
 
   const filtered = !query.condition
     ? sourceData
-    : sourceData
-        .map((entry: Record<string, unknown>) =>
-          handleCondition(query.condition, entry, query.dataset.value as string, joinTables),
+    : (
+        await Promise.all(
+          sourceData.map((entry: Record<string, unknown>) =>
+            handleCondition(
+              query.condition,
+              entry,
+              query.dataset.value as string,
+              joinTables,
+              datasource,
+            ),
+          ),
         )
-        .filter((entry: unknown) => !!entry);
+      ).filter((entry: unknown) => !!entry);
 
   let output: unknown[];
 
@@ -346,30 +419,38 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       });
       break;
     case ProjectionType.DISTINCT:
-      output = distinct(
+      output = await distinct(
         query.projection.values,
         filtered as Record<string, unknown>[],
         query.dataset.value as string,
+        datasource,
       );
       break;
     case ProjectionType.FUNCTION:
-      output = filtered.map((datum) => {
-        const resolvedArguments = query.projection.function.args.map((arg) => {
-          if (query.dataset.type === DataSetType.SUBQUERY) {
-            throw new Error('Cannot currently execute a function against a sub-queried dataset');
-          }
-          return resolveValue(
-            arg,
-            datum as Record<string, unknown>,
-            query.dataset.value as unknown as string,
+      output = await Promise.all(
+        filtered.map(async (datum) => {
+          const resolvedArguments = await Promise.all(
+            query.projection.function.args.map((arg) => {
+              if (query.dataset.type === DataSetType.SUBQUERY) {
+                throw new Error(
+                  'Cannot currently execute a function against a sub-queried dataset',
+                );
+              }
+              return resolveValue(
+                arg,
+                datum as Record<string, unknown>,
+                query.dataset.value as unknown as string,
+                datasource,
+              );
+            }),
           );
-        });
-        return {
-          0: functions[query.projection.function.functionName.toUpperCase() as FunctionName](
-            ...resolvedArguments,
-          ),
-        };
-      });
+          return {
+            0: functions[query.projection.function.functionName.toUpperCase() as FunctionName](
+              ...resolvedArguments,
+            ),
+          };
+        }),
+      );
       break;
     default:
       throw new Error('Unsupported projection type');
@@ -380,23 +461,28 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       return [{ count: output.length } as unknown] as T[];
     case AggregateType.AVG:
     case AggregateType.SUM: {
-      const sum = output.reduce((acc: number, current: Record<string, number>) => {
-        const val = resolveValue(
-          query.projection.values[0],
-          current,
-          query.dataset.value as string,
-        );
-
-        if (typeof val !== 'number') {
-          throw new Error(
-            `Cannot use '${
-              query.aggregation === AggregateType.SUM ? 'SUM' : 'AVG'
-            }' on non numeric field`,
+      const sum = (await output.reduce(
+        async (acc: Promise<number>, current: Record<string, number>) => {
+          const resolvedAcc = await acc;
+          const val = await resolveValue(
+            query.projection.values[0],
+            current,
+            query.dataset.value as string,
+            datasource,
           );
-        }
 
-        return acc + val;
-      }, 0) as number;
+          if (typeof val !== 'number') {
+            throw new Error(
+              `Cannot use '${
+                query.aggregation === AggregateType.SUM ? 'SUM' : 'AVG'
+              }' on non numeric field`,
+            );
+          }
+
+          return resolvedAcc + val;
+        },
+        new Promise((resolve) => resolve(0)),
+      )) as number;
 
       if (query.aggregation === AggregateType.SUM) {
         return [{ sum }] as unknown as T[];
