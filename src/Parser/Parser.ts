@@ -58,7 +58,7 @@ export interface Condition {
 }
 
 export interface Value {
-  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT' | 'EXPRESSION';
+  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT' | 'EXPRESSION' | 'SUBQUERY';
 }
 
 export interface FieldValue extends Value {
@@ -80,6 +80,12 @@ export interface FunctionResultValue extends Value {
 export interface ExpressionValue extends Value {
   type: 'EXPRESSION';
   chain: (Value | NumericOperation)[];
+}
+
+export interface SubqueryValue extends Value {
+  type: 'SUBQUERY';
+  // eslint-disable-next-line no-use-before-define
+  query: Query;
 }
 
 export interface SingularCondition extends Condition {
@@ -375,6 +381,10 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
   return toReturn;
 };
 
+// FIXME: This is dumb
+const isSubquery = (tokens: string[]): boolean =>
+  tokens.length > 2 && tokens[0] === '(' && tokens[1] === 'SELECT';
+
 const isFunctionResult = (tokens: string[]): boolean => {
   if (tokens.length < 2 || tokens[1] !== '(') {
     return false;
@@ -442,6 +452,18 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     return {
       value: { type: 'LITERAL', value: parsedSet.setValue } as LiteralValue,
       tokens: tokens.slice(parsedSet.consumed + 1),
+    };
+  }
+
+  if (isSubquery(tokens)) {
+    // TODO: Generalise this a bit better
+    const bracketedPairs = findBracketPairs(tokens);
+    const outermostPair = bracketedPairs.find((pair) => pair.start === 0);
+    // eslint-disable-next-line no-use-before-define
+    const subquery = parse(tokens.slice(1, outermostPair.end));
+    return {
+      value: { type: 'SUBQUERY', query: subquery } as SubqueryValue,
+      tokens: tokens.slice(outermostPair.end + 1),
     };
   }
 
