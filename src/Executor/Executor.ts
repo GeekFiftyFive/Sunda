@@ -108,12 +108,7 @@ const resolveValue = async (
             resolvedAcc.accumulator = numericOperations[resolvedAcc.operation](
               resolvedAcc.accumulator,
               // TODO: Type checking
-              (await await resolveValue(
-                valueOrOp as Value,
-                entry,
-                tableName,
-                datasource,
-              )) as number,
+              (await resolveValue(valueOrOp as Value, entry, tableName, datasource)) as number,
             );
             resolvedAcc.operation = null;
           } else {
