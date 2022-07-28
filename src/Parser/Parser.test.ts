@@ -1013,7 +1013,7 @@ describe('test parser handles subqueries', () => {
       '(',
       'SELECT',
       'name',
-      'from',
+      'FROM',
       'cats',
       ')',
     ];

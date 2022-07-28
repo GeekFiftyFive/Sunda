@@ -977,7 +977,7 @@ describe("executor can handle 'IN' operator", () => {
               dataset: { type: DataSetType.TABLE, value: 'posts' },
               condition: {
                 boolean: BooleanType.NONE,
-                comprison: Comparison.LT,
+                comparison: Comparison.LT,
                 lhs: { type: 'FIELD', fieldName: 'Views' },
                 rhs: { type: 'LITERAL', value: 11 },
               },

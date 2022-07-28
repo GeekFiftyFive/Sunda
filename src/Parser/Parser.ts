@@ -382,7 +382,7 @@ const parseSet = (tokens: string[]): { setValue: unknown[]; consumed: number } =
 };
 
 const mustBeSubquery = (tokens: string[]): boolean =>
-  tokens.length > 2 && tokens[0] === '(' && tokens[1] === 'SELECT';
+  tokens.length > 2 && tokens[0] === '(' && tokens[1].toLowerCase() === 'select';
 
 const isFunctionResult = (tokens: string[]): boolean => {
   if (tokens.length < 2 || tokens[1] !== '(') {
