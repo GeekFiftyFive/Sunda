@@ -948,6 +948,62 @@ describe("executor can handle 'IN' operator", () => {
       },
     ]);
   });
+
+  test('executor can handle the IN operator on subqueries', async () => {
+    const result = await wrapAndExec<Record<string, unknown>>(
+      {
+        projection: {
+          type: ProjectionType.ALL,
+        },
+        aggregation: AggregateType.NONE,
+        dataset: { type: DataSetType.TABLE, value: 'posts' },
+        condition: {
+          boolean: BooleanType.NONE,
+          comparison: Comparison.IN,
+          lhs: { type: 'FIELD', fieldName: 'ID' },
+          rhs: {
+            type: 'SUBQUERY',
+            query: {
+              projection: {
+                type: ProjectionType.SELECTED,
+                values: [
+                  {
+                    type: 'FIELD',
+                    fieldName: 'ID',
+                  },
+                ],
+              },
+              aggregation: AggregateType.NONE,
+              dataset: { type: DataSetType.TABLE, value: 'posts' },
+              condition: {
+                boolean: BooleanType.NONE,
+                comparison: Comparison.LT,
+                lhs: { type: 'FIELD', fieldName: 'Views' },
+                rhs: { type: 'LITERAL', value: 11 },
+              },
+              joins: [],
+            },
+          },
+        } as SingularCondition,
+        joins: [],
+      },
+      data,
+    );
+    expect(result).toEqual([
+      {
+        ID: 1,
+        PosterID: 1,
+        Views: 10,
+        Title: 'Hello, world',
+      },
+      {
+        ID: 4,
+        PosterID: 2,
+        Views: 8,
+        Title: 'Goodbye all!',
+      },
+    ]);
+  });
 });
 
 describe('Executor can handle sub-queries', () => {

@@ -1000,6 +1000,57 @@ describe('test parser handles subqueries', () => {
       joins: [],
     });
   });
+
+  test('parse use of subquery passed to IN', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'cats',
+      'WHERE',
+      'name',
+      'IN',
+      '(',
+      'SELECT',
+      'name',
+      'FROM',
+      'cats',
+      ')',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'cats' },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.IN,
+        lhs: { type: 'FIELD', fieldName: 'name' },
+        rhs: {
+          type: 'SUBQUERY',
+          query: {
+            projection: {
+              type: ProjectionType.SELECTED,
+              values: [
+                {
+                  type: 'FIELD',
+                  fieldName: 'name',
+                },
+              ],
+            },
+            aggregation: AggregateType.NONE,
+            dataset: { type: DataSetType.TABLE, value: 'cats' },
+            joins: [],
+          },
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser handlers functions', () => {
