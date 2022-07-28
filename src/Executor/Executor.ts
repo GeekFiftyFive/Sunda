@@ -118,7 +118,7 @@ const resolveValue = async (
             resolvedAcc.operation = null;
           } else {
             // TODO: Type checking
-            resolvedAcc.accumulator = (await await resolveValue(
+            resolvedAcc.accumulator = (await resolveValue(
               valueOrOp as Value,
               entry,
               tableName,
