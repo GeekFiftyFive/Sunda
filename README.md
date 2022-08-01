@@ -537,6 +537,47 @@ We'd get the following result:
 
 Note that a plain JavaScript `undefined` is returned if nothing was matched.
 
+### `parse_number`
+
+`parse_number` allows you to parse a string representing a number to a JavaScript number type. This allows
+numeric operations to be performed on it.
+
+- Argument 1: The value containing a string to parse
+
+As an example, say we have the following data:
+
+```
+{
+  "testData": [
+    {
+      "stringNum": "42"
+    },
+    {
+      "stringNum": "-1"
+    },
+    {
+      "stringNum": "7.5"
+    }
+  ]
+}
+```
+
+If we were to run the following query against it:
+
+```
+SELECT PARSE_NUMBER(stringNum) FROM testData
+```
+
+We'd get the following result:
+
+```
+[
+  { "0": 42 },
+  { "0": -1 },
+  { "0": 7.5 }
+]
+```
+
 ## JSONL Support
 
 As well as individual JSON objects, Sunda also supports JSONL files. These are collections of JSON objects delimited by new lines. When using a JSONL file, one table will exist with the name `root`.
