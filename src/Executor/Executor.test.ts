@@ -1155,6 +1155,48 @@ describe('executor can handle function calls', () => {
     ]);
   });
 
+  test('can execute PARSE_NUMBER', async () => {
+    const data = {
+      testData: [
+        {
+          stringNum: '42',
+        },
+        {
+          stringNum: '-1',
+        },
+        {
+          stringNum: '7.5',
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.FUNCTION,
+        function: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'PARSE_NUMBER',
+          args: [
+            {
+              type: 'FIELD',
+              fieldName: 'stringNum',
+            } as FieldValue,
+          ],
+        } as FunctionResultValue,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+    };
+
+    const result = await wrapAndExec<{ '0': number }>(query, data);
+
+    expect(result).toEqual([{ '0': 42 }, { '0': -1 }, { '0': 7.5 }]);
+  });
+
   test('can execute functions that appear on the right hand side of condition', async () => {
     const query: Query = {
       projection: {

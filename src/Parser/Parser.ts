@@ -20,6 +20,7 @@ export enum Comparison {
 export enum FunctionName {
   ARRAY_POSITION = 'ARRAY_POSITION',
   REGEX_GROUP = 'REGEX_GROUP',
+  PARSE_NUMBER = 'PARSE_NUMBER',
 }
 
 export enum DataSetType {
