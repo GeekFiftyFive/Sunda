@@ -64,4 +64,17 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
 
     return value[groupIndexToReturn];
   },
+  PARSE_NUMBER: (...args) => {
+    if (args.length !== 1) {
+      throw new Error("Incorrect number of arguments passed to 'PARSE_NUMBER'");
+    }
+
+    const str = args[0];
+
+    if (typeof str !== 'string') {
+      throw new Error("Incorrect argument type for 'PARSE_NUMBER'");
+    }
+
+    return parseFloat(str);
+  },
 };
