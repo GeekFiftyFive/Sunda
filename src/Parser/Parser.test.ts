@@ -5,6 +5,7 @@ import {
   Comparison,
   DataSetType,
   NumericOperation,
+  Order,
   parse,
   ProjectionType,
 } from './Parser';
@@ -1651,6 +1652,30 @@ describe('test parser handlers functions', () => {
         rhs: { type: 'LITERAL', value: 5 },
       },
       joins: [],
+    });
+  });
+});
+
+describe('test parser handles order by', () => {
+  test('ordering not specified', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      ordering: {
+        field: 'age',
+        order: Order.ASC,
+      },
     });
   });
 });
