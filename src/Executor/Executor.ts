@@ -15,6 +15,7 @@ import {
   isSingularCondition,
   LiteralValue,
   NumericOperation,
+  Order,
   ProjectionType,
   Query,
   SingularCondition,
@@ -337,10 +338,11 @@ const distinct = async <T>(
   return values as T[];
 };
 
-export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
+const executeExcludingOrder = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
   let sourceData: unknown[];
   if (typeof query.dataset.value === 'object') {
     // The dataset is a subquery
+    // eslint-disable-next-line no-use-before-define
     sourceData = await execute(query.dataset.value, datasource);
     if (query.dataset.alias) {
       sourceData = sourceData.map((datum) => ({
@@ -488,4 +490,18 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
     default:
       return output as T[];
   }
+};
+
+export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
+  const unorderedResults = await executeExcludingOrder<T>(query, datasource);
+  if (query.ordering) {
+    // TODO: Type checking
+    (unorderedResults as unknown as Record<string, number>[]).sort(
+      (a: Record<string, number>, b: Record<string, number>) =>
+        (query.ordering.order === Order.ASC ? 1 : -1) * a[query.ordering.field] -
+        b[query.ordering.field],
+    );
+  }
+
+  return unorderedResults;
 };
