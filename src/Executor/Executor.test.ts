@@ -1676,4 +1676,74 @@ describe('Executor can handle ordering', () => {
       },
     ]);
   });
+
+  test('ordering string ascending', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'name',
+        order: Order.ASC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Em',
+        age: 25,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Tess',
+        age: 30,
+      },
+    ]);
+  });
+
+  test('ordering string desceding', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'name',
+        order: Order.DESC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Tess',
+        age: 30,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Em',
+        age: 25,
+      },
+    ]);
+  });
 });

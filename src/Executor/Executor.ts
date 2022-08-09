@@ -497,9 +497,21 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
   if (query.ordering) {
     // TODO: Type checking
     (unorderedResults as unknown as Record<string, number>[]).sort(
-      (a: Record<string, number>, b: Record<string, number>) =>
-        (query.ordering.order === Order.ASC ? 1 : -1) * a[query.ordering.field] -
-        b[query.ordering.field],
+      (a: Record<string, number | string>, b: Record<string, number | string>) => {
+        const aValue = a[query.ordering.field];
+        const bValue = b[query.ordering.field];
+
+        if (
+          (typeof aValue === 'number' && typeof bValue === 'number') ||
+          (typeof aValue === 'string' && typeof bValue === 'string')
+        ) {
+          return (query.ordering.order === Order.ASC ? 1 : -1) * (aValue > bValue ? 1 : -1);
+        }
+
+        throw new Error(
+          'Mismatched or invalid types for sort (must be matching numbers or string)',
+        );
+      },
     );
   }
 
