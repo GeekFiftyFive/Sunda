@@ -338,7 +338,7 @@ const distinct = async <T>(
   return values as T[];
 };
 
-const executeExcludingOrder = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
+const executeRaw = async (query: Query, datasource: DataSource): Promise<unknown[]> => {
   let sourceData: unknown[];
   if (typeof query.dataset.value === 'object') {
     // The dataset is a subquery
@@ -396,14 +396,40 @@ const executeExcludingOrder = async <T>(query: Query, datasource: DataSource): P
         )
       ).filter((entry: unknown) => !!entry);
 
+  return filtered;
+};
+
+export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
+  const results = await executeRaw(query, datasource);
+  if (query.ordering) {
+    // TODO: Type checking
+    (results as unknown as Record<string, number>[]).sort(
+      (a: Record<string, number | string>, b: Record<string, number | string>) => {
+        const aValue = a[query.ordering.field];
+        const bValue = b[query.ordering.field];
+
+        if (
+          (typeof aValue === 'number' && typeof bValue === 'number') ||
+          (typeof aValue === 'string' && typeof bValue === 'string')
+        ) {
+          return (query.ordering.order === Order.ASC ? 1 : -1) * (aValue > bValue ? 1 : -1);
+        }
+
+        throw new Error(
+          'Mismatched or invalid types for sort (must be matching numbers or string)',
+        );
+      },
+    );
+  }
+
   let output: unknown[];
 
   switch (query.projection.type) {
     case ProjectionType.ALL:
-      output = filtered;
+      output = results;
       break;
     case ProjectionType.SELECTED:
-      output = filtered.map((value: Record<string, unknown>) => {
+      output = results.map((value: Record<string, unknown>) => {
         const obj: Record<string, unknown> = {};
         query.projection.values.forEach((selectedValue) => {
           if (isFieldValue(selectedValue)) {
@@ -418,14 +444,14 @@ const executeExcludingOrder = async <T>(query: Query, datasource: DataSource): P
     case ProjectionType.DISTINCT:
       output = await distinct(
         query.projection.values,
-        filtered as Record<string, unknown>[],
+        results as Record<string, unknown>[],
         query.dataset.value as string,
         datasource,
       );
       break;
     case ProjectionType.FUNCTION:
       output = await Promise.all(
-        filtered.map(async (datum) => {
+        results.map(async (datum) => {
           const resolvedArguments = await Promise.all(
             query.projection.function.args.map((arg) => {
               if (query.dataset.type === DataSetType.SUBQUERY) {
@@ -490,30 +516,4 @@ const executeExcludingOrder = async <T>(query: Query, datasource: DataSource): P
     default:
       return output as T[];
   }
-};
-
-export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
-  const unorderedResults = await executeExcludingOrder<T>(query, datasource);
-  if (query.ordering) {
-    // TODO: Type checking
-    (unorderedResults as unknown as Record<string, number>[]).sort(
-      (a: Record<string, number | string>, b: Record<string, number | string>) => {
-        const aValue = a[query.ordering.field];
-        const bValue = b[query.ordering.field];
-
-        if (
-          (typeof aValue === 'number' && typeof bValue === 'number') ||
-          (typeof aValue === 'string' && typeof bValue === 'string')
-        ) {
-          return (query.ordering.order === Order.ASC ? 1 : -1) * (aValue > bValue ? 1 : -1);
-        }
-
-        throw new Error(
-          'Mismatched or invalid types for sort (must be matching numbers or string)',
-        );
-      },
-    );
-  }
-
-  return unorderedResults;
 };
