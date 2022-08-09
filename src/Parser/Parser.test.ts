@@ -1678,6 +1678,50 @@ describe('test parser handles order by', () => {
       },
     });
   });
+
+  test('ordering ascending specified', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age', 'ASC'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      ordering: {
+        field: 'age',
+        order: Order.ASC,
+      },
+    });
+  });
+
+  test('ordering descending specified', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age', 'DESC'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      ordering: {
+        field: 'age',
+        order: Order.DESC,
+      },
+    });
+  });
 });
 
 describe('test parser error handling', () => {

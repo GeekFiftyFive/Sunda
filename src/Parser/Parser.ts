@@ -751,10 +751,21 @@ const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[]
     throw new Error('Invalid ordering!');
   }
 
+  let order = Order.ASC;
+  let consumedCount = 3;
+
+  if (
+    tokens.length > 3 &&
+    (tokens[3].toUpperCase() === Order.ASC || tokens[3].toUpperCase() === Order.DESC)
+  ) {
+    order = tokens[3] as Order;
+    consumedCount = 4;
+  }
+
   return {
-    tokens: tokens.slice(3),
+    tokens: tokens.slice(consumedCount),
     ordering: {
-      order: Order.ASC,
+      order,
       field: tokens[2],
     },
   };
