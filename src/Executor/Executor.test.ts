@@ -14,6 +14,7 @@ import {
   FieldValue,
   NumericOperation,
   FunctionResultValue,
+  Order,
 } from '../Parser';
 
 const wrapAndExec = async <T>(query: Query, data: Record<string, unknown[]>) => {
@@ -1584,6 +1585,164 @@ describe('Executor can handle regex', () => {
       },
       {
         0: undefined,
+      },
+    ]);
+  });
+});
+
+describe('Executor can handle ordering', () => {
+  const data = {
+    testData: [
+      {
+        name: 'Tess',
+        age: 30,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Em',
+        age: 25,
+      },
+    ],
+  };
+  test('ordering number ascending', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'age',
+        order: Order.ASC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Em',
+        age: 25,
+      },
+      {
+        name: 'Tess',
+        age: 30,
+      },
+    ]);
+  });
+
+  test('ordering number desceding', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'age',
+        order: Order.DESC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Tess',
+        age: 30,
+      },
+      {
+        name: 'Em',
+        age: 25,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+    ]);
+  });
+
+  test('ordering string ascending', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'name',
+        order: Order.ASC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Em',
+        age: 25,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Tess',
+        age: 30,
+      },
+    ]);
+  });
+
+  test('ordering string desceding', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      ordering: {
+        field: 'name',
+        order: Order.DESC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ name: string; age: number }>(query, data);
+
+    expect(actual).toEqual([
+      {
+        name: 'Tess',
+        age: 30,
+      },
+      {
+        name: 'Frank',
+        age: 21,
+      },
+      {
+        name: 'Em',
+        age: 25,
       },
     ]);
   });

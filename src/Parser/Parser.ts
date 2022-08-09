@@ -49,6 +49,11 @@ export enum NumericOperation {
   SUBTRACT = '-',
 }
 
+export enum Order {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
 export interface Join {
   table: string;
   alias?: string;
@@ -113,12 +118,18 @@ export interface DataSet {
   alias?: string;
 }
 
+export interface Ordering {
+  field: string;
+  order: Order;
+}
+
 export interface Query {
   projection: Projection;
   aggregation: AggregateType;
   dataset: DataSet;
   joins: Join[];
   condition?: Condition;
+  ordering?: Ordering;
 }
 
 export const isFieldValue = (value: Value): value is FieldValue => value.type === 'FIELD';
@@ -731,6 +742,35 @@ const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => 
   return { tokens: newTokens, dataset: { type: DataSetType.TABLE, value: newTokens[0] } };
 };
 
+const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[] } => {
+  if (
+    !(tokens[0].toLowerCase() === 'order' && tokens[1].toLowerCase() === 'by') &&
+    tokens.length >= 3
+  ) {
+    // TODO: Better error messages!
+    throw new Error('Invalid ordering!');
+  }
+
+  let order = Order.ASC;
+  let consumedCount = 3;
+
+  if (
+    tokens.length > 3 &&
+    (tokens[3].toUpperCase() === Order.ASC || tokens[3].toUpperCase() === Order.DESC)
+  ) {
+    order = tokens[3] as Order;
+    consumedCount = 4;
+  }
+
+  return {
+    tokens: tokens.slice(consumedCount),
+    ordering: {
+      order,
+      field: tokens[2],
+    },
+  };
+};
+
 export const parse = (input: string[]): Query => {
   let query: Query;
   let projection: Projection;
@@ -795,6 +835,12 @@ export const parse = (input: string[]): Query => {
         rhs: parsed.condition,
       } as ConditionPair;
     }
+  }
+
+  if (tokens[0] && tokens[0].toLowerCase() === 'order') {
+    const parsed = parseOrdering(tokens);
+    tokens = parsed.tokens;
+    query.ordering = parsed.ordering;
   }
 
   if (tokens.length !== 0 && tokens[0] !== ';') {
