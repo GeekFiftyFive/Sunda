@@ -402,11 +402,10 @@ const executeRaw = async (query: Query, datasource: DataSource): Promise<unknown
 export const execute = async <T>(query: Query, datasource: DataSource): Promise<T[]> => {
   const results = await executeRaw(query, datasource);
   if (query.ordering) {
-    // TODO: Type checking
     (results as unknown as Record<string, number>[]).sort(
       (a: Record<string, number | string>, b: Record<string, number | string>) => {
-        const aValue = a[query.ordering.field];
-        const bValue = b[query.ordering.field];
+        const aValue = followJsonPath(query.ordering.field, a, query.dataset.value as string);
+        const bValue = followJsonPath(query.ordering.field, b, query.dataset.value as string);
 
         if (
           (typeof aValue === 'number' && typeof bValue === 'number') ||

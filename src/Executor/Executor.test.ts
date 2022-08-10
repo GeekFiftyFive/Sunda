@@ -1746,4 +1746,62 @@ describe('Executor can handle ordering', () => {
       },
     ]);
   });
+
+  test('can follow JSON path when ordering on a field', async () => {
+    const nestedData = {
+      nested: [
+        {
+          obj: {
+            field: 5,
+          },
+        },
+        {
+          obj: {
+            field: 7,
+          },
+        },
+        {
+          obj: {
+            field: 3,
+          },
+        },
+      ],
+    };
+
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'nested',
+      },
+      joins: [],
+      ordering: {
+        field: 'nested.obj.field',
+        order: Order.ASC,
+      },
+    };
+
+    const actual = await wrapAndExec<{ obj: { field: number } }>(query, nestedData);
+
+    expect(actual).toEqual([
+      {
+        obj: {
+          field: 3,
+        },
+      },
+      {
+        obj: {
+          field: 5,
+        },
+      },
+      {
+        obj: {
+          field: 7,
+        },
+      },
+    ]);
+  });
 });
