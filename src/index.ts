@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 /* eslint-disable no-console */
+import * as path from 'path';
 import * as readline from 'readline';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -84,6 +85,13 @@ const startStreamMode = async (query: string, inputPath?: string, outputPath?: s
 if (require.main === module) {
   const { parser: argsParser, dumpUsage } = createArgsParser([
     {
+      key: 'version',
+      longhand: '--version',
+      shorthand: '-v',
+      description: 'prints version information',
+      noInput: true,
+    },
+    {
       key: 'inputPath',
       default: true,
       description: 'input file name',
@@ -118,7 +126,15 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const { outputPath, inputPath, query, help } = parserOutput;
+  const { outputPath, inputPath, query, help, version } = parserOutput;
+
+  if (version) {
+    const packageJSON = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '../package.json')).toString(),
+    );
+    console.log(`Running sunda version ${packageJSON.version}`);
+    process.exit(0);
+  }
 
   if (outputPath && inputPath && !query) {
     console.error('Cannot specify output location when running in REPL mode');
