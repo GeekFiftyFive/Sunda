@@ -80,12 +80,15 @@ export const followJsonPath = <T>(
 
 const resolveValue = async (
   value: Value,
-  entry: Record<string, unknown>,
-  tableName: string,
-  datasource: DataSource,
+  entry?: Record<string, unknown>,
+  tableName?: string,
+  datasource?: DataSource,
 ): Promise<unknown> => {
   switch (value.type) {
     case 'FIELD':
+      if (!entry || !tableName || !datasource) {
+        throw new Error('Entry, Tablename and datasource are required to evaliate a field!');
+      }
       return followJsonPath<unknown>((value as FieldValue).fieldName, entry, tableName);
     case 'LITERAL':
       return (value as LiteralValue).value;
@@ -513,6 +516,18 @@ export const execute = async <T>(query: Query, datasource: DataSource): Promise<
       return [{ avg: sum / output.length }] as unknown as T[];
     }
     default:
+      if (query.limitAndOffset) {
+        if (query.limitAndOffset.offset) {
+          // TODO: Typechecking
+          const evaluatedOffset = (await resolveValue(query.limitAndOffset.offset)) as number;
+          output = output.slice(evaluatedOffset);
+        }
+        if (query.limitAndOffset.limit) {
+          // TODO: Typechecking
+          const evaluatedLimit = (await resolveValue(query.limitAndOffset.limit)) as number;
+          output = output.slice(0, evaluatedLimit);
+        }
+      }
       return output as T[];
   }
 };
