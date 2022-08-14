@@ -1805,3 +1805,90 @@ describe('Executor can handle ordering', () => {
     ]);
   });
 });
+
+describe('Executor can handle limit and offset', () => {
+  const generateData = (start: number, count: number) =>
+    Array.from(Array(count)).map((_val, idx) => ({
+      datum: `Value ${idx + start}`,
+    }));
+
+  const data = {
+    testData: generateData(0, 50),
+  };
+
+  test('can limit the query output', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      limitAndOffset: {
+        limit: {
+          type: 'LITERAL',
+          value: 10,
+        } as LiteralValue,
+      },
+    };
+
+    const actual = await wrapAndExec<{ datum: string }>(query, data);
+
+    expect(actual).toEqual(generateData(0, 10));
+  });
+
+  test('can offset the query output', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      limitAndOffset: {
+        offset: {
+          type: 'LITERAL',
+          value: 10,
+        } as LiteralValue,
+      },
+    };
+
+    const actual = await wrapAndExec<{ datum: string }>(query, data);
+
+    expect(actual).toEqual(generateData(10, 40));
+  });
+
+  test('can limit and offset the query output', async () => {
+    const query: Query = {
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'testData',
+      },
+      joins: [],
+      limitAndOffset: {
+        offset: {
+          type: 'LITERAL',
+          value: 10,
+        } as LiteralValue,
+        limit: {
+          type: 'LITERAL',
+          value: 10,
+        } as LiteralValue,
+      },
+    };
+
+    const actual = await wrapAndExec<{ datum: string }>(query, data);
+
+    expect(actual).toEqual(generateData(10, 10));
+  });
+});

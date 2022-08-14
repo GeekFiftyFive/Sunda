@@ -847,7 +847,7 @@ export const parse = (input: string[]): Query => {
     let index = tokens.length;
 
     tokens.forEach((token, idx) => {
-      if (['ORDER', 'LIMIT', 'OFFSET'].includes(token)) {
+      if (['ORDER', 'LIMIT', 'OFFSET'].includes(token.toUpperCase())) {
         index = idx;
       }
     });
@@ -855,6 +855,7 @@ export const parse = (input: string[]): Query => {
     return tokens.slice(0, index);
   };
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (tokens[0] && tokens[0].toLowerCase() === 'order') {
       const parsed = parseOrdering(tokens);

@@ -1773,8 +1773,36 @@ describe('test parser handles limit and offset', () => {
     });
   });
 
-  test('parser handles both offset and limit with a simple numeric value', () => {
+  test('parser handles offset first and limit second with a simple numeric value', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '10', 'LIMIT', '10'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      limitAndOffset: {
+        limit: {
+          type: 'LITERAL',
+          value: 10,
+        },
+        offset: {
+          type: 'LITERAL',
+          value: 10,
+        },
+      },
+    });
+  });
+
+  test('parser handles both limit first and offset second with a simple numeric value', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'LIMIT', '10', 'OFFSET', '10'];
 
     const actual = parse(tokens);
 
