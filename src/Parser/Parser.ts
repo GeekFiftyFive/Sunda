@@ -94,6 +94,11 @@ export interface SubqueryValue extends Value {
   query: Query;
 }
 
+export interface LimitAndOffset {
+  limit?: Value;
+  offset?: Value;
+}
+
 export interface SingularCondition extends Condition {
   comparison: Comparison;
   lhs: Value;
@@ -130,6 +135,7 @@ export interface Query {
   joins: Join[];
   condition?: Condition;
   ordering?: Ordering;
+  limitAndOffset?: LimitAndOffset;
 }
 
 export const isFieldValue = (value: Value): value is FieldValue => value.type === 'FIELD';
@@ -837,10 +843,51 @@ export const parse = (input: string[]): Query => {
     }
   }
 
-  if (tokens[0] && tokens[0].toLowerCase() === 'order') {
-    const parsed = parseOrdering(tokens);
-    tokens = parsed.tokens;
-    query.ordering = parsed.ordering;
+  const getTokensBetween = (tokens: string[]) => {
+    let index = tokens.length;
+
+    tokens.forEach((token, idx) => {
+      if (['ORDER', 'LIMIT', 'OFFSET'].includes(token)) {
+        index = idx;
+      }
+    });
+
+    return tokens.slice(0, index);
+  };
+
+  while (true) {
+    if (tokens[0] && tokens[0].toLowerCase() === 'order') {
+      const parsed = parseOrdering(tokens);
+      tokens = parsed.tokens;
+      query.ordering = parsed.ordering;
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    if (tokens[0] && tokens[0].toLowerCase() === 'limit') {
+      if (tokens[1]) {
+        const tokensToParse = getTokensBetween(tokens.slice(1));
+        const parsed = parseValue(tokensToParse);
+        tokens = tokens.slice(tokensToParse.length + 1);
+        query.limitAndOffset = { limit: parsed.value, ...query.limitAndOffset };
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+      throw new Error('Value required for limit!');
+    }
+
+    if (tokens[0] && tokens[0].toLowerCase() === 'offset') {
+      if (tokens[1]) {
+        const tokensToParse = getTokensBetween(tokens.slice(1));
+        const parsed = parseValue(tokensToParse);
+        tokens = tokens.slice(tokensToParse.length + 1);
+        query.limitAndOffset = { offset: parsed.value, ...query.limitAndOffset };
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+      throw new Error('Value required for offset!');
+    }
+    break;
   }
 
   if (tokens.length !== 0 && tokens[0] !== ';') {

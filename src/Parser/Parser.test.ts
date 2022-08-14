@@ -1724,6 +1724,132 @@ describe('test parser handles order by', () => {
   });
 });
 
+describe('test parser handles limit and offset', () => {
+  test('parser handles limit on its own with a simple numeric value', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'LIMIT', '10'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      limitAndOffset: {
+        limit: {
+          type: 'LITERAL',
+          value: 10,
+        },
+      },
+    });
+  });
+
+  test('parser handles offset on its own with a simple numeric value', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '10'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      limitAndOffset: {
+        offset: {
+          type: 'LITERAL',
+          value: 10,
+        },
+      },
+    });
+  });
+
+  test('parser handles both offset and limit with a simple numeric value', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '10', 'LIMIT', '10'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      limitAndOffset: {
+        limit: {
+          type: 'LITERAL',
+          value: 10,
+        },
+        offset: {
+          type: 'LITERAL',
+          value: 10,
+        },
+      },
+    });
+  });
+
+  test('parser handles both offset and limit with numeric expressions', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '5', '+', '5', 'LIMIT', '5', '+', '5'];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'cats',
+      },
+      joins: [],
+      limitAndOffset: {
+        limit: {
+          type: 'EXPRESSION',
+          chain: [
+            {
+              type: 'LITERAL',
+              value: 5,
+            },
+            NumericOperation.ADD,
+            {
+              type: 'LITERAL',
+              value: 5,
+            },
+          ],
+        },
+        offset: {
+          type: 'EXPRESSION',
+          chain: [
+            {
+              type: 'LITERAL',
+              value: 5,
+            },
+            NumericOperation.ADD,
+            {
+              type: 'LITERAL',
+              value: 5,
+            },
+          ],
+        },
+      },
+    });
+  });
+});
+
 describe('test parser error handling', () => {
   test('get sensible error when empty query parsed', () => {
     expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
