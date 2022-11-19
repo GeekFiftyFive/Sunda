@@ -485,6 +485,86 @@ Will yield thse results:
 
 Note that the first returned result now points to index `4` rather than one `1`. This is because our updated query passes in a 3rd optional parameter indicating that we should begin our search at index `2`.
 
+### `array_length`
+
+`array_length` allows you to get the length of an array
+
+- Argument 1: The array to find the length of
+
+As an example, say we have the following data:
+
+```
+{
+  "testData": [
+    {
+      "array": [1,2,3]
+    },
+    {
+      "array": [4,5,6,7,8]
+    },
+    {
+      "array": []
+    }
+  ]
+}
+```
+
+If we were to run the following query against it:
+
+```
+SELECT array_length(array) FROM testData
+```
+
+We'd get the following results:
+
+```
+[
+  {"0": 3},
+  {"0": 5},
+  {"0": 0}
+]
+```
+
+### `coalesce`
+
+`coalesce` takes N number of arguments and returns the first one that does not evaluate to `undefined` or `null`
+
+As an example, say we have the following data:
+
+```
+{
+  "testData": [
+    {
+      "array": [1,2,3]
+    },
+    {
+      "array": [4,5,6,7,8]
+    },
+    {
+      "array": []
+    },
+    {}
+  ]
+}
+```
+
+If we were to run the following query against it:
+
+```
+SELECT coalesce(array, ()) FROM testData
+```
+
+We'd get the following results:
+
+```
+[
+  {"0": [1,2,3]},
+  {"0": [4,5,6,7,8]},
+  {"0": []},
+  {"0": []}
+]
+```
+
 ### `regex_group`
 
 `regex_group` allows you to select a value from a match group in some regex. It takes 3 arguments:

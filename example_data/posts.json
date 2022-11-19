@@ -23,6 +23,11 @@
       "PosterID": 2,
       "Views": 9,
       "CommentorIDs": [2, 4]
+    },
+    {
+      "ID": 5,
+      "PosterID": 2,
+      "Views": 9
     }
   ],
   "users": [

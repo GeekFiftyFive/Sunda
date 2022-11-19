@@ -1236,6 +1236,61 @@ describe('test parser handlers functions', () => {
     });
   });
 
+  test('can parse empty sets being passed to a function', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'ARRAY_POSITION',
+      '(',
+      '(',
+      ')',
+      ',',
+      "'Fred'",
+      ')',
+      '>',
+      '0',
+    ];
+
+    const actual = parse(tokens);
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: {
+        type: DataSetType.TABLE,
+        value: 'posts',
+      },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.GT,
+        lhs: {
+          type: 'FUNCTION_RESULT',
+          functionName: 'ARRAY_POSITION',
+          args: [
+            {
+              type: 'LITERAL',
+              value: [],
+            },
+            {
+              type: 'LITERAL',
+              value: 'Fred',
+            },
+          ],
+        },
+        rhs: {
+          type: 'LITERAL',
+          value: 0,
+        },
+      },
+      joins: [],
+    });
+  });
+
   test('can parse more than two arguments passed to function', () => {
     const tokens = [
       'SELECT',

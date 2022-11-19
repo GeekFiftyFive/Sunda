@@ -19,6 +19,8 @@ export enum Comparison {
 
 export enum FunctionName {
   ARRAY_POSITION = 'ARRAY_POSITION',
+  ARRAY_LENGTH = 'ARRAY_LENGTH',
+  COALESCE = 'COALESCE',
   REGEX_GROUP = 'REGEX_GROUP',
   PARSE_NUMBER = 'PARSE_NUMBER',
 }
@@ -436,26 +438,28 @@ const parseFunctionResult = (
     consumed: 1,
   };
 
+  let tokenIndex = 2;
+
   // TODO: De-dupe. This is very similar to what happens when we parse a set
-  for (let i = 2; i < tokens.length; ) {
-    if (tokens[i] === ')') {
+  for (let i = 0; i < tokens.length; i += 1) {
+    if (tokens[tokenIndex] === ')') {
       toReturn.consumed += 1;
       break;
     }
 
-    if (i % 2 === 1 && tokens[i] !== ',') {
+    if (i % 2 === 1 && tokens[tokenIndex] !== ',') {
       throw new Error('Not a valid arguments list');
     }
 
     if (i % 2 === 0) {
       // eslint-disable-next-line no-use-before-define
-      const value = parseValue(tokens.slice(i));
-      const increment = tokens.length - i - value.tokens.length;
-      i += increment;
+      const value = parseValue(tokens.slice(tokenIndex));
+      const increment = tokens.length - tokenIndex - value.tokens.length;
+      tokenIndex += increment;
       toReturn.consumed += increment;
       toReturn.functionResultValue.args.push(value.value);
     } else {
-      i += 1;
+      tokenIndex += 1;
       toReturn.consumed += 1;
     }
   }
@@ -468,7 +472,7 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     const parsedSet = parseSet(tokens);
     return {
       value: { type: 'LITERAL', value: parsedSet.setValue } as LiteralValue,
-      tokens: tokens.slice(parsedSet.consumed + 1),
+      tokens: tokens.slice(parsedSet.consumed),
     };
   }
 

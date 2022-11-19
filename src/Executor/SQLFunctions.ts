@@ -1,9 +1,15 @@
 import { FunctionName } from '../Parser';
 
+const getArgCountError = (functionName: string): Error =>
+  new Error(`Incorrect number of arguments passed to '${functionName}'`);
+
+const getArgTypeError = (positionName: string, functionName: string, typeName: string): Error =>
+  new Error(`Expected ${positionName} passed to ${functionName} to be of type '${typeName}'`);
+
 export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = {
   ARRAY_POSITION: (...args) => {
     if (args.length < 2) {
-      throw new Error("Incorrect number of arguments passed to 'ARRAY_POSITION'");
+      throw getArgCountError('ARRAY_POSITION');
     }
 
     const arrayToSearch = args[0];
@@ -14,12 +20,12 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
       if (typeof args[2] === 'number') {
         startIndex = args[2] - 1;
       } else {
-        throw new Error("Expected 3rd parameter passed to 'ARRAY_POSITION' to be numeric");
+        throw getArgTypeError('third', 'ARRAY_POSITION', 'numeric');
       }
     }
 
     if (!Array.isArray(arrayToSearch)) {
-      throw new Error("Expected second argument to 'ARRAY_POSITION' to refer to an array");
+      throw getArgTypeError('first', 'ARRAY_POSITION', 'array');
     }
 
     const index =
@@ -33,9 +39,21 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
 
     return index + 1;
   },
+  ARRAY_LENGTH: (...args) => {
+    if (args.length > 1) {
+      throw getArgCountError('ARRAY_LENGTH');
+    }
+
+    if (!Array.isArray(args[0])) {
+      throw getArgTypeError('first', 'ARRAY_LENGTH', 'array');
+    }
+
+    return args[0].length;
+  },
+  COALESCE: (...args) => args.find((item) => item !== null && item !== undefined),
   REGEX_GROUP: (...args) => {
     if (args.length < 3) {
-      throw new Error("Incorrect number of arguments passed to 'REGEX_GROUP'");
+      throw getArgCountError('REGEX_GROUP');
     }
 
     if (args.filter((arg) => arg === undefined).length > 0) {
@@ -43,7 +61,19 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
     }
 
     if (typeof args[0] !== 'string' || typeof args[1] !== 'string' || typeof args[2] !== 'number') {
-      throw new Error("Incorrect arguemnt type for 'REGEX_GROUP'");
+      throw new Error("Incorrect argument type for 'REGEX_GROUP'");
+    }
+
+    if (typeof args[0] !== 'string') {
+      throw getArgTypeError('first', 'REGEX_GROUP', 'string');
+    }
+
+    if (typeof args[1] !== 'string') {
+      throw getArgTypeError('second', 'REGEX_GROUP', 'string');
+    }
+
+    if (typeof args[2] !== 'number') {
+      throw getArgTypeError('third', 'REGEX_GROUP', 'number');
     }
 
     const regex = args[0];
@@ -66,13 +96,13 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
   },
   PARSE_NUMBER: (...args) => {
     if (args.length !== 1) {
-      throw new Error("Incorrect number of arguments passed to 'PARSE_NUMBER'");
+      throw getArgCountError('PARSE_NUMBER');
     }
 
     const str = args[0];
 
     if (typeof str !== 'string') {
-      throw new Error("Incorrect argument type for 'PARSE_NUMBER'");
+      throw getArgTypeError('first', 'PARSE_NUMBER', 'string');
     }
 
     return parseFloat(str);
