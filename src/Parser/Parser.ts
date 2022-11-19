@@ -19,6 +19,8 @@ export enum Comparison {
 
 export enum FunctionName {
   ARRAY_POSITION = 'ARRAY_POSITION',
+  ARRAY_LENGTH = 'ARRAY_LENGTH',
+  COALESCE = 'COALESCE',
   REGEX_GROUP = 'REGEX_GROUP',
   PARSE_NUMBER = 'PARSE_NUMBER',
 }
