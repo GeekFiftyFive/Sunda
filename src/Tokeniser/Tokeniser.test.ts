@@ -46,7 +46,7 @@ describe('test tokeniser', () => {
   test('can tokenise two string conditions', () => {
     const actual = tokenise(
       'select * from cats where breed = \'British Shorthair\' or breed = "Bengal"',
-    );
+    ).map(getRawToken);
     expect(actual).toEqual([
       'select',
       '*',
@@ -120,7 +120,7 @@ describe('test tokeniser', () => {
   test('can tokenise a basic join', () => {
     const actual = tokenise(
       'SELECT * FROM posts JOIN users WHERE posts.PosterID = users.ID and users.Name = "George"',
-    );
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -142,7 +142,7 @@ describe('test tokeniser', () => {
   test('can tokenise subfields in select statement', () => {
     const actual = tokenise(
       "SELECT address.line1 FROM users WHERE address.line1 = '123 Street Lane'",
-    );
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       'address.line1',
@@ -158,7 +158,7 @@ describe('test tokeniser', () => {
   test('can tokenise subfields in distinct statement', () => {
     const actual = tokenise(
       "SELECT DISTINCT address.line1 FROM users WHERE address.line1 = '123 Street Lane'",
-    );
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       'DISTINCT',
@@ -175,7 +175,7 @@ describe('test tokeniser', () => {
   test('can tokenise join with no constraint on joined table', () => {
     const actual = tokenise(
       'SELECT DISTINCT users.name FROM posts JOIN users WHERE posts.posterId = users.id AND posts.views >= 10',
-    );
+    ).map(getRawToken);
 
     expect(actual).toEqual([
       'SELECT',
@@ -237,7 +237,7 @@ describe('test tokeniser', () => {
   test('can tokenise brackets', () => {
     const actual = tokenise(
       "SELECT * FROM posts WHERE (Title = 'Goodbye all!' or Title = 'Hello, world') and Views > 10",
-    );
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -308,5 +308,16 @@ describe('test tokeniser', () => {
       '>',
       '5',
     ]);
+  });
+
+  test('Ensure tokeniser gives correct span info for a single line command', () => {
+    const actual = tokenise('select * from table');
+    /* expect(actual).toEqual([
+      {
+        value: 'select',
+        pos: [0, 6],
+        line: 1,
+      },
+    ]); */
   });
 });
