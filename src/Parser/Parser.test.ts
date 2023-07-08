@@ -6,9 +6,9 @@ import {
   DataSetType,
   NumericOperation,
   Order,
-  parse,
   ProjectionType,
-} from './Parser';
+} from './types';
+import { parse } from './Parser';
 
 describe('test parser', () => {
   test('parse simple valid query', () => {
