@@ -1,6 +1,21 @@
-// eslint-disable-next-line no-unused-vars
-export const tokenise = (input: string): string[] => {
+export interface Span {
+  start: number;
+  end: number;
+}
+
+export interface Token {
+  value: string;
+  pos: Span;
+  line: number; // TODO multi line support
+}
+
+export const tokenise = (input: string): Token[] => {
   const regex =
     /\s*(\*|\+|\/|-|[0-9]+\.[0-9]+|[\w|.|-]+|\w+|,|\(|\)|<=|>=|<>|<|>|=|;|"[^"]*"|'[^']*')/gim;
-  return [...input.matchAll(regex)].map((match) => match[1]);
+  const tokens = [...input.matchAll(regex)].map((match) => ({
+    value: match[1],
+    pos: { start: match.index, end: match.index + match[1].length },
+    line: 1,
+  }));
+  return tokens;
 };

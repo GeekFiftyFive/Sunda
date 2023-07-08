@@ -77,11 +77,15 @@ export const executeMetaCommand = async (
     throw new Error('Empty command passed to MetaInterface');
   }
 
-  const method = commandMappings[tokens[0]];
+  const method = commandMappings[tokens[0].value];
 
   if (!method) {
     throw new Error(`Invalid Meta command '${tokens[0]}'`);
   }
 
-  await method(datasource, logFunction, tokens.slice(1));
+  await method(
+    datasource,
+    logFunction,
+    tokens.slice(1).map((token) => token.value),
+  );
 };

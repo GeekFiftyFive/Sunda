@@ -1,43 +1,45 @@
-import { tokenise } from './Tokeniser';
+import { Token, tokenise } from './Tokeniser';
+
+const getRawToken = (token: Token): string => token.value;
 
 describe('test tokeniser', () => {
   test('tokenise valid simple command', () => {
-    const actual = tokenise('SELECT * FROM table');
+    const actual = tokenise('SELECT * FROM table').map(getRawToken);
     expect(actual).toEqual(['SELECT', '*', 'FROM', 'table']);
   });
 
   test('tokenise valid simple command in lowercase', () => {
-    const actual = tokenise('select * from table');
+    const actual = tokenise('select * from table').map(getRawToken);
     expect(actual).toEqual(['select', '*', 'from', 'table']);
   });
 
   test('tokenise valid simple command with leading whitspace', () => {
-    const actual = tokenise('  SELECT * FROM table');
+    const actual = tokenise('  SELECT * FROM table').map(getRawToken);
     expect(actual).toEqual(['SELECT', '*', 'FROM', 'table']);
   });
 
   test('tokenise valid simple command with simple where condition', () => {
-    const actual = tokenise('SELECT * FROM table WHERE field="value";');
+    const actual = tokenise('SELECT * FROM table WHERE field="value";').map(getRawToken);
     expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field', '=', '"value"', ';']);
   });
 
   test('tokenise valid simple command with single quotes', () => {
-    const actual = tokenise("SELECT * FROM table WHERE field='value';");
+    const actual = tokenise("SELECT * FROM table WHERE field='value';").map(getRawToken);
     expect(actual).toEqual(['SELECT', '*', 'FROM', 'table', 'WHERE', 'field', '=', "'value'", ';']);
   });
 
   test('can tokenise all comparison operators', () => {
-    const actual = tokenise('= <= >= <> > < BETWEEN LIKE');
+    const actual = tokenise('= <= >= <> > < BETWEEN LIKE').map(getRawToken);
     expect(actual).toEqual(['=', '<=', '>=', '<>', '>', '<', 'BETWEEN', 'LIKE']);
   });
 
   test('can tokenise integers', () => {
-    const actual = tokenise('42');
+    const actual = tokenise('42').map(getRawToken);
     expect(actual).toEqual(['42']);
   });
 
   test('can tokenise decimals', () => {
-    const actual = tokenise('3.14');
+    const actual = tokenise('3.14').map(getRawToken);
     expect(actual).toEqual(['3.14']);
   });
 
@@ -62,7 +64,7 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise JSON path field names', () => {
-    const actual = tokenise('SELECT * FROM table WHERE field.subfield="value";');
+    const actual = tokenise('SELECT * FROM table WHERE field.subfield="value";').map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -77,17 +79,17 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise projections', () => {
-    const actual = tokenise('SELECT name, age  FROM table;');
+    const actual = tokenise('SELECT name, age  FROM table;').map(getRawToken);
     expect(actual).toEqual(['SELECT', 'name', ',', 'age', 'FROM', 'table', ';']);
   });
 
   test('can tokenise field names with no alphanumeric characters', () => {
-    const actual = tokenise('SELECT first-name, last-name FROM cool_people;');
+    const actual = tokenise('SELECT first-name, last-name FROM cool_people;').map(getRawToken);
     expect(actual).toEqual(['SELECT', 'first-name', ',', 'last-name', 'FROM', 'cool_people', ';']);
   });
 
   test('can tokenise aggregate functions', () => {
-    const actual = tokenise('SELECT COUNT(DISTINCT colour) FROM furniture;');
+    const actual = tokenise('SELECT COUNT(DISTINCT colour) FROM furniture;').map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       'COUNT',
@@ -102,7 +104,7 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise string containing special characters', () => {
-    const actual = tokenise('SELECT * FROM fruit WHERE price.exVAT="£0.30"');
+    const actual = tokenise('SELECT * FROM fruit WHERE price.exVAT="£0.30"').map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -195,7 +197,7 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise in operator with numerical values', () => {
-    const actual = tokenise('SELECT * FROM posts WHERE ID IN (1, 3)');
+    const actual = tokenise('SELECT * FROM posts WHERE ID IN (1, 3)').map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -213,7 +215,9 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise in operator with string values', () => {
-    const actual = tokenise("SELECT * FROM posts WHERE Title IN ('Hello, world', 'Goodbye all!')");
+    const actual = tokenise(
+      "SELECT * FROM posts WHERE Title IN ('Hello, world', 'Goodbye all!')",
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -257,7 +261,9 @@ describe('test tokeniser', () => {
   });
 
   test('con tokenise functions', () => {
-    const actual = tokenise("SELECT * FROM posts WHERE ARRAY_POSITION(names, 'Fred') > 0");
+    const actual = tokenise("SELECT * FROM posts WHERE ARRAY_POSITION(names, 'Fred') > 0").map(
+      getRawToken,
+    );
     expect(actual).toEqual([
       'SELECT',
       '*',
@@ -276,7 +282,9 @@ describe('test tokeniser', () => {
   });
 
   test('can tokenise arithmetic expressions', () => {
-    const actual = tokenise('SELECT * FROM table WHERE 3 * field1 / (1 + FUNC(field2)) + 3 > 5');
+    const actual = tokenise(
+      'SELECT * FROM table WHERE 3 * field1 / (1 + FUNC(field2)) + 3 > 5',
+    ).map(getRawToken);
     expect(actual).toEqual([
       'SELECT',
       '*',
