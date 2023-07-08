@@ -312,12 +312,27 @@ describe('test tokeniser', () => {
 
   test('Ensure tokeniser gives correct span info for a single line command', () => {
     const actual = tokenise('select * from table');
-    /* expect(actual).toEqual([
+    expect(actual).toEqual([
       {
         value: 'select',
         pos: [0, 6],
         line: 1,
       },
-    ]); */
+      {
+        value: '*',
+        pos: [6, 7],
+        line: 1,
+      },
+      {
+        value: 'from',
+        pos: [8, 12],
+        line: 1,
+      },
+      {
+        value: 'table',
+        pos: [13, 18],
+        line: 1,
+      },
+    ]);
   });
 });
