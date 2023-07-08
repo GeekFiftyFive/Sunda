@@ -17,7 +17,7 @@ import { executeMetaCommand } from './MetaInterface';
 export * from './CommonTypes';
 
 export const executeQuery = async <T>(query: string, datasource: DataSource): Promise<T[]> => {
-  const tokens = tokenise(query).map((token) => token.value);
+  const tokens = tokenise(query);
   const parsedQuery = parse(tokens);
   return execute<T>(parsedQuery, datasource);
 };

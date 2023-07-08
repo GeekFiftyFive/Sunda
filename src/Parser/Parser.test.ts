@@ -9,11 +9,20 @@ import {
   ProjectionType,
 } from './types';
 import { parse } from './Parser';
+import { Token } from '../Tokeniser';
+
+// TODO: Find a nicer way of doing this
+const addSpanInfo = (tokens: string[]): Token[] =>
+  tokens.map((token) => ({
+    value: token,
+    pos: [0, 0],
+    line: 1,
+  }));
 
 describe('test parser', () => {
   test('parse simple valid query', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -27,7 +36,7 @@ describe('test parser', () => {
 
   test('parse simple valid query in lowercase', () => {
     const tokens = ['select', '*', 'from', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -41,7 +50,7 @@ describe('test parser', () => {
 
   test('parse valid query with simple where clause', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '"value"', ';'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -61,7 +70,7 @@ describe('test parser', () => {
 
   test('parse valid query with single quotes', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', "'value'", ';'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -81,7 +90,7 @@ describe('test parser', () => {
 
   test('parser should parse numeric values', () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'field', '=', '10', ';'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -115,7 +124,7 @@ describe('test parser', () => {
       '"value"',
       ';',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -158,7 +167,7 @@ describe('test parser', () => {
       '"value"',
       ';',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -205,7 +214,7 @@ describe('test parser', () => {
       '8',
       ';',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -243,7 +252,7 @@ describe('test parser', () => {
 
   test("parser should handle 'not' in the where clause", () => {
     const tokens = ['SELECT', '*', 'FROM', 'tableName', 'WHERE', 'NOT', 'field1', '=', '10'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -278,7 +287,7 @@ describe('test parser', () => {
       '"value"',
       ';',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -307,7 +316,7 @@ describe('test parser', () => {
 
   test('parser should handle projections', () => {
     const tokens = ['SELECT', 'name', ',', 'age', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual(
       expect.objectContaining({
@@ -331,7 +340,7 @@ describe('test parser', () => {
 
   test("parser should handle 'distinct' keyword", () => {
     const tokens = ['SELECT', 'DISTINCT', 'name', ',', 'age', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual(
       expect.objectContaining({
@@ -370,7 +379,7 @@ describe('test parser', () => {
       'FROM',
       'tableName',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual(
       expect.objectContaining({
@@ -408,7 +417,7 @@ describe('test parser', () => {
 
   test("parse simple 'count' aggregation", () => {
     const tokens = ['SELECT', 'COUNT', '(', '*', ')', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -422,7 +431,7 @@ describe('test parser', () => {
 
   test("parser should handle distinct 'count' aggregate function", () => {
     const tokens = ['SELECT', 'COUNT', '(', 'DISTINCT', 'colour', ')', 'FROM', 'furniture'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual(
       expect.objectContaining({
@@ -443,7 +452,7 @@ describe('test parser', () => {
 
   test("parse simple 'sum' aggregation", () => {
     const tokens = ['SELECT', 'SUM', '(', 'fieldName', ')', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -463,7 +472,7 @@ describe('test parser', () => {
 
   test("parse simple 'avg' aggregation", () => {
     const tokens = ['SELECT', 'AVG', '(', 'fieldName', ')', 'FROM', 'tableName'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -498,7 +507,7 @@ describe('test parser', () => {
       '=',
       '"George"',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -546,7 +555,7 @@ describe('test parser', () => {
       '>=',
       '10',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -599,7 +608,7 @@ describe('test parser', () => {
       '=',
       '"George"',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -637,7 +646,7 @@ describe('test parser', () => {
       '=',
       "'123 Street Lane'",
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -673,7 +682,7 @@ describe('test parser', () => {
       '=',
       "'123 Street Lane'",
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -701,7 +710,7 @@ describe('test parser', () => {
 describe("test parsing 'IN' operator", () => {
   test('parse in operator with numeric values', () => {
     const tokens = ['SELECT', '*', 'FROM', 'posts', 'WHERE', 'ID', 'IN', '(', '1', ',', '3', ')'];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -734,7 +743,7 @@ describe("test parsing 'IN' operator", () => {
       "'Goodbye all!'",
       ')',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -775,7 +784,7 @@ describe('test parsing brackets', () => {
       '>',
       '10',
     ];
-    const query = parse(tokens);
+    const query = parse(addSpanInfo(tokens));
 
     expect(query).toEqual({
       projection: {
@@ -843,7 +852,7 @@ describe('test parsing brackets', () => {
       ')',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -909,7 +918,7 @@ describe('test parser handles subqueries', () => {
       '21',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -970,7 +979,7 @@ describe('test parser handles subqueries', () => {
       'u',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1019,7 +1028,7 @@ describe('test parser handles subqueries', () => {
       ')',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1072,7 +1081,7 @@ describe('test parser handlers functions', () => {
       '0',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1131,7 +1140,7 @@ describe('test parser handlers functions', () => {
       ')',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1199,7 +1208,7 @@ describe('test parser handlers functions', () => {
       '0',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1254,7 +1263,7 @@ describe('test parser handlers functions', () => {
       '0',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1314,7 +1323,7 @@ describe('test parser handlers functions', () => {
       '0',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1368,7 +1377,7 @@ describe('test parser handlers functions', () => {
       'posts',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1397,7 +1406,7 @@ describe('test parser handlers functions', () => {
   test('can parse boolean values', () => {
     let tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '=', 'true'];
 
-    let actual = parse(tokens);
+    let actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1419,7 +1428,7 @@ describe('test parser handlers functions', () => {
 
     tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '=', 'false'];
 
-    actual = parse(tokens);
+    actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1443,7 +1452,7 @@ describe('test parser handlers functions', () => {
   test('can parse basic arithmetic expressions using multiply', () => {
     const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '*', '2', '>', '5'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1474,7 +1483,7 @@ describe('test parser handlers functions', () => {
   test('can parse basic arithmetic expressions using addition', () => {
     const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', 'value', '+', '2', '=', '5'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1505,7 +1514,7 @@ describe('test parser handlers functions', () => {
   test('can parse basic arithmetic expressions using addition and subtraction', () => {
     const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', '2', '-', 'value', '+', '2', '=', '5'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1554,7 +1563,7 @@ describe('test parser handlers functions', () => {
       '1',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1592,7 +1601,7 @@ describe('test parser handlers functions', () => {
   test('can parse arithmetic expressions with negative numbers', () => {
     const tokens = ['SELECT', '*', 'FROM', 'table', 'WHERE', '-', '2', '+', 'value', '=', '5'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1652,7 +1661,7 @@ describe('test parser handlers functions', () => {
       '5',
     ];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1715,7 +1724,7 @@ describe('test parser handles order by', () => {
   test('ordering not specified', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1737,7 +1746,7 @@ describe('test parser handles order by', () => {
   test('ordering ascending specified', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age', 'ASC'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1759,7 +1768,7 @@ describe('test parser handles order by', () => {
   test('ordering descending specified', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'ORDER', 'BY', 'age', 'DESC'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1783,7 +1792,7 @@ describe('test parser handles limit and offset', () => {
   test('parser handles limit on its own with a simple numeric value', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'LIMIT', '10'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1807,7 +1816,7 @@ describe('test parser handles limit and offset', () => {
   test('parser handles offset on its own with a simple numeric value', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '10'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1831,7 +1840,7 @@ describe('test parser handles limit and offset', () => {
   test('parser handles offset first and limit second with a simple numeric value', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '10', 'LIMIT', '10'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1859,7 +1868,7 @@ describe('test parser handles limit and offset', () => {
   test('parser handles both limit first and offset second with a simple numeric value', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'LIMIT', '10', 'OFFSET', '10'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1887,7 +1896,7 @@ describe('test parser handles limit and offset', () => {
   test('parser handles both offset and limit with numeric expressions', () => {
     const tokens = ['SELECT', '*', 'FROM', 'cats', 'OFFSET', '5', '+', '5', 'LIMIT', '5', '+', '5'];
 
-    const actual = parse(tokens);
+    const actual = parse(addSpanInfo(tokens));
 
     expect(actual).toEqual({
       projection: {
@@ -1941,7 +1950,7 @@ describe('test parser error handling', () => {
   test("'sum' with multiple fields throws an error", () => {
     const tokens = ['SELECT', 'SUM', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
 
-    expect(() => parse(tokens)).toThrowError(
+    expect(() => parse(addSpanInfo(tokens))).toThrowError(
       "Cannot use 'SUM' aggregation with multiple field names",
     );
   });
@@ -1949,7 +1958,7 @@ describe('test parser error handling', () => {
   test("'avg' with multiple fields throws an error", () => {
     const tokens = ['SELECT', 'AVG', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
 
-    expect(() => parse(tokens)).toThrowError(
+    expect(() => parse(addSpanInfo(tokens))).toThrowError(
       "Cannot use 'AVG' aggregation with multiple field names",
     );
   });
@@ -1957,12 +1966,16 @@ describe('test parser error handling', () => {
   test("'sum' with wildcard throws an error", () => {
     const tokens = ['SELECT', 'SUM', '(', '*', ')', 'FROM', 'tableName'];
 
-    expect(() => parse(tokens)).toThrowError("Cannot use 'SUM' aggregation with wildcard");
+    expect(() => parse(addSpanInfo(tokens))).toThrowError(
+      "Cannot use 'SUM' aggregation with wildcard",
+    );
   });
 
   test("'avg' with wildcard throws an error", () => {
     const tokens = ['SELECT', 'AVG', '(', '*', ')', 'FROM', 'tableName'];
 
-    expect(() => parse(tokens)).toThrowError("Cannot use 'AVG' aggregation with wildcard");
+    expect(() => parse(addSpanInfo(tokens))).toThrowError(
+      "Cannot use 'AVG' aggregation with wildcard",
+    );
   });
 });

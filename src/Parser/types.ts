@@ -130,6 +130,12 @@ export interface Ordering {
   order: Order;
 }
 
+export interface ParserError extends Error {
+  pos: [number, number];
+  message: string;
+  suggestion?: string;
+}
+
 export interface Query {
   projection: Projection;
   aggregation: AggregateType;

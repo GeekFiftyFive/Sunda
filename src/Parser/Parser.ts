@@ -1,3 +1,4 @@
+import { Token } from '../Tokeniser';
 import {
   AggregateType,
   BooleanType,
@@ -364,7 +365,13 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     const bracketedPairs = findBracketPairs(tokens);
     const outermostPair = bracketedPairs.find((pair) => pair.start === 0);
     // eslint-disable-next-line no-use-before-define
-    const subquery = parse(tokens.slice(1, outermostPair.end));
+    const subquery = parse(
+      tokens.slice(1, outermostPair.end).map((token) => ({
+        value: token,
+        pos: [0, 0],
+        line: 1,
+      })),
+    );
     return {
       value: { type: 'SUBQUERY', query: subquery } as SubqueryValue,
       tokens: tokens.slice(outermostPair.end + 1),
@@ -611,7 +618,13 @@ const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => 
     }
 
     // eslint-disable-next-line no-use-before-define
-    const subquery = parse(newTokens.slice(outerBracketPair.start + 1, outerBracketPair.end));
+    const subquery = parse(
+      newTokens.slice(outerBracketPair.start + 1, outerBracketPair.end).map((token) => ({
+        value: token,
+        pos: [0, 0],
+        line: 1,
+      })),
+    );
 
     newTokens = newTokens.slice(outerBracketPair.end + 1);
 
@@ -664,11 +677,11 @@ const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[]
   };
 };
 
-export const parse = (input: string[]): Query => {
+export const parse = (input: Token[]): Query => {
   let query: Query;
   let projection: Projection;
   let aggregation: AggregateType;
-  let tokens = input;
+  let tokens = input.map((token) => token.value);
 
   if (tokens.length === 0) {
     throw new Error("Expected 'SELECT'");
