@@ -31,7 +31,7 @@ describe('test token pointer', () => {
     const tokens = addSpanInfo(['select', '*', 'from', 'tables']);
     const tp = new TokenPointer(tokens);
     const segment = tp.createSegment(1, 2);
-    expect(segment.getTokens()).toEqual([tokens[1], tokens[2]]);
+    expect(segment.getTokens()).toEqual([tokens[1]]);
   });
 
   test('Token pointer can create segments without a specified end value', () => {

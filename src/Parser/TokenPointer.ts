@@ -46,7 +46,7 @@ export class TokenPointer {
 
   createSegment(startIndex: number, endIndex?: number): TokenPointer {
     const computedStartIndex = startIndex + this.pointer;
-    const computedEndIndex = endIndex ? endIndex + this.pointer : this.tokens.length - 1;
+    const computedEndIndex = endIndex ? endIndex + this.pointer : this.tokens.length;
     if (computedStartIndex < 0) {
       TokenPointer.raiseInternalError('Creating this segment would exceed array bounds');
     }

@@ -1955,7 +1955,7 @@ describe('test parser error handling', () => {
     const tokens = ['SELECT', 'SUM', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
 
     expect(() => parse(addSpanInfo(tokens))).toThrowError(
-      'Cannot use "SUM" aggregation with multiple field names',
+      "Cannot use 'SUM' aggregation with multiple field names",
     );
   });
 
@@ -1963,7 +1963,7 @@ describe('test parser error handling', () => {
     const tokens = ['SELECT', 'AVG', '(', 'field1', ',', 'field2', ')', 'FROM', 'tableName'];
 
     expect(() => parse(addSpanInfo(tokens))).toThrowError(
-      'Cannot use "AVG" aggregation with multiple field names',
+      "Cannot use 'AVG' aggregation with multiple field names",
     );
   });
 
@@ -1971,7 +1971,7 @@ describe('test parser error handling', () => {
     const tokens = ['SELECT', 'SUM', '(', '*', ')', 'FROM', 'tableName'];
 
     expect(() => parse(addSpanInfo(tokens))).toThrowError(
-      'Cannot use "SUM" aggregation with wildcard',
+      "Cannot use 'SUM' aggregation with wildcard",
     );
   });
 
@@ -1979,7 +1979,7 @@ describe('test parser error handling', () => {
     const tokens = ['SELECT', 'AVG', '(', '*', ')', 'FROM', 'tableName'];
 
     expect(() => parse(addSpanInfo(tokens))).toThrowError(
-      'Cannot use "AVG" aggregation with wildcard',
+      "Cannot use 'AVG' aggregation with wildcard",
     );
   });
 });

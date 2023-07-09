@@ -523,19 +523,18 @@ const parseSelection = (
   };
 
   if (Object.keys(aggregates).includes(tp.getCurrentToken().value)) {
+    const aggregationStr = tp.getCurrentToken().value;
     const aggregation = aggregates[tp.getCurrentToken().value];
     const lParenIdx = tp.getRawTokens().findIndex((token) => token === '(');
     const { projection } = parseSelection(tp.movePointer(lParenIdx + 1));
 
     if (aggregation === AggregateType.AVG || aggregation === AggregateType.SUM) {
       if (projection.type === ProjectionType.ALL) {
-        throw new Error(`Cannot use '${tp.getCurrentToken().value}' aggregation with wildcard`);
+        throw new Error(`Cannot use '${aggregationStr}' aggregation with wildcard`);
       }
 
       if (projection.values.length > 1) {
-        throw new Error(
-          `Cannot use '${tp.getCurrentToken().value}' aggregation with multiple field names`,
-        );
+        throw new Error(`Cannot use '${aggregationStr}' aggregation with multiple field names`);
       }
     }
 
@@ -725,7 +724,7 @@ export const parse = (input: Token[]): Query => {
   let joinCondition: Condition | undefined;
 
   if (tp.peek(1)?.value === ReservedWords.ON) {
-    joinCondition = parseCondition(tp.createSegment(1, 3).getRawTokens()).condition;
+    joinCondition = parseCondition(tp.createSegment(2, 5).getRawTokens()).condition;
     tp.movePointer(4);
   }
 
@@ -775,7 +774,7 @@ export const parse = (input: Token[]): Query => {
       if (tp.peek(2)) {
         const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
         const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
-        tp.movePointer(parsed.tokens.length);
+        tp.movePointer(tokensToParse - 1);
         query.limitAndOffset = { limit: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
@@ -787,7 +786,7 @@ export const parse = (input: Token[]): Query => {
       if (tp.peek(2)) {
         const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
         const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
-        tp.movePointer(parsed.tokens.length);
+        tp.movePointer(tokensToParse - 1);
         query.limitAndOffset = { offset: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
