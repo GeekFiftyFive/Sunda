@@ -1,4 +1,5 @@
-import { Token } from '../Tokeniser';
+import { ReservedWords, Token } from '../Tokeniser';
+import { TokenPointer } from './TokenPointer';
 import {
   AggregateType,
   BooleanType,
@@ -503,76 +504,80 @@ const parseCondition = (tokens: string[]): { condition: Condition; tokens: strin
 };
 
 const parseSelection = (
-  tokens: string[],
-): { projection: Projection; aggregation: AggregateType; tokens: string[] } => {
-  if (tokens[0] === '*') {
+  tp: TokenPointer,
+): { projection: Projection; aggregation: AggregateType } => {
+  if (tp.getCurrentToken().value === '*') {
+    tp.movePointer(1);
     return {
       projection: {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      tokens: tokens.slice(1),
     };
   }
 
   const aggregates: Record<string, AggregateType> = {
-    count: AggregateType.COUNT,
-    sum: AggregateType.SUM,
-    avg: AggregateType.AVG,
+    COUNT: AggregateType.COUNT,
+    SUM: AggregateType.SUM,
+    AVG: AggregateType.AVG,
   };
 
-  if (Object.keys(aggregates).includes(tokens[0].toLowerCase())) {
-    const lParenIdx = tokens.findIndex((token) => token === '(');
-    const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
-
-    const aggregation = aggregates[tokens[0].toLowerCase()];
+  if (Object.keys(aggregates).includes(tp.getCurrentToken().value)) {
+    const aggregation = aggregates[tp.getCurrentToken().value];
+    const lParenIdx = tp.getRawTokens().findIndex((token) => token === '(');
+    const { projection } = parseSelection(tp.movePointer(lParenIdx + 1));
 
     if (aggregation === AggregateType.AVG || aggregation === AggregateType.SUM) {
       if (projection.type === ProjectionType.ALL) {
-        throw new Error(`Cannot use '${tokens[0].toUpperCase()}' aggregation with wildcard`);
+        throw new Error(`Cannot use '${tp.getCurrentToken().value}' aggregation with wildcard`);
       }
 
       if (projection.values.length > 1) {
         throw new Error(
-          `Cannot use '${tokens[0].toUpperCase()}' aggregation with multiple field names`,
+          `Cannot use '${tp.getCurrentToken().value}' aggregation with multiple field names`,
         );
       }
     }
 
+    tp.movePointer(1);
+
     return {
       projection,
       aggregation,
-      tokens: newTokens.slice(1),
     };
   }
-  if (tokens[1] === '(') {
+  if (tp.peek(1).value === '(') {
     // Attempt to parse a function call
-    const { functionResultValue, consumed } = parseFunctionResult(tokens);
+    const { functionResultValue, consumed } = parseFunctionResult(tp.getRawTokens());
+    tp.movePointer(consumed + 1);
     return {
       projection: {
         type: ProjectionType.FUNCTION,
         function: functionResultValue,
       },
       aggregation: AggregateType.NONE,
-      tokens: tokens.slice(consumed + 1),
     };
   }
 
   const type =
-    tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
+    tp.getCurrentToken().value === ReservedWords.DISTINCT
+      ? ProjectionType.DISTINCT
+      : ProjectionType.SELECTED;
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
+  tp.movePointer(offset);
+
   const values: Value[] = [];
-  let remainingTokens = Array.from(tokens.slice(offset));
   let listIndex = 0;
 
-  while (remainingTokens[0].toLowerCase() !== 'from' && remainingTokens[0].toLowerCase() !== ')') {
+  while (tp.getCurrentToken().value !== ReservedWords.FROM && tp.getCurrentToken().value !== ')') {
     if (listIndex % 2 === 0) {
-      const parsedValue = parseValue(remainingTokens);
+      const parsedValue = parseValue(tp.getRawTokens());
+      const tokensConsumed = tp.getTokens().length - parsedValue.tokens.length;
       values.push(parsedValue.value);
-      remainingTokens = parsedValue.tokens;
-    } else if (remainingTokens[0] === ',') {
-      remainingTokens = remainingTokens.slice(1);
+      tp.movePointer(tokensConsumed);
+    } else if (tp.getCurrentToken().value === ',') {
+      tp.movePointer(1);
     } else {
       throw new Error('Remapping column names is not currently supported!');
     }
@@ -585,7 +590,6 @@ const parseSelection = (
       values,
     },
     aggregation: AggregateType.NONE,
-    tokens: remainingTokens,
   };
 };
 
@@ -681,21 +685,22 @@ export const parse = (input: Token[]): Query => {
   let query: Query;
   let projection: Projection;
   let aggregation: AggregateType;
-  let tokens = input.map((token) => token.value);
+  const tp = new TokenPointer(input);
 
-  if (tokens.length === 0) {
+  if (tp.length === 0) {
     throw new Error("Expected 'SELECT'");
   }
 
-  if (tokens[0].toLowerCase() === 'select') {
-    ({ tokens, projection, aggregation } = parseSelection(tokens.splice(1)));
+  if (tp.getCurrentToken().value === ReservedWords.SELECT) {
+    ({ projection, aggregation } = parseSelection(tp.movePointer(1)));
   } else {
     throw new Error("Expected 'SELECT'");
   }
 
-  if (tokens[0].toLowerCase() === 'from') {
-    const parsedFrom = parseFrom(tokens);
-    tokens = parsedFrom.tokens;
+  if (tp.getCurrentToken().value === ReservedWords.FROM) {
+    const parsedFrom = parseFrom(tp.getRawTokens());
+    const consumed = tp.getTokens().length - parsedFrom.tokens.length;
+    tp.movePointer(consumed);
     query = {
       projection,
       dataset: parsedFrom.dataset,
@@ -706,11 +711,10 @@ export const parse = (input: Token[]): Query => {
     throw new Error("Expected 'FROM'");
   }
 
-  tokens = tokens.slice(1);
-
-  if (tokens[0] && tokens[0].toLowerCase() === 'join') {
-    const { tokens: newTokens, joins } = parseJoins(tokens);
-    tokens = newTokens;
+  if (tp.peek(1)?.value === ReservedWords.JOIN) {
+    const { tokens: newTokens, joins } = parseJoins(tp.movePointer(1).getRawTokens());
+    const consumed = tp.getTokens().length - (newTokens.length + 1);
+    tp.movePointer(consumed);
     query = {
       ...query,
       joins,
@@ -720,14 +724,15 @@ export const parse = (input: Token[]): Query => {
   // TODO: Should be handled by parseJoins
   let joinCondition: Condition | undefined;
 
-  if (tokens[0] && tokens[0].toLowerCase() === 'on') {
-    joinCondition = parseCondition(tokens.slice(1, 4)).condition;
-    tokens = tokens.splice(4);
+  if (tp.peek(1)?.value === ReservedWords.ON) {
+    joinCondition = parseCondition(tp.createSegment(1, 3).getRawTokens()).condition;
+    tp.movePointer(4);
   }
 
-  if (tokens[0] && tokens[0].toLowerCase() === 'where') {
-    const parsed = parseCondition(tokens.splice(1));
-    tokens = parsed.tokens;
+  if (tp.peek(1)?.value === ReservedWords.WHERE) {
+    const parsed = parseCondition(tp.movePointer(2).getRawTokens());
+    const consumed = tp.getTokens().length - (parsed.tokens.length + 1);
+    tp.movePointer(consumed);
 
     if (!joinCondition) {
       query.condition = parsed.condition;
@@ -752,24 +757,25 @@ export const parse = (input: Token[]): Query => {
       }
     });
 
-    return tokens.slice(0, index);
+    return index;
   };
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    if (tokens[0] && tokens[0].toLowerCase() === 'order') {
-      const parsed = parseOrdering(tokens);
-      tokens = parsed.tokens;
+    if (tp.peek(1)?.value === ReservedWords.ORDER) {
+      const parsed = parseOrdering(tp.movePointer(1).getRawTokens());
+      const consumed = tp.getTokens().length - (parsed.tokens.length + 1);
+      tp.movePointer(consumed);
       query.ordering = parsed.ordering;
       // eslint-disable-next-line no-continue
       continue;
     }
 
-    if (tokens[0] && tokens[0].toLowerCase() === 'limit') {
-      if (tokens[1]) {
-        const tokensToParse = getTokensBetween(tokens.slice(1));
-        const parsed = parseValue(tokensToParse);
-        tokens = tokens.slice(tokensToParse.length + 1);
+    if (tp.peek(1)?.value === ReservedWords.LIMIT) {
+      if (tp.peek(2)) {
+        const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
+        const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
+        tp.movePointer(parsed.tokens.length);
         query.limitAndOffset = { limit: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
@@ -777,11 +783,11 @@ export const parse = (input: Token[]): Query => {
       throw new Error('Value required for limit!');
     }
 
-    if (tokens[0] && tokens[0].toLowerCase() === 'offset') {
-      if (tokens[1]) {
-        const tokensToParse = getTokensBetween(tokens.slice(1));
-        const parsed = parseValue(tokensToParse);
-        tokens = tokens.slice(tokensToParse.length + 1);
+    if (tp.peek(1)?.value === ReservedWords.OFFSET) {
+      if (tp.peek(2)) {
+        const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
+        const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
+        tp.movePointer(parsed.tokens.length);
         query.limitAndOffset = { offset: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
@@ -791,7 +797,7 @@ export const parse = (input: Token[]): Query => {
     break;
   }
 
-  if (tokens.length !== 0 && tokens[0] !== ';') {
+  if (tp.peek(1) && tp.peek(1).value !== ';') {
     throw new Error('Expected end of query');
   }
 

@@ -130,10 +130,19 @@ export interface Ordering {
   order: Order;
 }
 
-export interface ParserError extends Error {
-  pos: [number, number];
+export class ParserError extends Error {
   message: string;
+
+  pos: [number, number];
+
   suggestion?: string;
+
+  constructor(params: { pos: [number, number]; message: string; suggestion?: string }) {
+    super();
+    this.pos = params.pos;
+    this.message = params.message;
+    this.suggestion = params.suggestion;
+  }
 }
 
 export interface Query {

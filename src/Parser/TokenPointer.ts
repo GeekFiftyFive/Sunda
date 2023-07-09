@@ -5,35 +5,52 @@ export class TokenPointer {
 
   private pointer = 0;
 
+  length: number;
+
   constructor(tokens: Token[]) {
     this.tokens = tokens;
+    this.length = tokens.length;
   }
 
   private static raiseInternalError(message: string): void {
     throw new Error(`${message}! This is an internal error, please report on GitHub :^)`);
   }
 
+  getRawTokens(): string[] {
+    return this.getTokens().map((token) => token.value);
+  }
+
   getTokens(): Token[] {
-    return this.tokens;
+    return this.tokens.slice(this.pointer);
   }
 
   getCurrentToken(): Token {
+    if (this.tokens.length === 0) {
+      TokenPointer.raiseInternalError('Performing getCurrentToken would read out of bounds');
+    }
     return this.tokens[this.pointer];
   }
 
-  move(offset: number): void {
+  movePointer(offset: number): TokenPointer {
     const newPointer = this.pointer + offset;
     if (newPointer < 0 || newPointer >= this.tokens.length) {
       TokenPointer.raiseInternalError('Moving pointer by this offset would exceed array bounds');
     }
     this.pointer = newPointer;
+    return this;
   }
 
-  createSegment(startIndex: number, endIndex: number): TokenPointer {
-    if (startIndex < 0 || endIndex >= this.tokens.length) {
+  peek(offset: number): Token | undefined {
+    return this.tokens[this.pointer + offset];
+  }
+
+  createSegment(startIndex: number, endIndex?: number): TokenPointer {
+    const computedStartIndex = startIndex + this.pointer;
+    const computedEndIndex = endIndex ? endIndex + this.pointer : this.tokens.length - 1;
+    if (computedStartIndex < 0) {
       TokenPointer.raiseInternalError('Creating this segment would exceed array bounds');
     }
-    const newTokens = this.tokens.slice(startIndex, endIndex + 1);
+    const newTokens = this.tokens.slice(computedStartIndex, computedEndIndex);
     return new TokenPointer(newTokens);
   }
 }

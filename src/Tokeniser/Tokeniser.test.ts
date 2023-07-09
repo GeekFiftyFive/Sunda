@@ -10,7 +10,7 @@ describe('test tokeniser', () => {
 
   test('tokenise valid simple command in lowercase', () => {
     const actual = tokenise('select * from table').map(getRawToken);
-    expect(actual).toEqual(['select', '*', 'from', 'table']);
+    expect(actual).toEqual(['SELECT', '*', 'FROM', 'table']);
   });
 
   test('tokenise valid simple command with leading whitspace', () => {
@@ -48,15 +48,15 @@ describe('test tokeniser', () => {
       'select * from cats where breed = \'British Shorthair\' or breed = "Bengal"',
     ).map(getRawToken);
     expect(actual).toEqual([
-      'select',
+      'SELECT',
       '*',
-      'from',
+      'FROM',
       'cats',
-      'where',
+      'WHERE',
       'breed',
       '=',
       "'British Shorthair'",
-      'or',
+      'OR',
       'breed',
       '=',
       '"Bengal"',
@@ -132,7 +132,7 @@ describe('test tokeniser', () => {
       'posts.PosterID',
       '=',
       'users.ID',
-      'and',
+      'AND',
       'users.Name',
       '=',
       '"George"',
@@ -248,12 +248,12 @@ describe('test tokeniser', () => {
       'Title',
       '=',
       "'Goodbye all!'",
-      'or',
+      'OR',
       'Title',
       '=',
       "'Hello, world'",
       ')',
-      'and',
+      'AND',
       'Views',
       '>',
       '10',
@@ -314,7 +314,7 @@ describe('test tokeniser', () => {
     const actual = tokenise('select * from table');
     expect(actual).toEqual([
       {
-        value: 'select',
+        value: 'SELECT',
         pos: [0, 6],
         line: 1,
       },
@@ -324,7 +324,7 @@ describe('test tokeniser', () => {
         line: 1,
       },
       {
-        value: 'from',
+        value: 'FROM',
         pos: [8, 12],
         line: 1,
       },
