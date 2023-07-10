@@ -909,7 +909,7 @@ describe('test parser handles subqueries', () => {
       'FROM',
       'users',
       ')',
-      'as',
+      'AS',
       'u',
       'WHERE',
       'u.age',
@@ -974,7 +974,7 @@ describe('test parser handles subqueries', () => {
       '"Sammy"',
       ')',
       ')',
-      'as',
+      'AS',
       'u',
     ];
 

@@ -603,12 +603,12 @@ const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
   };
 };
 
-const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => {
-  let newTokens = tokens.slice(1);
+const parseFrom = (tp: TokenPointer): DataSet => {
+  tp.movePointer(1);
 
-  if (newTokens[0] === '(') {
+  if (tp.getCurrentToken().value === '(') {
     // Assume this is a sub-query
-    const bracketPairs = findBracketPairs(newTokens);
+    const bracketPairs = findBracketPairs(tp.getRawTokens());
 
     if (bracketPairs.length === 0) {
       throw new Error('Could not find matching end bracket');
@@ -622,33 +622,25 @@ const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => 
 
     // eslint-disable-next-line no-use-before-define
     const subquery = parse(
-      newTokens.slice(outerBracketPair.start + 1, outerBracketPair.end).map((token) => ({
-        value: token,
-        pos: [0, 0],
-        line: 1,
-      })),
+      tp.createSegment(outerBracketPair.start + 1, outerBracketPair.end).getTokens(),
     );
 
-    newTokens = newTokens.slice(outerBracketPair.end + 1);
+    tp.movePointer(outerBracketPair.end + 1);
 
-    if (newTokens[0] !== 'as') {
+    if (tp.getCurrentToken().value !== ReservedWords.AS) {
       throw new Error('Expected an alias for subquery results');
     }
 
     return {
-      tokens: newTokens.slice(1),
-      dataset: {
-        type: DataSetType.SUBQUERY,
-        value: subquery,
-        alias: newTokens[1],
-      },
+      type: DataSetType.SUBQUERY,
+      value: subquery,
+      alias: tp.movePointer(1).getCurrentToken().value,
     };
   }
 
   // Assume this is just a table name
   // FIXME: Should have more error handling around this
-
-  return { tokens: newTokens, dataset: { type: DataSetType.TABLE, value: newTokens[0] } };
+  return { type: DataSetType.TABLE, value: tp.getCurrentToken().value };
 };
 
 const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[] } => {
@@ -697,12 +689,10 @@ export const parse = (input: Token[]): Query => {
   }
 
   if (tp.getCurrentToken().value === ReservedWords.FROM) {
-    const parsedFrom = parseFrom(tp.getRawTokens());
-    const consumed = tp.getTokens().length - parsedFrom.tokens.length;
-    tp.movePointer(consumed);
+    const dataset = parseFrom(tp);
     query = {
       projection,
-      dataset: parsedFrom.dataset,
+      dataset,
       aggregation,
       joins: [],
     };

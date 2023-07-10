@@ -16,6 +16,7 @@ export enum ReservedWords {
   AVG = 'AVG',
   LIMIT = 'LIMIT',
   OFFSET = 'OFFSET',
+  AS = 'AS',
 }
 
 export interface Token {
