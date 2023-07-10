@@ -48,10 +48,7 @@ const firstUnbracketedIndex = (
     if (orIndex >= 0) {
       return orIndex;
     }
-    if (
-      searchValues.includes(token.toLowerCase()) &&
-      !isInBracketedExpression(index, bracketPairs)
-    ) {
+    if (searchValues.includes(token) && !isInBracketedExpression(index, bracketPairs)) {
       return index;
     }
 
@@ -445,62 +442,67 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
   };
 };
 
-const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
-  const bracketedPairs = findBracketPairs(tokens);
+const parseCondition = (tp: TokenPointer): Condition => {
+  const bracketedPairs = findBracketPairs(tp.getRawTokens());
 
-  const unbracketedBoolean = firstUnbracketedIndex(['and', 'or'], tokens, bracketedPairs);
+  const unbracketedBoolean = firstUnbracketedIndex(
+    [ReservedWords.AND, ReservedWords.OR],
+    tp.getRawTokens(),
+    bracketedPairs,
+  );
 
   if (unbracketedBoolean >= 0) {
-    const boolean: BooleanType = tokens[unbracketedBoolean].toUpperCase() as BooleanType;
+    const boolean: BooleanType = tp.peek(unbracketedBoolean).value as BooleanType;
 
-    const remainingTokens = tokens.splice(unbracketedBoolean).slice(1);
-    const parsedLhs = parseCondition(tokens);
-    const parsedRhs = parseCondition(remainingTokens);
+    const parsedLhs = parseCondition(tp.createSegment(0, unbracketedBoolean));
+    tp.movePointer(unbracketedBoolean + 1);
+    const parsedRhs = parseCondition(tp);
 
     return {
-      condition: {
-        boolean,
-        lhs: parsedLhs.condition,
-        rhs: parsedRhs.condition,
-      } as ConditionPair,
-      tokens: parsedRhs.tokens,
-    };
+      boolean,
+      lhs: parsedLhs,
+      rhs: parsedRhs,
+    } as ConditionPair;
   }
 
-  const unbracketedNot = firstUnbracketedIndex(['not'], tokens, bracketedPairs);
+  const unbracketedNot = firstUnbracketedIndex(
+    [ReservedWords.NOT],
+    tp.getRawTokens(),
+    bracketedPairs,
+  );
 
   if (unbracketedNot >= 0) {
-    const parsed = parseCondition(tokens.slice(1));
-    parsed.condition.boolean = BooleanType.NOT;
-    return parsed;
+    const condition = parseCondition(tp.movePointer(1));
+    condition.boolean = BooleanType.NOT;
+    return condition;
   }
 
   const unbracketedComparison = firstUnbracketedIndex(
-    Object.values(Comparison).map((comparison) => comparison.toLowerCase()),
-    tokens,
+    Object.values(Comparison),
+    tp.getRawTokens(),
     bracketedPairs,
   );
 
   if (unbracketedComparison >= 0) {
-    const comparison: Comparison = tokens[unbracketedComparison].toUpperCase() as Comparison;
+    const comparison: Comparison = tp.peek(unbracketedComparison).value as Comparison;
 
-    const remainingTokens = tokens.splice(unbracketedComparison).slice(1);
-    const parsedLhsValue = parseValue(tokens);
-    const parsedRhsValue = parseValue(remainingTokens);
+    const parsedLhsValue = parseValue(tp.createSegment(0, unbracketedComparison).getRawTokens());
+    tp.movePointer(unbracketedComparison + 1);
+    const parsedRhsValue = parseValue(tp.getRawTokens());
+    tp.movePointer(tp.getTokens().length - (parsedRhsValue.tokens.length + 1));
 
     return {
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison,
-        lhs: parsedLhsValue.value,
-        rhs: parsedRhsValue.value,
-      } as SingularCondition,
-      tokens: parsedRhsValue.tokens,
-    };
+      boolean: BooleanType.NONE,
+      comparison,
+      lhs: parsedLhsValue.value,
+      rhs: parsedRhsValue.value,
+    } as SingularCondition;
   }
 
   // If we find ourselves here, the entire expression is in brackets
-  return parseCondition(tokens.splice(1, tokens.length - 2));
+  const condition = parseCondition(tp.createSegment(1, tp.length - 2));
+  tp.movePointer(tp.length - 1);
+  return condition;
 };
 
 const parseSelection = (
@@ -592,15 +594,14 @@ const parseSelection = (
   };
 };
 
-const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
+const parseJoins = (tp: TokenPointer): Join[] => {
   // TODO: Extend
-  if (tokens[2].toLowerCase() !== 'where' && tokens[2].toLowerCase() !== 'on') {
+  if (tp.peek(3).value !== ReservedWords.WHERE && tp.peek(3).value !== ReservedWords.ON) {
     throw new Error('Multiple joins and aliases not currently supported');
   }
-  return {
-    joins: [{ table: tokens[1] }],
-    tokens: tokens.slice(2),
-  };
+  const joins = [{ table: tp.peek(2).value }];
+  tp.movePointer(2);
+  return joins;
 };
 
 const parseFrom = (tp: TokenPointer): DataSet => {
@@ -701,9 +702,7 @@ export const parse = (input: Token[]): Query => {
   }
 
   if (tp.peek(1)?.value === ReservedWords.JOIN) {
-    const { tokens: newTokens, joins } = parseJoins(tp.movePointer(1).getRawTokens());
-    const consumed = tp.getTokens().length - (newTokens.length + 1);
-    tp.movePointer(consumed);
+    const joins = parseJoins(tp);
     query = {
       ...query,
       joins,
@@ -714,17 +713,15 @@ export const parse = (input: Token[]): Query => {
   let joinCondition: Condition | undefined;
 
   if (tp.peek(1)?.value === ReservedWords.ON) {
-    joinCondition = parseCondition(tp.createSegment(2, 5).getRawTokens()).condition;
+    joinCondition = parseCondition(tp.createSegment(2, 5));
     tp.movePointer(4);
   }
 
   if (tp.peek(1)?.value === ReservedWords.WHERE) {
-    const parsed = parseCondition(tp.movePointer(2).getRawTokens());
-    const consumed = tp.getTokens().length - (parsed.tokens.length + 1);
-    tp.movePointer(consumed);
+    const condition = parseCondition(tp.movePointer(2));
 
     if (!joinCondition) {
-      query.condition = parsed.condition;
+      query.condition = condition;
     } else {
       // TODO: Using 'on' and just joining on a value via the where clause have
       // slightly different behaviours, but here we are treating them the same.
@@ -732,7 +729,7 @@ export const parse = (input: Token[]): Query => {
       query.condition = {
         boolean: BooleanType.AND,
         lhs: joinCondition,
-        rhs: parsed.condition,
+        rhs: condition,
       } as ConditionPair;
     }
   }

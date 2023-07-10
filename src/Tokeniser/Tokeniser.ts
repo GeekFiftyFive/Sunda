@@ -17,6 +17,7 @@ export enum ReservedWords {
   LIMIT = 'LIMIT',
   OFFSET = 'OFFSET',
   AS = 'AS',
+  NOT = 'NOT',
 }
 
 export interface Token {
