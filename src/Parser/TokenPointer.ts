@@ -37,6 +37,7 @@ export class TokenPointer {
       TokenPointer.raiseInternalError('Moving pointer by this offset would exceed array bounds');
     }
     this.pointer = newPointer;
+    this.length -= offset;
     return this;
   }
 

@@ -500,7 +500,7 @@ const parseCondition = (tp: TokenPointer): Condition => {
   }
 
   // If we find ourselves here, the entire expression is in brackets
-  const condition = parseCondition(tp.createSegment(1, tp.length - 2));
+  const condition = parseCondition(tp.createSegment(1, tp.length - 1));
   tp.movePointer(tp.length - 1);
   return condition;
 };
