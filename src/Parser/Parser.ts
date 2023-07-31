@@ -306,43 +306,33 @@ const isFunctionResult = (tokens: string[]): boolean => {
   return true;
 };
 
-/* TODO: More consistent return types from these parsers! Some return the rest of the token
-  stream whilst others (such as this) return a count of the tokens consumed whilst parsing */
-const parseFunctionResult = (
-  tokens: string[],
-): { functionResultValue: FunctionResultValue; consumed: number } => {
-  const toReturn: { functionResultValue: FunctionResultValue; consumed: number } = {
-    functionResultValue: {
-      type: 'FUNCTION_RESULT',
-      functionName: tokens[0] as FunctionName,
-      args: [],
-    },
-    consumed: 1,
+const parseFunctionResult = (tp: TokenPointer): FunctionResultValue => {
+  const toReturn: FunctionResultValue = {
+    type: 'FUNCTION_RESULT',
+    functionName: tp.getCurrentToken().value as FunctionName,
+    args: [],
   };
 
-  let tokenIndex = 2;
+  tp.movePointer(2);
 
   // TODO: De-dupe. This is very similar to what happens when we parse a set
-  for (let i = 0; i < tokens.length; i += 1) {
-    if (tokens[tokenIndex] === ')') {
-      toReturn.consumed += 1;
+  for (let i = 0; tp.length > 0; i += 1) {
+    if (tp.getCurrentToken().value === ')') {
       break;
     }
 
-    if (i % 2 === 1 && tokens[tokenIndex] !== ',') {
+    if (i % 2 === 1 && tp.getCurrentToken().value !== ',') {
       throw new Error('Not a valid arguments list');
     }
 
     if (i % 2 === 0) {
       // eslint-disable-next-line no-use-before-define
-      const value = parseValue(tokens.slice(tokenIndex));
-      const increment = tokens.length - tokenIndex - value.tokens.length;
-      tokenIndex += increment;
-      toReturn.consumed += increment;
-      toReturn.functionResultValue.args.push(value.value);
+      const value = parseValue(tp.getRawTokens());
+      const increment = tp.length - value.tokens.length;
+      tp.movePointer(increment);
+      toReturn.args.push(value.value);
     } else {
-      tokenIndex += 1;
-      toReturn.consumed += 1;
+      tp.movePointer(1);
     }
   }
 
@@ -383,10 +373,17 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
   }
 
   if (isFunctionResult(tokens)) {
-    const parsedFunction = parseFunctionResult(tokens);
+    const tp = new TokenPointer(
+      tokens.map((token) => ({
+        value: token,
+        pos: [0, 0],
+        line: 1,
+      })),
+    );
+    const parsedFunction = parseFunctionResult(tp);
     return {
-      value: parsedFunction.functionResultValue,
-      tokens: tokens.slice(parsedFunction.consumed + 1),
+      value: parsedFunction,
+      tokens: tp.getRawTokens().slice(1),
     };
   }
 
@@ -549,8 +546,8 @@ const parseSelection = (
   }
   if (tp.peek(1).value === '(') {
     // Attempt to parse a function call
-    const { functionResultValue, consumed } = parseFunctionResult(tp.getRawTokens());
-    tp.movePointer(consumed + 1);
+    const functionResultValue = parseFunctionResult(tp);
+    tp.movePointer(1);
     return {
       projection: {
         type: ProjectionType.FUNCTION,
