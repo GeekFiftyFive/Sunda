@@ -1946,8 +1946,7 @@ describe('test parser error handling', () => {
     try {
       parse([]);
     } catch (err) {
-      const extracted = extractParserError(err);
-      // expect(extracted).toEqual({ message: 'Expected "SELECT"', pos: [0, 0] });
+      expect(() => parse([])).toThrow(new Error("Expected 'SELECT'"));
     }
   });
 
