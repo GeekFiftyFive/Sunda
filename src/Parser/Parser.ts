@@ -1,144 +1,29 @@
-export enum BooleanType {
-  AND = 'AND',
-  OR = 'OR',
-  NONE = 'NONE',
-  NOT = 'NOT',
-}
-
-export enum Comparison {
-  EQ = '=',
-  NEQ = '<>',
-  GT = '>',
-  LT = '<',
-  GTE = '>=',
-  LTE = '<=',
-  BETWEEN = 'BETWEEN',
-  LIKE = 'LIKE',
-  IN = 'IN',
-}
-
-export enum FunctionName {
-  ARRAY_POSITION = 'ARRAY_POSITION',
-  ARRAY_LENGTH = 'ARRAY_LENGTH',
-  COALESCE = 'COALESCE',
-  REGEX_GROUP = 'REGEX_GROUP',
-  PARSE_NUMBER = 'PARSE_NUMBER',
-}
-
-export enum DataSetType {
-  TABLE,
-  SUBQUERY,
-}
-
-export enum ProjectionType {
-  ALL,
-  SELECTED,
-  DISTINCT,
-  FUNCTION,
-}
-
-export enum AggregateType {
-  NONE,
-  COUNT,
-  SUM,
-  AVG,
-}
-
-export enum NumericOperation {
-  MULTIPLY = '*',
-  DIVIDE = '/',
-  ADD = '+',
-  SUBTRACT = '-',
-}
-
-export enum Order {
-  ASC = 'ASC',
-  DESC = 'DESC',
-}
-
-export interface Join {
-  table: string;
-  alias?: string;
-}
-
-export interface Condition {
-  boolean: BooleanType;
-}
-
-export interface Value {
-  type: 'FIELD' | 'LITERAL' | 'FUNCTION_RESULT' | 'EXPRESSION' | 'SUBQUERY';
-}
-
-export interface FieldValue extends Value {
-  type: 'FIELD';
-  fieldName: string;
-}
-
-export interface LiteralValue extends Value {
-  type: 'LITERAL';
-  value: unknown;
-}
-
-export interface FunctionResultValue extends Value {
-  type: 'FUNCTION_RESULT';
-  functionName: FunctionName;
-  args: Value[];
-}
-
-export interface ExpressionValue extends Value {
-  type: 'EXPRESSION';
-  chain: (Value | NumericOperation)[];
-}
-
-export interface SubqueryValue extends Value {
-  type: 'SUBQUERY';
-  // eslint-disable-next-line no-use-before-define
-  query: Query;
-}
-
-export interface LimitAndOffset {
-  limit?: Value;
-  offset?: Value;
-}
-
-export interface SingularCondition extends Condition {
-  comparison: Comparison;
-  lhs: Value;
-  rhs: Value;
-}
-
-export interface ConditionPair extends Condition {
-  lhs: Condition;
-  rhs: Condition;
-}
-
-export interface Projection {
-  type: ProjectionType;
-  values?: Value[];
-  function?: FunctionResultValue;
-}
-
-export interface DataSet {
-  type: DataSetType;
-  // eslint-disable-next-line no-use-before-define
-  value: string | Query;
-  alias?: string;
-}
-
-export interface Ordering {
-  field: string;
-  order: Order;
-}
-
-export interface Query {
-  projection: Projection;
-  aggregation: AggregateType;
-  dataset: DataSet;
-  joins: Join[];
-  condition?: Condition;
-  ordering?: Ordering;
-  limitAndOffset?: LimitAndOffset;
-}
+import { ReservedWords, Token } from '../Tokeniser';
+import { TokenPointer } from './TokenPointer';
+import {
+  AggregateType,
+  BooleanType,
+  Comparison,
+  Condition,
+  ConditionPair,
+  DataSet,
+  DataSetType,
+  ExpressionValue,
+  FieldValue,
+  FunctionName,
+  FunctionResultValue,
+  Join,
+  LiteralValue,
+  NumericOperation,
+  Order,
+  Ordering,
+  Projection,
+  ProjectionType,
+  Query,
+  SingularCondition,
+  SubqueryValue,
+  Value,
+} from './types';
 
 export const isFieldValue = (value: Value): value is FieldValue => value.type === 'FIELD';
 
@@ -163,10 +48,7 @@ const firstUnbracketedIndex = (
     if (orIndex >= 0) {
       return orIndex;
     }
-    if (
-      searchValues.includes(token.toLowerCase()) &&
-      !isInBracketedExpression(index, bracketPairs)
-    ) {
+    if (searchValues.includes(token) && !isInBracketedExpression(index, bracketPairs)) {
       return index;
     }
 
@@ -424,43 +306,33 @@ const isFunctionResult = (tokens: string[]): boolean => {
   return true;
 };
 
-/* TODO: More consistent return types from these parsers! Some return the rest of the token
-  stream whilst others (such as this) return a count of the tokens consumed whilst parsing */
-const parseFunctionResult = (
-  tokens: string[],
-): { functionResultValue: FunctionResultValue; consumed: number } => {
-  const toReturn: { functionResultValue: FunctionResultValue; consumed: number } = {
-    functionResultValue: {
-      type: 'FUNCTION_RESULT',
-      functionName: tokens[0] as FunctionName,
-      args: [],
-    },
-    consumed: 1,
+const parseFunctionResult = (tp: TokenPointer): FunctionResultValue => {
+  const toReturn: FunctionResultValue = {
+    type: 'FUNCTION_RESULT',
+    functionName: tp.getCurrentToken().value as FunctionName,
+    args: [],
   };
 
-  let tokenIndex = 2;
+  tp.movePointer(2);
 
   // TODO: De-dupe. This is very similar to what happens when we parse a set
-  for (let i = 0; i < tokens.length; i += 1) {
-    if (tokens[tokenIndex] === ')') {
-      toReturn.consumed += 1;
+  for (let i = 0; tp.length > 0; i += 1) {
+    if (tp.getCurrentToken().value === ')') {
       break;
     }
 
-    if (i % 2 === 1 && tokens[tokenIndex] !== ',') {
+    if (i % 2 === 1 && tp.getCurrentToken().value !== ',') {
       throw new Error('Not a valid arguments list');
     }
 
     if (i % 2 === 0) {
       // eslint-disable-next-line no-use-before-define
-      const value = parseValue(tokens.slice(tokenIndex));
-      const increment = tokens.length - tokenIndex - value.tokens.length;
-      tokenIndex += increment;
-      toReturn.consumed += increment;
-      toReturn.functionResultValue.args.push(value.value);
+      const value = parseValue(tp.getRawTokens());
+      const increment = tp.length - value.tokens.length;
+      tp.movePointer(increment);
+      toReturn.args.push(value.value);
     } else {
-      tokenIndex += 1;
-      toReturn.consumed += 1;
+      tp.movePointer(1);
     }
   }
 
@@ -481,7 +353,13 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
     const bracketedPairs = findBracketPairs(tokens);
     const outermostPair = bracketedPairs.find((pair) => pair.start === 0);
     // eslint-disable-next-line no-use-before-define
-    const subquery = parse(tokens.slice(1, outermostPair.end));
+    const subquery = parse(
+      tokens.slice(1, outermostPair.end).map((token) => ({
+        value: token,
+        pos: [0, 0],
+        line: 1,
+      })),
+    );
     return {
       value: { type: 'SUBQUERY', query: subquery } as SubqueryValue,
       tokens: tokens.slice(outermostPair.end + 1),
@@ -495,10 +373,17 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
   }
 
   if (isFunctionResult(tokens)) {
-    const parsedFunction = parseFunctionResult(tokens);
+    const tp = new TokenPointer(
+      tokens.map((token) => ({
+        value: token,
+        pos: [0, 0],
+        line: 1,
+      })),
+    );
+    const parsedFunction = parseFunctionResult(tp);
     return {
-      value: parsedFunction.functionResultValue,
-      tokens: tokens.slice(parsedFunction.consumed + 1),
+      value: parsedFunction,
+      tokens: tp.getRawTokens().slice(1),
     };
   }
 
@@ -554,135 +439,143 @@ const parseValue = (tokens: string[]): { value: Value; tokens: string[] } => {
   };
 };
 
-const parseCondition = (tokens: string[]): { condition: Condition; tokens: string[] } => {
-  const bracketedPairs = findBracketPairs(tokens);
+const parseCondition = (tp: TokenPointer): Condition => {
+  const bracketedPairs = findBracketPairs(tp.getRawTokens());
 
-  const unbracketedBoolean = firstUnbracketedIndex(['and', 'or'], tokens, bracketedPairs);
+  const unbracketedBoolean = firstUnbracketedIndex(
+    [ReservedWords.AND, ReservedWords.OR],
+    tp.getRawTokens(),
+    bracketedPairs,
+  );
 
   if (unbracketedBoolean >= 0) {
-    const boolean: BooleanType = tokens[unbracketedBoolean].toUpperCase() as BooleanType;
+    const boolean: BooleanType = tp.peek(unbracketedBoolean).value as BooleanType;
 
-    const remainingTokens = tokens.splice(unbracketedBoolean).slice(1);
-    const parsedLhs = parseCondition(tokens);
-    const parsedRhs = parseCondition(remainingTokens);
+    const parsedLhs = parseCondition(tp.createSegment(0, unbracketedBoolean));
+    tp.movePointer(unbracketedBoolean + 1);
+    const parsedRhs = parseCondition(tp);
 
     return {
-      condition: {
-        boolean,
-        lhs: parsedLhs.condition,
-        rhs: parsedRhs.condition,
-      } as ConditionPair,
-      tokens: parsedRhs.tokens,
-    };
+      boolean,
+      lhs: parsedLhs,
+      rhs: parsedRhs,
+    } as ConditionPair;
   }
 
-  const unbracketedNot = firstUnbracketedIndex(['not'], tokens, bracketedPairs);
+  const unbracketedNot = firstUnbracketedIndex(
+    [ReservedWords.NOT],
+    tp.getRawTokens(),
+    bracketedPairs,
+  );
 
   if (unbracketedNot >= 0) {
-    const parsed = parseCondition(tokens.slice(1));
-    parsed.condition.boolean = BooleanType.NOT;
-    return parsed;
+    const condition = parseCondition(tp.movePointer(1));
+    condition.boolean = BooleanType.NOT;
+    return condition;
   }
 
   const unbracketedComparison = firstUnbracketedIndex(
-    Object.values(Comparison).map((comparison) => comparison.toLowerCase()),
-    tokens,
+    Object.values(Comparison),
+    tp.getRawTokens(),
     bracketedPairs,
   );
 
   if (unbracketedComparison >= 0) {
-    const comparison: Comparison = tokens[unbracketedComparison].toUpperCase() as Comparison;
+    const comparison: Comparison = tp.peek(unbracketedComparison).value as Comparison;
 
-    const remainingTokens = tokens.splice(unbracketedComparison).slice(1);
-    const parsedLhsValue = parseValue(tokens);
-    const parsedRhsValue = parseValue(remainingTokens);
+    const parsedLhsValue = parseValue(tp.createSegment(0, unbracketedComparison).getRawTokens());
+    tp.movePointer(unbracketedComparison + 1);
+    const parsedRhsValue = parseValue(tp.getRawTokens());
+    tp.movePointer(tp.getTokens().length - (parsedRhsValue.tokens.length + 1));
 
     return {
-      condition: {
-        boolean: BooleanType.NONE,
-        comparison,
-        lhs: parsedLhsValue.value,
-        rhs: parsedRhsValue.value,
-      } as SingularCondition,
-      tokens: parsedRhsValue.tokens,
-    };
+      boolean: BooleanType.NONE,
+      comparison,
+      lhs: parsedLhsValue.value,
+      rhs: parsedRhsValue.value,
+    } as SingularCondition;
   }
 
   // If we find ourselves here, the entire expression is in brackets
-  return parseCondition(tokens.splice(1, tokens.length - 2));
+  const condition = parseCondition(tp.createSegment(1, tp.length - 1));
+  tp.movePointer(tp.length - 1);
+  return condition;
 };
 
 const parseSelection = (
-  tokens: string[],
-): { projection: Projection; aggregation: AggregateType; tokens: string[] } => {
-  if (tokens[0] === '*') {
+  tp: TokenPointer,
+): { projection: Projection; aggregation: AggregateType } => {
+  if (tp.getCurrentToken().value === '*') {
+    tp.movePointer(1);
     return {
       projection: {
         type: ProjectionType.ALL,
       },
       aggregation: AggregateType.NONE,
-      tokens: tokens.slice(1),
     };
   }
 
   const aggregates: Record<string, AggregateType> = {
-    count: AggregateType.COUNT,
-    sum: AggregateType.SUM,
-    avg: AggregateType.AVG,
+    COUNT: AggregateType.COUNT,
+    SUM: AggregateType.SUM,
+    AVG: AggregateType.AVG,
   };
 
-  if (Object.keys(aggregates).includes(tokens[0].toLowerCase())) {
-    const lParenIdx = tokens.findIndex((token) => token === '(');
-    const { projection, tokens: newTokens } = parseSelection(tokens.slice(lParenIdx + 1));
-
-    const aggregation = aggregates[tokens[0].toLowerCase()];
+  if (Object.keys(aggregates).includes(tp.getCurrentToken().value)) {
+    const aggregationStr = tp.getCurrentToken().value;
+    const aggregation = aggregates[tp.getCurrentToken().value];
+    const lParenIdx = tp.getRawTokens().findIndex((token) => token === '(');
+    const { projection } = parseSelection(tp.movePointer(lParenIdx + 1));
 
     if (aggregation === AggregateType.AVG || aggregation === AggregateType.SUM) {
       if (projection.type === ProjectionType.ALL) {
-        throw new Error(`Cannot use '${tokens[0].toUpperCase()}' aggregation with wildcard`);
+        throw new Error(`Cannot use '${aggregationStr}' aggregation with wildcard`);
       }
 
       if (projection.values.length > 1) {
-        throw new Error(
-          `Cannot use '${tokens[0].toUpperCase()}' aggregation with multiple field names`,
-        );
+        throw new Error(`Cannot use '${aggregationStr}' aggregation with multiple field names`);
       }
     }
+
+    tp.movePointer(1);
 
     return {
       projection,
       aggregation,
-      tokens: newTokens.slice(1),
     };
   }
-  if (tokens[1] === '(') {
+  if (tp.peek(1).value === '(') {
     // Attempt to parse a function call
-    const { functionResultValue, consumed } = parseFunctionResult(tokens);
+    const functionResultValue = parseFunctionResult(tp);
+    tp.movePointer(1);
     return {
       projection: {
         type: ProjectionType.FUNCTION,
         function: functionResultValue,
       },
       aggregation: AggregateType.NONE,
-      tokens: tokens.slice(consumed + 1),
     };
   }
 
   const type =
-    tokens[0].toLowerCase() === 'distinct' ? ProjectionType.DISTINCT : ProjectionType.SELECTED;
+    tp.getCurrentToken().value === ReservedWords.DISTINCT
+      ? ProjectionType.DISTINCT
+      : ProjectionType.SELECTED;
   const offset = type === ProjectionType.DISTINCT ? 1 : 0;
 
+  tp.movePointer(offset);
+
   const values: Value[] = [];
-  let remainingTokens = Array.from(tokens.slice(offset));
   let listIndex = 0;
 
-  while (remainingTokens[0].toLowerCase() !== 'from' && remainingTokens[0].toLowerCase() !== ')') {
+  while (tp.getCurrentToken().value !== ReservedWords.FROM && tp.getCurrentToken().value !== ')') {
     if (listIndex % 2 === 0) {
-      const parsedValue = parseValue(remainingTokens);
+      const parsedValue = parseValue(tp.getRawTokens());
+      const tokensConsumed = tp.getTokens().length - parsedValue.tokens.length;
       values.push(parsedValue.value);
-      remainingTokens = parsedValue.tokens;
-    } else if (remainingTokens[0] === ',') {
-      remainingTokens = remainingTokens.slice(1);
+      tp.movePointer(tokensConsumed);
+    } else if (tp.getCurrentToken().value === ',') {
+      tp.movePointer(1);
     } else {
       throw new Error('Remapping column names is not currently supported!');
     }
@@ -695,27 +588,25 @@ const parseSelection = (
       values,
     },
     aggregation: AggregateType.NONE,
-    tokens: remainingTokens,
   };
 };
 
-const parseJoins = (tokens: string[]): { joins: Join[]; tokens: string[] } => {
+const parseJoins = (tp: TokenPointer): Join[] => {
   // TODO: Extend
-  if (tokens[2].toLowerCase() !== 'where' && tokens[2].toLowerCase() !== 'on') {
+  if (tp.peek(3).value !== ReservedWords.WHERE && tp.peek(3).value !== ReservedWords.ON) {
     throw new Error('Multiple joins and aliases not currently supported');
   }
-  return {
-    joins: [{ table: tokens[1] }],
-    tokens: tokens.slice(2),
-  };
+  const joins = [{ table: tp.peek(2).value }];
+  tp.movePointer(2);
+  return joins;
 };
 
-const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => {
-  let newTokens = tokens.slice(1);
+const parseFrom = (tp: TokenPointer): DataSet => {
+  tp.movePointer(1);
 
-  if (newTokens[0] === '(') {
+  if (tp.getCurrentToken().value === '(') {
     // Assume this is a sub-query
-    const bracketPairs = findBracketPairs(newTokens);
+    const bracketPairs = findBracketPairs(tp.getRawTokens());
 
     if (bracketPairs.length === 0) {
       throw new Error('Could not find matching end bracket');
@@ -728,28 +619,26 @@ const parseFrom = (tokens: string[]): { dataset: DataSet; tokens: string[] } => 
     }
 
     // eslint-disable-next-line no-use-before-define
-    const subquery = parse(newTokens.slice(outerBracketPair.start + 1, outerBracketPair.end));
+    const subquery = parse(
+      tp.createSegment(outerBracketPair.start + 1, outerBracketPair.end).getTokens(),
+    );
 
-    newTokens = newTokens.slice(outerBracketPair.end + 1);
+    tp.movePointer(outerBracketPair.end + 1);
 
-    if (newTokens[0] !== 'as') {
+    if (tp.getCurrentToken().value !== ReservedWords.AS) {
       throw new Error('Expected an alias for subquery results');
     }
 
     return {
-      tokens: newTokens.slice(1),
-      dataset: {
-        type: DataSetType.SUBQUERY,
-        value: subquery,
-        alias: newTokens[1],
-      },
+      type: DataSetType.SUBQUERY,
+      value: subquery,
+      alias: tp.movePointer(1).getCurrentToken().value,
     };
   }
 
   // Assume this is just a table name
   // FIXME: Should have more error handling around this
-
-  return { tokens: newTokens, dataset: { type: DataSetType.TABLE, value: newTokens[0] } };
+  return { type: DataSetType.TABLE, value: tp.getCurrentToken().value };
 };
 
 const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[] } => {
@@ -781,28 +670,27 @@ const parseOrdering = (tokens: string[]): { ordering: Ordering; tokens: string[]
   };
 };
 
-export const parse = (input: string[]): Query => {
+export const parse = (input: Token[]): Query => {
   let query: Query;
   let projection: Projection;
   let aggregation: AggregateType;
-  let tokens = input;
+  const tp = new TokenPointer(input);
 
-  if (tokens.length === 0) {
+  if (tp.length === 0) {
     throw new Error("Expected 'SELECT'");
   }
 
-  if (tokens[0].toLowerCase() === 'select') {
-    ({ tokens, projection, aggregation } = parseSelection(tokens.splice(1)));
+  if (tp.getCurrentToken().value === ReservedWords.SELECT) {
+    ({ projection, aggregation } = parseSelection(tp.movePointer(1)));
   } else {
     throw new Error("Expected 'SELECT'");
   }
 
-  if (tokens[0].toLowerCase() === 'from') {
-    const parsedFrom = parseFrom(tokens);
-    tokens = parsedFrom.tokens;
+  if (tp.getCurrentToken().value === ReservedWords.FROM) {
+    const dataset = parseFrom(tp);
     query = {
       projection,
-      dataset: parsedFrom.dataset,
+      dataset,
       aggregation,
       joins: [],
     };
@@ -810,11 +698,8 @@ export const parse = (input: string[]): Query => {
     throw new Error("Expected 'FROM'");
   }
 
-  tokens = tokens.slice(1);
-
-  if (tokens[0] && tokens[0].toLowerCase() === 'join') {
-    const { tokens: newTokens, joins } = parseJoins(tokens);
-    tokens = newTokens;
+  if (tp.peek(1)?.value === ReservedWords.JOIN) {
+    const joins = parseJoins(tp);
     query = {
       ...query,
       joins,
@@ -824,17 +709,16 @@ export const parse = (input: string[]): Query => {
   // TODO: Should be handled by parseJoins
   let joinCondition: Condition | undefined;
 
-  if (tokens[0] && tokens[0].toLowerCase() === 'on') {
-    joinCondition = parseCondition(tokens.slice(1, 4)).condition;
-    tokens = tokens.splice(4);
+  if (tp.peek(1)?.value === ReservedWords.ON) {
+    joinCondition = parseCondition(tp.createSegment(2, 5));
+    tp.movePointer(4);
   }
 
-  if (tokens[0] && tokens[0].toLowerCase() === 'where') {
-    const parsed = parseCondition(tokens.splice(1));
-    tokens = parsed.tokens;
+  if (tp.peek(1)?.value === ReservedWords.WHERE) {
+    const condition = parseCondition(tp.movePointer(2));
 
     if (!joinCondition) {
-      query.condition = parsed.condition;
+      query.condition = condition;
     } else {
       // TODO: Using 'on' and just joining on a value via the where clause have
       // slightly different behaviours, but here we are treating them the same.
@@ -842,7 +726,7 @@ export const parse = (input: string[]): Query => {
       query.condition = {
         boolean: BooleanType.AND,
         lhs: joinCondition,
-        rhs: parsed.condition,
+        rhs: condition,
       } as ConditionPair;
     }
   }
@@ -856,24 +740,25 @@ export const parse = (input: string[]): Query => {
       }
     });
 
-    return tokens.slice(0, index);
+    return index;
   };
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    if (tokens[0] && tokens[0].toLowerCase() === 'order') {
-      const parsed = parseOrdering(tokens);
-      tokens = parsed.tokens;
+    if (tp.peek(1)?.value === ReservedWords.ORDER) {
+      const parsed = parseOrdering(tp.movePointer(1).getRawTokens());
+      const consumed = tp.getTokens().length - (parsed.tokens.length + 1);
+      tp.movePointer(consumed);
       query.ordering = parsed.ordering;
       // eslint-disable-next-line no-continue
       continue;
     }
 
-    if (tokens[0] && tokens[0].toLowerCase() === 'limit') {
-      if (tokens[1]) {
-        const tokensToParse = getTokensBetween(tokens.slice(1));
-        const parsed = parseValue(tokensToParse);
-        tokens = tokens.slice(tokensToParse.length + 1);
+    if (tp.peek(1)?.value === ReservedWords.LIMIT) {
+      if (tp.peek(2)) {
+        const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
+        const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
+        tp.movePointer(tokensToParse - 1);
         query.limitAndOffset = { limit: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
@@ -881,11 +766,11 @@ export const parse = (input: string[]): Query => {
       throw new Error('Value required for limit!');
     }
 
-    if (tokens[0] && tokens[0].toLowerCase() === 'offset') {
-      if (tokens[1]) {
-        const tokensToParse = getTokensBetween(tokens.slice(1));
-        const parsed = parseValue(tokensToParse);
-        tokens = tokens.slice(tokensToParse.length + 1);
+    if (tp.peek(1)?.value === ReservedWords.OFFSET) {
+      if (tp.peek(2)) {
+        const tokensToParse = getTokensBetween(tp.movePointer(2).getRawTokens());
+        const parsed = parseValue(tp.createSegment(0, tokensToParse).getRawTokens());
+        tp.movePointer(tokensToParse - 1);
         query.limitAndOffset = { offset: parsed.value, ...query.limitAndOffset };
         // eslint-disable-next-line no-continue
         continue;
@@ -895,7 +780,7 @@ export const parse = (input: string[]): Query => {
     break;
   }
 
-  if (tokens.length !== 0 && tokens[0] !== ';') {
+  if (tp.peek(1) && tp.peek(1).value !== ';') {
     throw new Error('Expected end of query');
   }
 
