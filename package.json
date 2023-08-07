@@ -3,6 +3,7 @@
   "version": "0.18.0",
   "description": "Tool to query JSON input using SQL style syntax",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:GeekFiftyFive/Sunda.git"
