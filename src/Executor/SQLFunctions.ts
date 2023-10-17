@@ -107,4 +107,16 @@ export const functions: Record<FunctionName, (...args: unknown[]) => unknown> = 
 
     return parseFloat(str);
   },
+  PARSE_DATE: (...args) => {
+    if (args.length !== 1) {
+      throw getArgCountError('PARSE_DATE');
+    }
+    const str = args[0];
+
+    if (typeof str !== 'string') {
+      throw getArgTypeError('first', 'PARSE_DATE', 'string');
+    }
+
+    return new Date(str);
+  },
 };

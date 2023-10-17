@@ -82,3 +82,9 @@ describe("test 'COALESCE' function", () => {
     expect(actual).toEqual(undefined);
   });
 });
+
+describe("test 'PARSE_DATE' function", () => {
+  const date = new Date();
+  const actual = functions.PARSE_DATE(date.toISOString());
+  expect(actual).toEqual(date);
+});
