@@ -23,6 +23,7 @@ export enum FunctionName {
   COALESCE = 'COALESCE',
   REGEX_GROUP = 'REGEX_GROUP',
   PARSE_NUMBER = 'PARSE_NUMBER',
+  PARSE_DATE = 'PARSE_DATE',
 }
 
 export enum DataSetType {
