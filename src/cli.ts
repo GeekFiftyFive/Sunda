@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* eslint-disable no-console */
 import * as path from 'path';
 import * as readline from 'readline';
@@ -65,7 +66,7 @@ const startStreamMode = async (query: string, inputPath?: string, outputPath?: s
   writeStream.end();
 };
 
-export const runCli = () => {
+export const runCli = (): void => {
   const { parser: argsParser, dumpUsage } = createArgsParser([
     {
       key: 'version',
@@ -140,3 +141,5 @@ export const runCli = () => {
     process.exit(1);
   }
 };
+
+runCli();

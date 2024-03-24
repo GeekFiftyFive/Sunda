@@ -1,10 +1,8 @@
-#!/usr/bin/env node
 import { execute } from './Executor';
 import { parse } from './Parser';
 import { tokenise } from './Tokeniser';
 import { createObjectDataSource } from './ObjectDataSource';
 import { DataSource } from './CommonTypes';
-import { runCli } from './cli';
 
 export * from './CommonTypes';
 
@@ -18,7 +16,3 @@ export const executeQueryFromObject = async <T>(
   query: string,
   data: Record<string, unknown[]>,
 ): Promise<T[]> => executeQuery<T>(query, createObjectDataSource(data));
-
-if (require.main === module) {
-  runCli();
-}
