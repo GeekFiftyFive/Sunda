@@ -1,9 +1,7 @@
 {
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": true
-    },
-    "eslint.validate": [
-      "javascript"
-    ],
-    "jest.jestCommandLine": "yarn test"
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript"],
+  "jest.jestCommandLine": "yarn test"
 }
