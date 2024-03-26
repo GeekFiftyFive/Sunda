@@ -1,6 +1,6 @@
 {
   "name": "sunda",
-  "version": "0.19.3",
+  "version": "0.19.4",
   "description": "Tool to query JSON input using SQL style syntax",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,6 +21,7 @@
     "lint-fix": "eslint . --ext .ts --fix",
     "start": "ts-node src/cli.ts",
     "build": "tsc",
+    "build:prod": "tsc -p tsconfig.prod.json",
     "test": "jest"
   },
   "devDependencies": {
@@ -41,8 +42,7 @@
   },
   "bin": "./dist/cli.js",
   "files": [
-    "/dist/**/*.d.ts",
-    "/dist/**/*.js"
+    "/dist"
   ],
   "keywords": [
     "sql",
