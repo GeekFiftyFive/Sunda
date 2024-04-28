@@ -102,6 +102,11 @@ export interface LimitAndOffset {
   offset?: Value;
 }
 
+export interface NegatedCondition extends Condition {
+  boolean: BooleanType.NOT;
+  condition: Condition;
+}
+
 export interface SingularCondition extends Condition {
   comparison: Comparison;
   lhs: Value;
