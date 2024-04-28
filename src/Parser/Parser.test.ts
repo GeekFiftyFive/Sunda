@@ -759,6 +759,26 @@ describe('test parsing "IN" operator', () => {
       joins: [],
     });
   });
+
+  test('in operator is case insensitive', () => {
+    const tokens = ['SELECT', '*', 'FROM', 'posts', 'WHERE', 'ID', 'in', '(', '1', ',', '3', ')'];
+    const query = parse(addSpanInfo(tokens));
+
+    expect(query).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
+      condition: {
+        boolean: BooleanType.NONE,
+        comparison: Comparison.IN,
+        lhs: { type: 'FIELD', fieldName: 'ID' },
+        rhs: { type: 'LITERAL', value: [1, 3] },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parsing brackets', () => {
