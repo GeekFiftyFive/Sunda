@@ -43,17 +43,23 @@ const firstUnbracketedIndex = (
   searchValues: string[],
   tokens: string[],
   bracketPairs: { start: number; end: number }[],
-) =>
-  tokens.reduce((orIndex, token, index) => {
+  caseInsensitive = false,
+) => {
+  const toSearch = caseInsensitive
+    ? searchValues.map((value) => value.toUpperCase())
+    : searchValues;
+  return tokens.reduce((orIndex, token, index) => {
+    const tokenToFind = caseInsensitive ? token.toUpperCase() : token;
     if (orIndex >= 0) {
       return orIndex;
     }
-    if (searchValues.includes(token) && !isInBracketedExpression(index, bracketPairs)) {
+    if (toSearch.includes(tokenToFind) && !isInBracketedExpression(index, bracketPairs)) {
       return index;
     }
 
     return orIndex;
   }, -1);
+};
 
 const allUnbracketedIndexes = (
   searchValues: string[],
@@ -82,7 +88,7 @@ const findBracketPairs = (
 
   if (bracketIndex > -1) {
     // Ensure bracket is not part of an array
-    if (tokens[bracketIndex - 1] !== 'IN') {
+    if (tokens[bracketIndex - 1]?.toUpperCase() !== Comparison.IN) {
       // Peek tokens and look for matching close bracket
       const brackets = [];
       do {
@@ -478,10 +484,11 @@ const parseCondition = (tp: TokenPointer): Condition => {
     Object.values(Comparison),
     tp.getRawTokens(),
     bracketedPairs,
+    true,
   );
 
   if (unbracketedComparison >= 0) {
-    const comparison: Comparison = tp.peek(unbracketedComparison).value as Comparison;
+    const comparison: Comparison = tp.peek(unbracketedComparison).value.toUpperCase() as Comparison;
 
     const parsedLhsValue = parseValue(tp.createSegment(0, unbracketedComparison).getRawTokens());
     tp.movePointer(unbracketedComparison + 1);
