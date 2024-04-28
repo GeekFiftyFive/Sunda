@@ -915,6 +915,54 @@ describe('test parsing brackets', () => {
       joins: [],
     });
   });
+
+  test('can parse and or or boolean operator inside of a bracketed expression that has a not in front of it', () => {
+    const tokens = [
+      'SELECT',
+      '*',
+      'FROM',
+      'posts',
+      'WHERE',
+      'NOT',
+      '(',
+      'ID',
+      '=',
+      '1',
+      'OR',
+      'ID',
+      '=',
+      '2',
+      ')',
+    ];
+    const actual = parse(addSpanInfo(tokens));
+
+    expect(actual).toEqual({
+      projection: {
+        type: ProjectionType.ALL,
+      },
+      aggregation: AggregateType.NONE,
+      dataset: { type: DataSetType.TABLE, value: 'posts' },
+      condition: {
+        boolean: BooleanType.NOT,
+        condition: {
+          boolean: BooleanType.OR,
+          lhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            lhs: { type: 'FIELD', fieldName: 'ID' },
+            rhs: { type: 'LITERAL', value: 1 },
+          },
+          rhs: {
+            boolean: BooleanType.NONE,
+            comparison: Comparison.EQ,
+            lhs: { type: 'FIELD', fieldName: 'ID' },
+            rhs: { type: 'LITERAL', value: 2 },
+          },
+        },
+      },
+      joins: [],
+    });
+  });
 });
 
 describe('test parser handles subqueries', () => {
