@@ -88,7 +88,7 @@ const findBracketPairs = (
 
   if (bracketIndex > -1) {
     // Ensure bracket is not part of an array
-    if (tokens[bracketIndex - 1]?.toLowerCase() !== 'in') {
+    if (tokens[bracketIndex - 1]?.toUpperCase() !== Comparison.IN) {
       // Peek tokens and look for matching close bracket
       const brackets = [];
       do {
